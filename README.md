@@ -1,4 +1,25 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kronopay
+
+Sistema de gestión de cobranza con Next.js, Supabase y ElevenLabs. Incluye gestión de deudores, campañas automatizadas, llamadas por IA y notificaciones por email.
+
+## Características
+
+- **Gestión de Deudores**: CRUD completo de deudores con estados y filtros
+- **Campañas Automatizadas**: Sistema de campañas con llamadas por IA
+- **Integración ElevenLabs**: Llamadas automatizadas con voces de IA
+- **Notificaciones Email**: Sistema de envío de emails con Resend
+- **Autenticación**: Sistema de login/registro con Supabase Auth
+- **Dashboard**: Panel de control con métricas y estadísticas
+
+## Tecnologías
+
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Backend**: Next.js API Routes, Supabase
+- **Base de Datos**: Supabase PostgreSQL
+- **Autenticación**: Supabase Auth
+- **IA**: ElevenLabs para llamadas automatizadas
+- **Email**: Resend para notificaciones
+- **UI**: Tailwind CSS, Radix UI, Lucide React
 
 ## Getting Started
 
@@ -16,18 +37,27 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Variables de Entorno
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Crea un archivo `.env.local` con las siguientes variables:
 
-## Learn More
+```env
+SUPABASE_URL=tu_url_de_supabase
+SUPABASE_ANON_KEY=tu_anon_key_de_supabase
+ELEVENLABS_API_KEY=tu_api_key_de_elevenlabs
+RESEND_API_KEY=tu_api_key_de_resend
+NEXTAUTH_SECRET=tu_secret_para_auth
+NEXTAUTH_URL=http://localhost:3000
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Base de Datos
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Ejecuta los scripts de configuración:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run db:setup
+npm run db:verify
+```
 
 ## Deploy on Vercel
 
