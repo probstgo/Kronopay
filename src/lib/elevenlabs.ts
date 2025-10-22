@@ -9,6 +9,8 @@ interface ElevenLabsPhoneNumber {
   // Posibles alternativas del SDK
   phoneNumberId?: string;
   supportsOutbound?: boolean;
+  // Propiedades adicionales que puede tener el SDK
+  [key: string]: unknown;
 }
 
 interface ElevenLabsAgent {
@@ -63,8 +65,10 @@ export async function startOutboundCall(params: { agentId: string; toNumber: str
 
   // 2) Si no detectamos provider arriba, intentamos obtenerlo desde phoneNumbers.get
   if (!provider && phoneNumberId) {
-    const pn: ElevenLabsPhoneNumber = await elevenLabsClient.conversationalAi.phoneNumbers.get(phoneNumberId);
-    provider = pn.provider ?? (pn as any)?.provider; // en SDK puede variar
+    const pn = await elevenLabsClient.conversationalAi.phoneNumbers.get(phoneNumberId);
+    // Intentamos obtener el provider de diferentes formas posibles del SDK
+    const pnData = pn as unknown as Record<string, unknown>;
+    provider = pnData.provider as 'twilio' | 'sip_trunk' | undefined;
   }
 
   if (!phoneNumberId || !provider) {
