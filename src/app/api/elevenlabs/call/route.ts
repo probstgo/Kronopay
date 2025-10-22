@@ -12,8 +12,9 @@ export async function POST(req: Request) {
     const res = await startOutboundCall({ agentId, toNumber, agentPhoneNumberId })
 
     return NextResponse.json({ ok: true, result: res }, { status: 200 })
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
     console.error('Error iniciando llamada:', error)
-    return NextResponse.json({ error: error?.message ?? 'Error iniciando llamada' }, { status: 500 })
+    return NextResponse.json({ error: message ?? 'Error iniciando llamada' }, { status: 500 })
   }
 }

@@ -93,13 +93,13 @@ export default function ProfilePage() {
       
       setMessage({ type: 'success', text: 'Perfil actualizado exitosamente' })
       setIsEditing(false)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error al actualizar perfil:', error)
-      
+
       // Determinar el tipo de error y mostrar mensaje específico
       let errorMessage = 'Error al actualizar el perfil'
-      
-      if (error.message) {
+
+      if (error instanceof Error && error.message) {
         // Errores de Supabase
         if (error.message.includes('network') || error.message.includes('fetch')) {
           errorMessage = 'Error de conexión. Verifica tu internet e intenta nuevamente'
@@ -112,9 +112,10 @@ export default function ProfilePage() {
         } else {
           errorMessage = `Error del servidor: ${error.message}`
         }
-      } else if (error.code) {
+      } else if (typeof error === 'object' && error && 'code' in error) {
+        const code = (error as { code?: string }).code
         // Errores con código específico
-        switch (error.code) {
+        switch (code) {
           case 'NETWORK_ERROR':
             errorMessage = 'Error de conexión. Verifica tu internet'
             break
@@ -122,10 +123,10 @@ export default function ProfilePage() {
             errorMessage = 'Error de autenticación. Inicia sesión nuevamente'
             break
           default:
-            errorMessage = `Error del sistema: ${error.code}`
+            errorMessage = `Error del sistema: ${code}`
         }
       }
-      
+
       setMessage({ 
         type: 'error', 
         text: errorMessage

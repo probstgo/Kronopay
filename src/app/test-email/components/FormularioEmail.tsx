@@ -16,7 +16,7 @@ interface FormularioEmailProps {
 interface EnvioResultado {
   success: boolean
   message: string
-  details?: any
+  details?: unknown
 }
 
 export default function FormularioEmail({ deudorSeleccionado }: FormularioEmailProps) {
@@ -77,7 +77,7 @@ export default function FormularioEmail({ deudorSeleccionado }: FormularioEmailP
           details: data.details
         })
       }
-    } catch (error) {
+    } catch (error: unknown) {
       setResultado({
         success: false,
         message: 'Error de conexión al enviar el email',
@@ -214,11 +214,13 @@ Atentamente.`
                 {resultado.message}
               </AlertDescription>
             </div>
-            {resultado.details && (
+            {resultado.details != null && (
               <details className="mt-2 text-xs text-gray-600">
                 <summary>Detalles técnicos</summary>
                 <pre className="mt-1 p-2 bg-gray-100 rounded text-xs overflow-auto">
-                  {JSON.stringify(resultado.details, null, 2)}
+                  {typeof resultado.details === 'string'
+                    ? resultado.details
+                    : JSON.stringify(resultado.details, null, 2)}
                 </pre>
               </details>
             )}

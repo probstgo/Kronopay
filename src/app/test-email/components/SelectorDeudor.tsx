@@ -77,7 +77,7 @@ export default function SelectorDeudor({ onDeudorSelect, selectedDeudor }: Selec
             <p>Posibles soluciones:</p>
             <ul className="list-disc list-inside mt-2 space-y-1">
               <li>Verifica que estés logueado en la aplicación</li>
-              <li>Asegúrate de que hay deudores creados en la sección "Gestión de Deudores"</li>
+              <li>Asegúrate de que hay deudores creados en la sección &quot;Gestión de Deudores&quot;</li>
               <li>Revisa la consola del navegador para más detalles</li>
             </ul>
           </div>
@@ -99,7 +99,7 @@ export default function SelectorDeudor({ onDeudorSelect, selectedDeudor }: Selec
             <div className="text-sm text-gray-400">
               <p>Para usar esta funcionalidad:</p>
               <ol className="list-decimal list-inside mt-2 space-y-1">
-                <li>Ve a la sección "Gestión de Deudores"</li>
+                <li>Ve a la sección &quot;Gestión de Deudores&quot;</li>
                 <li>Agrega al menos un deudor con email</li>
                 <li>Regresa a esta sección</li>
               </ol>

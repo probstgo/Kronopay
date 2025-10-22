@@ -19,6 +19,9 @@ interface AgentPhoneNumber {
   label?: string;
   supports_outbound?: boolean;
   provider?: string;
+  // Compatibilidad con posibles claves alternativas devueltas por el API
+  phoneNumberId?: string;
+  supportsOutbound?: boolean;
 }
 
 export default function TestLlamadasPage() {
@@ -54,9 +57,9 @@ export default function TestLlamadasPage() {
       const json = await res.json();
       const source = (json?.phone_numbers ?? json?.phoneNumbers ?? []) as AgentPhoneNumber[];
       const numbers: AgentPhoneNumber[] = source
-        .filter((n: AgentPhoneNumber) => (n as any)?.supports_outbound || (n as any)?.supportsOutbound);
+        .filter((n) => n.supports_outbound || n.supportsOutbound);
       setAgentPhoneNumbers(numbers);
-      setSelectedAgentPhoneNumberId((numbers?.[0] as any)?.phone_number_id ?? (numbers?.[0] as any)?.phoneNumberId ?? '');
+      setSelectedAgentPhoneNumberId(numbers?.[0]?.phone_number_id ?? numbers?.[0]?.phoneNumberId ?? '');
     } catch (e) {
       console.error('Error cargando teléfonos del agente:', e);
       setAgentPhoneNumbers([]);
@@ -146,7 +149,7 @@ export default function TestLlamadasPage() {
                     <option value="">No hay números outbound asignados</option>
                   ) : (
                     agentPhoneNumbers.map((pn, idx) => {
-                      const id = (pn as any).phone_number_id ?? (pn as any).phoneNumberId;
+                      const id = pn.phone_number_id ?? pn.phoneNumberId;
                       const key = `pn-${id ?? idx}`
                       const label = pn.label || pn.phone_number || id || `Número ${idx+1}`
                       const provider = pn.provider ? ` (${pn.provider})` : ''

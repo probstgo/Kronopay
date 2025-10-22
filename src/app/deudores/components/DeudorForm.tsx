@@ -58,7 +58,7 @@ interface FormData {
   telefono: string;
   monto_deuda: string;
   fecha_vencimiento: string;
-  estado: string;
+  estado: Deudor['estado'];
   notas?: string;
 }
 
@@ -116,7 +116,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
     setErrors({});
   }, [deudor, isOpen]);
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
+  const handleInputChange = <K extends keyof FormData>(field: K, value: FormData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
     // Limpiar error del campo cuando el usuario empiece a escribir
@@ -209,7 +209,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
         telefono: formData.telefono.trim() || undefined,
         monto_deuda: parseFloat(formData.monto_deuda),
         fecha_vencimiento: formData.fecha_vencimiento || undefined,
-        estado: formData.estado as any
+        estado: formData.estado
       };
 
       if (deudor) {
@@ -400,7 +400,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
             {/* Estado */}
             <div className="md:col-span-2">
               <Label htmlFor="estado">Estado de la deuda</Label>
-              <Select value={formData.estado} onValueChange={(value) => handleInputChange('estado', value)}>
+              <Select value={formData.estado} onValueChange={(value) => handleInputChange('estado', value as Deudor['estado'])}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

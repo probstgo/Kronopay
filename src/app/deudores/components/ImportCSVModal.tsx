@@ -97,7 +97,7 @@ export function ImportCSVModal({ isOpen, onClose, onSuccess }: ImportCSVModalPro
 
     for (let i = 1; i < lines.length; i++) {
       const values = parseCSVLine(lines[i]);
-      const row: any = {};
+      const row: Partial<CSVData> = {};
 
       // Mapear datos usando el mapeo de columnas
       Object.entries(columnMapping).forEach(([field, headerName]) => {
@@ -128,9 +128,18 @@ export function ImportCSVModal({ isOpen, onClose, onSuccess }: ImportCSVModalPro
         }
       });
 
-      // Validar que tenga al menos nombre y monto
-      if (row.nombre && row.monto_deuda > 0) {
-        data.push(row);
+      // Validar que tenga al menos nombre y monto y construir objeto tipado
+      if (row.nombre && (row.monto_deuda ?? 0) > 0) {
+        const typedRow: CSVData = {
+          nombre: row.nombre,
+          rut: row.rut,
+          email: row.email,
+          telefono: row.telefono,
+          monto_deuda: row.monto_deuda!,
+          fecha_vencimiento: row.fecha_vencimiento,
+          estado: row.estado,
+        };
+        data.push(typedRow);
       }
     }
 
@@ -377,7 +386,7 @@ export function ImportCSVModal({ isOpen, onClose, onSuccess }: ImportCSVModalPro
           </DialogTitle>
           <DialogDescription>
             Selecciona un archivo CSV con los datos de los deudores. Se validarán los datos antes de la importación. 
-            Todos los deudores importados tendrán estado "nueva" por defecto.
+            Todos los deudores importados tendrán estado &quot;nueva&quot; por defecto.
           </DialogDescription>
         </DialogHeader>
 

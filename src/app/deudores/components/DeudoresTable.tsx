@@ -122,10 +122,10 @@ export function DeudoresTable({
   const fin = inicio + elementosPorPagina;
   const deudoresPagina = filtrados.slice(inicio, fin);
 
-  const handleCambioEstado = (deudorId: string, nuevoEstado: string) => {
+  const handleCambioEstado = (deudorId: string, nuevoEstado: Deudor['estado']) => {
     setDeudores(prev => prev.map(deudor => 
       deudor.id === deudorId 
-        ? { ...deudor, estado: nuevoEstado as any }
+        ? { ...deudor, estado: nuevoEstado }
         : deudor
     ));
   };

@@ -31,7 +31,7 @@ export interface HistorialEmail {
   asunto: string;
   estado: 'enviado' | 'fallido' | 'abierto' | 'rebotado';
   fecha_envio: string;
-  detalles?: any;
+  detalles?: unknown;
   created_at: string;
 }
 
@@ -50,7 +50,7 @@ export interface CreateEmailData {
   email_destinatario: string;
   asunto: string;
   estado?: 'enviado' | 'fallido' | 'abierto' | 'rebotado';
-  detalles?: any;
+  detalles?: unknown;
 }
 
 export interface UserStats {
@@ -131,12 +131,12 @@ export async function getDeudorById(id: string) {
 }
 
 export async function updateDeudor(id: string, updates: Partial<CreateDeudorData>) {
-  const updatesToSave: Record<string, any> = { ...updates };
+  const updatesToSave: Partial<CreateDeudorData> = { ...updates };
 
   // Normalizar/eliminar RUT si viene en la actualización
   if (Object.prototype.hasOwnProperty.call(updatesToSave, 'rut')) {
     const nuevoRut = updatesToSave.rut as string | undefined;
-    updatesToSave.rut = nuevoRut ? normalizarRUT(nuevoRut) : null;
+    updatesToSave.rut = nuevoRut ? normalizarRUT(nuevoRut) : undefined;
   }
 
   const { data, error } = await supabase
@@ -281,7 +281,7 @@ export async function getEmailHistory(deudorId?: string) {
   return data;
 }
 
-export async function updateEmailStatus(id: string, estado: HistorialEmail['estado'], detalles?: any) {
+export async function updateEmailStatus(id: string, estado: HistorialEmail['estado'], detalles?: unknown) {
   const { data, error } = await supabase
     .from('historial_emails')
     .update({ estado, detalles })

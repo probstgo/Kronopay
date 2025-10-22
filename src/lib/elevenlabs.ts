@@ -1,13 +1,32 @@
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
+interface ElevenLabsPhoneNumber {
+  phone_number_id?: string;
+  phone_number?: string;
+  label?: string;
+  supports_outbound?: boolean;
+  provider?: 'twilio' | 'sip_trunk';
+  // Posibles alternativas del SDK
+  phoneNumberId?: string;
+  supportsOutbound?: boolean;
+}
+
+interface ElevenLabsAgent {
+  agentId?: string;
+  name?: string;
+  phone_numbers?: ElevenLabsPhoneNumber[];
+  // Posibles alternativas del SDK
+  phoneNumbers?: ElevenLabsPhoneNumber[];
+}
+
 export const elevenLabsClient = new ElevenLabsClient({
   apiKey: process.env.ELEVENLABS_API_KEY!,
 });
 
-export async function getAgent(agentId: string) {
+export async function getAgent(agentId: string): Promise<ElevenLabsAgent> {
   try {
     const agent = await elevenLabsClient.conversationalAi.agents.get(agentId);
-    return agent;
+    return agent as ElevenLabsAgent;
   } catch (error) {
     console.error('Error obteniendo agente:', error);
     throw error;
@@ -31,21 +50,21 @@ export async function startOutboundCall(params: { agentId: string; toNumber: str
   let phoneNumberId = agentPhoneNumberId;
 
   if (!phoneNumberId) {
-    const agent = await getAgent(agentId);
-    const phones = (agent as any)?.phone_numbers ?? (agent as any)?.phoneNumbers ?? [];
-    const outbound = phones.find((p: any) => p.supports_outbound || p.supportsOutbound);
+    const agentData: ElevenLabsAgent = await getAgent(agentId);
+    const phones = agentData.phone_numbers ?? agentData.phoneNumbers ?? [];
+    const outbound = phones.find((p) => p.supports_outbound || p.supportsOutbound);
     if (!outbound) {
       throw new Error('El agente no tiene un número con llamadas salientes habilitadas');
     }
     // twilio: phone_number_id; sip_trunk: phone_number_id también
-    phoneNumberId = (outbound as any).phone_number_id ?? (outbound as any).phoneNumberId;
-    provider = (outbound as any).provider;
+    phoneNumberId = outbound.phone_number_id ?? outbound.phoneNumberId;
+    provider = outbound.provider;
   }
 
   // 2) Si no detectamos provider arriba, intentamos obtenerlo desde phoneNumbers.get
   if (!provider && phoneNumberId) {
-    const pn = await elevenLabsClient.conversationalAi.phoneNumbers.get(phoneNumberId);
-    provider = (pn as any)?.provider?.provider ?? (pn as any)?.provider; // en SDK puede variar
+    const pn: ElevenLabsPhoneNumber = await elevenLabsClient.conversationalAi.phoneNumbers.get(phoneNumberId);
+    provider = pn.provider ?? (pn as any)?.provider; // en SDK puede variar
   }
 
   if (!phoneNumberId || !provider) {

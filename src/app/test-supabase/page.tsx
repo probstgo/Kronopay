@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
+type SimpleTable = { table_name: string }
+
 export default function TestSupabase() {
   const [connectionStatus, setConnectionStatus] = useState<string>('Probando conexión...')
-  const [tables, setTables] = useState<any[]>([])
+  const [tables, setTables] = useState<SimpleTable[]>([])
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {

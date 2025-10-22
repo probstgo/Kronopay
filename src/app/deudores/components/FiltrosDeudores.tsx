@@ -51,8 +51,11 @@ export function FiltrosDeudores({ onFiltrosCambiados, onLimpiarFiltros }: Filtro
 
   const [mostrarFiltrosAvanzados, setMostrarFiltrosAvanzados] = useState(false);
 
-  const handleFiltroChange = (campo: keyof FiltrosAplicados, valor: any) => {
-    const nuevosFiltros = { ...filtros, [campo]: valor };
+  const handleFiltroChange = <K extends keyof FiltrosAplicados>(
+    campo: K,
+    valor: FiltrosAplicados[K]
+  ) => {
+    const nuevosFiltros = { ...filtros, [campo]: valor } as FiltrosAplicados;
     setFiltros(nuevosFiltros);
     onFiltrosCambiados(nuevosFiltros);
   };
@@ -237,7 +240,7 @@ export function FiltrosDeudores({ onFiltrosCambiados, onLimpiarFiltros }: Filtro
               <span className="text-sm text-gray-500">Filtros activos:</span>
               {filtros.busqueda && (
                 <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                  Búsqueda: "{filtros.busqueda}"
+                  Búsqueda: &quot;{filtros.busqueda}&quot;
                 </span>
               )}
               {filtros.estado !== 'todos' && (
