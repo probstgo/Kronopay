@@ -26,8 +26,8 @@ const authRoutes = [
 ]
 
 // Rutas públicas (no requieren autenticación)
-// Importante: NO incluir '/' para evitar que todas las rutas coincidan con startsWith('/').
 const publicRoutes = [
+  '/',
   '/auth/callback',
   '/auth/reset-password',
   '/test-email',
