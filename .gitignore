@@ -20,6 +20,25 @@
 # production
 /build
 
+# database docs
+/database/*.md
+/database/**/*.md
+
+# IDE/Editor
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+.cursor/
+
+# Caches y artefactos
+.eslintcache
+.pnpm-store/
+.cache/
+dist/
+tmp/
+temp/
+
 # misc
 .DS_Store
 *.pem
@@ -29,9 +48,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+logs/
+*.log.*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+!.env.local.example
 
 # vercel
 .vercel
