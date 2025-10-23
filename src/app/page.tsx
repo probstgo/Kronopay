@@ -33,10 +33,10 @@ export default function Home() {
             </span>
           </div>
           
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight tracking-tight">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight tracking-tight text-center mx-auto max-w-[18ch] sm:max-w-[20ch]">
             Recupera tu dinero
             <br />
-            <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent inline-block">
               automáticamente
             </span>
             <br />
