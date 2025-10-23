@@ -87,8 +87,8 @@ export function Sidebar() {
       await signOut()
       // 2) Cerrar sesión en el servidor (limpia cookies HTTP-only)
       await fetch('/api/auth/signout', { method: 'POST' })
-      // 3) Redirigir
-      router.push('/login')
+      // 3) Redirigir al home
+      router.push('/')
     } finally {
       setSigningOut(false)
     }

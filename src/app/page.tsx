@@ -24,7 +24,7 @@ export default function Home() {
       </header>
 
       {/* Hero Section - Estilo Stripe con mucho whitespace */}
-      <section className="pt-24 pb-32">
+      <section className="pt-8 sm:pt-16 md:pt-24 pb-16 sm:pb-24 md:pb-32">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <div className="mb-8">
             <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-50 text-purple-700 border border-purple-200">
@@ -33,17 +33,17 @@ export default function Home() {
             </span>
           </div>
           
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight tracking-tight text-center mx-auto max-w-[18ch] sm:max-w-[20ch]">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-gray-900 mb-6 sm:mb-8 leading-tight tracking-tight text-center mx-auto max-w-[18ch] sm:max-w-[20ch]">
             Recupera tu dinero
             <br />
-            <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent inline-block">
+            <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent inline-block whitespace-nowrap text-[0.85em] sm:text-[1em]">
               automáticamente
             </span>
             <br />
             sin esfuerzo
           </h1>
           
-          <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg sm:text-xl text-gray-600 mb-8 sm:mb-12 max-w-2xl mx-auto leading-relaxed">
             IA que llama, envía emails y negocia con tus deudores 24/7. 
             Recupera hasta 3x más dinero en la mitad de tiempo.
           </p>
