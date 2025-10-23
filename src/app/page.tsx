@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       {/* Header minimalista estilo Stripe */}
       <header className="border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
@@ -33,7 +33,7 @@ export default function Home() {
             </span>
           </div>
           
-          <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight tracking-tight">
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight tracking-tight">
             Recupera tu dinero
             <br />
             <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -164,7 +164,7 @@ export default function Home() {
           </div>
           
           <div className="text-center">
-            <div className="inline-flex items-center gap-8 text-gray-600">
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-6 text-gray-600">
               <div className="text-center">
                 <div className="text-3xl font-bold text-gray-900">500+</div>
                 <div className="text-sm">Empresas</div>
