@@ -7,7 +7,6 @@ import {
   MessageSquare, 
   TrendingUp, 
   TrendingDown, 
-  ArrowRight,
   CheckCircle2,
   Zap,
   BarChart4
@@ -35,7 +34,6 @@ function useCountUp(target: number, duration: number = 1500, delay: number = 0) 
       return;
     }
     
-    let timeout: NodeJS.Timeout;
     let raf: number;
     let startTime: number;
     
@@ -58,7 +56,7 @@ function useCountUp(target: number, duration: number = 1500, delay: number = 0) 
       }
     };
     
-    timeout = setTimeout(startAnimation, delay);
+    const timeout: NodeJS.Timeout = setTimeout(startAnimation, delay);
     
     return () => {
       clearTimeout(timeout);
