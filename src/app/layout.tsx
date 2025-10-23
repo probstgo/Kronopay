@@ -16,12 +16,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CobranzaIA - Automatiza tu Cobranza con IA",
+  title: "Kronopay - La Infraestructura de Cobranza para Internet",
   description: "Sistema inteligente de cobranza con llamadas automáticas, emails personalizados y seguimiento avanzado. Reduce el tiempo de cobranza en un 70%.",
-  keywords: ["cobranza", "automatización", "inteligencia artificial", "llamadas automáticas", "emails", "gestión de deudores"],
-  authors: [{ name: "CobranzaIA" }],
+  keywords: ["cobranza", "automatización", "inteligencia artificial", "llamadas automáticas", "emails", "gestión de deudores", "Kronopay"],
+  authors: [{ name: "Kronopay" }],
   openGraph: {
-    title: "CobranzaIA - Automatiza tu Cobranza con IA",
+    title: "Kronopay - La Infraestructura de Cobranza para Internet",
     description: "Sistema inteligente de cobranza con llamadas automáticas, emails personalizados y seguimiento avanzado.",
     type: "website",
     locale: "es_ES",

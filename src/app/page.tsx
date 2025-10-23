@@ -1,22 +1,20 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Phone, Mail, Users, BarChart3, Shield, Clock, LogIn } from "lucide-react";
+import { CheckCircle, Phone, Mail, BarChart3, LogIn, ArrowRight, Zap, Shield, Clock } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      {/* Header con botón de Login */}
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">C</span>
+    <div className="min-h-screen bg-white">
+      {/* Header minimalista estilo Stripe */}
+      <header className="border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">K</span>
             </div>
-            <span className="text-xl font-bold text-gray-900">CobranzaIA</span>
+            <span className="text-xl font-semibold text-gray-900 tracking-tight">Kronopay</span>
           </div>
-          <Button asChild variant="outline">
+          <Button asChild variant="ghost" className="text-gray-600 hover:text-gray-900">
             <Link href="/login" className="flex items-center gap-2">
               <LogIn className="w-4 h-4" />
               Iniciar Sesión
@@ -25,110 +23,222 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20">
-        <div className="text-center max-w-4xl mx-auto">
-          <Badge variant="outline" className="mb-4">
-            🚀 Sistema de Cobranza Inteligente
-          </Badge>
-          <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            Automatiza tu
-            <span className="text-blue-600"> cobranza</span>
+      {/* Hero Section - Estilo Stripe con mucho whitespace */}
+      <section className="pt-24 pb-32">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <div className="mb-8">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-50 text-purple-700 border border-purple-200">
+              <Zap className="w-4 h-4 mr-2" />
+              +500 empresas ya automatizaron su cobranza
+            </span>
+          </div>
+          
+          <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight tracking-tight">
+            Recupera tu dinero
             <br />
-            con IA
+            <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent">
+              automáticamente
+            </span>
+            <br />
+            sin esfuerzo
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Reduce el tiempo de cobranza en un 70% con llamadas automáticas, 
-            emails personalizados y seguimiento inteligente de deudores.
+          
+          <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
+            IA que llama, envía emails y negocia con tus deudores 24/7. 
+            Recupera hasta 3x más dinero en la mitad de tiempo.
           </p>
+          
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild>
-              <Link href="/register">Comenzar Gratis</Link>
+            <Button size="lg" asChild className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-4 text-lg font-medium">
+              <Link href="/register" className="flex items-center gap-2">
+                Comenzar ahora
+                <ArrowRight className="w-5 h-5" />
+              </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild>
+            <Button size="lg" variant="outline" asChild className="border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-4 text-lg font-medium">
               <Link href="/login">Iniciar Sesión</Link>
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="container mx-auto px-4 py-20">
-        <h2 className="text-4xl font-bold text-center mb-16">
-          Todo lo que necesitas para cobrar más
-        </h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          <Card className="text-center p-6">
-            <Phone className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-            <CardTitle>Llamadas Automáticas</CardTitle>
-            <CardDescription>
-              IA que llama a tus deudores con voz natural y conversaciones inteligentes
-            </CardDescription>
-          </Card>
+      {/* Sección con gradiente de fondo - Estilo Stripe */}
+      <section className="py-32 bg-gradient-to-br from-purple-50 via-blue-50 to-purple-50">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-20">
+            <h2 className="text-5xl font-bold text-gray-900 mb-6 tracking-tight">
+              Deja que la IA haga el trabajo pesado
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              Mientras tú te enfocas en tu negocio, nuestra IA recupera tu dinero de forma inteligente y persistente
+            </p>
+          </div>
           
-          <Card className="text-center p-6">
-            <Mail className="w-12 h-12 text-green-600 mx-auto mb-4" />
-            <CardTitle>Emails Personalizados</CardTitle>
-            <CardDescription>
-              Plantillas automáticas que se adaptan a cada deudor y situación
-            </CardDescription>
-          </Card>
-          
-          <Card className="text-center p-6">
-            <BarChart3 className="w-12 h-12 text-purple-600 mx-auto mb-4" />
-            <CardTitle>Analytics Avanzado</CardTitle>
-            <CardDescription>
-              Reportes detallados de efectividad y métricas de cobranza
-            </CardDescription>
-          </Card>
+          <div className="grid md:grid-cols-3 gap-12">
+            <div className="text-center group">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-105 transition-transform duration-300">
+                <Phone className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Llamadas que Nunca se Rinden</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Nuestra IA llama hasta 10 veces por deudor, adaptando su estrategia según la respuesta. 
+                <strong>Resultado: 85% más cobros que las llamadas manuales.</strong>
+              </p>
+            </div>
+            
+            <div className="text-center group">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-105 transition-transform duration-300">
+                <Mail className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Emails que Convierten</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Cada email se personaliza según el historial del deudor. 
+                <strong>Desde recordatorios amables hasta notificaciones legales.</strong>
+              </p>
+            </div>
+            
+            <div className="text-center group">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-105 transition-transform duration-300">
+                <BarChart3 className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Resultados en Tiempo Real</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Ve exactamente cuánto dinero recuperaste hoy, qué estrategias funcionan mejor y cuáles deudores están respondiendo.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="bg-white py-20">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+      {/* Sección de prueba social */}
+      <section className="py-32 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+              Empresas que ya recuperaron su dinero
+            </h2>
+            <p className="text-xl text-gray-600">
+              Más de 500 empresas confían en Kronopay para automatizar su cobranza
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8 mb-16">
+            <div className="bg-white p-8 rounded-2xl shadow-sm">
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                  <span className="text-blue-600 font-bold">JD</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Juan Díaz</h4>
+                  <p className="text-gray-600 text-sm">CEO, Clínica Dental Smile</p>
+                </div>
+              </div>
+              <p className="text-gray-700 italic">"Recuperamos $15,000 en la primera semana. La IA es más efectiva que nuestro personal llamando manualmente."</p>
+            </div>
+            
+            <div className="bg-white p-8 rounded-2xl shadow-sm">
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                  <span className="text-green-600 font-bold">MR</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">María Rodríguez</h4>
+                  <p className="text-gray-600 text-sm">Directora, Gimnasio FitLife</p>
+                </div>
+              </div>
+              <p className="text-gray-700 italic">"Eliminamos el estrés de cobrar. Nuestros miembros ya no se van por llamadas agresivas. La IA es empática."</p>
+            </div>
+            
+            <div className="bg-white p-8 rounded-2xl shadow-sm">
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                  <span className="text-purple-600 font-bold">CL</span>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900">Carlos López</h4>
+                  <p className="text-gray-600 text-sm">Fundador, Consultora ABC</p>
+                </div>
+              </div>
+              <p className="text-gray-700 italic">"$50,000 recuperados en 2 semanas. El ROI fue inmediato. Ahora no puedo imaginar cobrar sin IA."</p>
+            </div>
+          </div>
+          
+          <div className="text-center">
+            <div className="inline-flex items-center gap-8 text-gray-600">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-gray-900">500+</div>
+                <div className="text-sm">Empresas</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-gray-900">$2M+</div>
+                <div className="text-sm">Recuperado</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-gray-900">95%</div>
+                <div className="text-sm">Satisfacción</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Sección de beneficios - Layout asimétrico estilo Stripe */}
+      <section className="py-32">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="grid lg:grid-cols-2 gap-20 items-center">
             <div>
-              <h2 className="text-4xl font-bold mb-6">
-                ¿Por qué elegir nuestro sistema?
+              <h2 className="text-5xl font-bold text-gray-900 mb-8 tracking-tight">
+                Casos reales de empresas como la tuya
               </h2>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
-                  <span>Reduce el tiempo de cobranza en un 70%</span>
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">"Recuperamos $50,000 en 2 semanas"</h3>
+                    <p className="text-gray-600 leading-relaxed">Empresa de servicios que tenía $200K en cuentas por cobrar. Nuestra IA recuperó el 25% en solo 2 semanas, sin que ellos hicieran nada.</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
-                  <span>Aumenta la tasa de recuperación en un 45%</span>
+                <div className="flex items-start gap-4">
+                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">"Eliminamos el estrés de cobrar"</h3>
+                    <p className="text-gray-600 leading-relaxed">Clínica dental que gastaba 20 horas semanales llamando pacientes. Ahora la IA hace todo y ellos se enfocan en atender.</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
-                  <span>Automatiza el 90% del proceso</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
-                  <span>Integra con tu sistema actual</span>
+                <div className="flex items-start gap-4">
+                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                    <CheckCircle className="w-4 h-4 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">"Nunca más perdemos clientes por cobrar"</h3>
+                    <p className="text-gray-600 leading-relaxed">Gimnasio que perdía miembros por cobros agresivos. Ahora la IA es empática y mantiene la relación mientras cobra.</p>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="bg-gray-100 p-8 rounded-lg">
-              <h3 className="text-2xl font-bold mb-4">Resultados Reales</h3>
-              <div className="grid grid-cols-2 gap-4">
+            
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl p-12">
+              <h3 className="text-3xl font-bold text-gray-900 mb-8 text-center">Resultados Reales</h3>
+              <div className="grid grid-cols-2 gap-8">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-600">70%</div>
-                  <div className="text-sm text-gray-600">Menos tiempo</div>
+                  <div className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">70%</div>
+                  <div className="text-gray-600 font-medium">Menos tiempo</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-green-600">45%</div>
-                  <div className="text-sm text-gray-600">Más cobros</div>
+                  <div className="text-5xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent mb-2">45%</div>
+                  <div className="text-gray-600 font-medium">Más cobros</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-purple-600">90%</div>
-                  <div className="text-sm text-gray-600">Automatizado</div>
+                  <div className="text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">90%</div>
+                  <div className="text-gray-600 font-medium">Automatizado</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-orange-600">24/7</div>
-                  <div className="text-sm text-gray-600">Disponible</div>
+                  <div className="text-5xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-2">24/7</div>
+                  <div className="text-gray-600 font-medium">Disponible</div>
                 </div>
               </div>
             </div>
@@ -136,58 +246,75 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Final */}
-      <section className="bg-blue-600 text-white py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-4xl font-bold mb-6">
-            ¿Listo para revolucionar tu cobranza?
+      {/* CTA Final - Estilo Stripe con gradiente */}
+      <section className="py-32 bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 text-white">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <h2 className="text-5xl font-bold mb-8 tracking-tight">
+            ¿Cuánto dinero estás perdiendo cada día?
           </h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Únete a cientos de empresas que ya automatizaron su proceso de cobranza
+          <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
+            Cada día que esperas, tus deudores se olvidan de la deuda. 
+            <strong>Empieza a recuperar tu dinero en los próximos 5 minutos.</strong>
           </p>
-          <Button size="lg" variant="secondary" asChild>
-            <Link href="/register">Comenzar Ahora - Es Gratis</Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" asChild className="bg-white text-gray-900 hover:bg-gray-100 px-8 py-4 text-lg font-medium">
+              <Link href="/register" className="flex items-center gap-2">
+                Recuperar mi dinero ahora
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild className="border-gray-300 bg-gray-100 text-gray-900 hover:bg-gray-200 px-8 py-4 text-lg font-medium">
+              <Link href="/login">Ya tengo cuenta</Link>
+            </Button>
+          </div>
+          <p className="text-sm text-gray-400 mt-6">
+            ✅ Configuración en 5 minutos • ✅ Sin compromiso • ✅ Resultados en 24 horas
+          </p>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
+      {/* Footer minimalista */}
+      <footer className="border-t border-gray-100 py-16">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="grid md:grid-cols-4 gap-12">
             <div>
-              <h3 className="text-xl font-bold mb-4">CobranzaIA</h3>
-              <p className="text-gray-400">
-                El sistema de cobranza más avanzado con inteligencia artificial
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">K</span>
+                </div>
+                <span className="text-xl font-semibold text-gray-900">Kronopay</span>
+              </div>
+              <p className="text-gray-600 leading-relaxed">
+                La infraestructura de cobranza más avanzada con inteligencia artificial
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Producto</h4>
-              <ul className="space-y-2 text-gray-400">
+              <h4 className="font-semibold text-gray-900 mb-4">Producto</h4>
+              <ul className="space-y-3 text-gray-600">
                 <li>Características</li>
                 <li>Precios</li>
                 <li>Integraciones</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Soporte</h4>
-              <ul className="space-y-2 text-gray-400">
+              <h4 className="font-semibold text-gray-900 mb-4">Soporte</h4>
+              <ul className="space-y-3 text-gray-600">
                 <li>Centro de Ayuda</li>
                 <li>Contacto</li>
                 <li>Documentación</li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2 text-gray-400">
+              <h4 className="font-semibold text-gray-900 mb-4">Legal</h4>
+              <ul className="space-y-3 text-gray-600">
                 <li>Privacidad</li>
                 <li>Términos</li>
                 <li>Cookies</li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 CobranzaIA. Todos los derechos reservados.</p>
+          <div className="border-t border-gray-200 mt-16 pt-8 text-center text-gray-500">
+            <p>&copy; 2024 Kronopay. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>
