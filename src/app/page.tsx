@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Phone, Mail, BarChart3, LogIn, ArrowRight, Zap, Shield, Clock } from "lucide-react";
+import { CheckCircle, Phone, Mail, BarChart3, LogIn, ArrowRight, Zap } from "lucide-react";
 import Link from "next/link";
 
 export default function Home() {
@@ -133,7 +133,7 @@ export default function Home() {
                   <p className="text-gray-600 text-sm">CEO, Clínica Dental Smile</p>
                 </div>
               </div>
-              <p className="text-gray-700 italic">"Recuperamos $15,000 en la primera semana. La IA es más efectiva que nuestro personal llamando manualmente."</p>
+              <p className="text-gray-700 italic">&ldquo;Recuperamos $15,000 en la primera semana. La IA es más efectiva que nuestro personal llamando manualmente.&rdquo;</p>
             </div>
             
             <div className="bg-white p-8 rounded-2xl shadow-sm">
@@ -146,7 +146,7 @@ export default function Home() {
                   <p className="text-gray-600 text-sm">Directora, Gimnasio FitLife</p>
                 </div>
               </div>
-              <p className="text-gray-700 italic">"Eliminamos el estrés de cobrar. Nuestros miembros ya no se van por llamadas agresivas. La IA es empática."</p>
+              <p className="text-gray-700 italic">&ldquo;Eliminamos el estrés de cobrar. Nuestros miembros ya no se van por llamadas agresivas. La IA es empática.&rdquo;</p>
             </div>
             
             <div className="bg-white p-8 rounded-2xl shadow-sm">
@@ -159,7 +159,7 @@ export default function Home() {
                   <p className="text-gray-600 text-sm">Fundador, Consultora ABC</p>
                 </div>
               </div>
-              <p className="text-gray-700 italic">"$50,000 recuperados en 2 semanas. El ROI fue inmediato. Ahora no puedo imaginar cobrar sin IA."</p>
+              <p className="text-gray-700 italic">&ldquo;$50,000 recuperados en 2 semanas. El ROI fue inmediato. Ahora no puedo imaginar cobrar sin IA.&rdquo;</p>
             </div>
           </div>
           
@@ -196,7 +196,7 @@ export default function Home() {
                     <CheckCircle className="w-4 h-4 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">"Recuperamos $50,000 en 2 semanas"</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">&ldquo;Recuperamos $50,000 en 2 semanas&rdquo;</h3>
                     <p className="text-gray-600 leading-relaxed">Empresa de servicios que tenía $200K en cuentas por cobrar. Nuestra IA recuperó el 25% en solo 2 semanas, sin que ellos hicieran nada.</p>
                   </div>
                 </div>
@@ -205,7 +205,7 @@ export default function Home() {
                     <CheckCircle className="w-4 h-4 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">"Eliminamos el estrés de cobrar"</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">&ldquo;Eliminamos el estrés de cobrar&rdquo;</h3>
                     <p className="text-gray-600 leading-relaxed">Clínica dental que gastaba 20 horas semanales llamando pacientes. Ahora la IA hace todo y ellos se enfocan en atender.</p>
                   </div>
                 </div>
@@ -214,7 +214,7 @@ export default function Home() {
                     <CheckCircle className="w-4 h-4 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">"Nunca más perdemos clientes por cobrar"</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">&ldquo;Nunca más perdemos clientes por cobrar&rdquo;</h3>
                     <p className="text-gray-600 leading-relaxed">Gimnasio que perdía miembros por cobros agresivos. Ahora la IA es empática y mantiene la relación mientras cobra.</p>
                   </div>
                 </div>
