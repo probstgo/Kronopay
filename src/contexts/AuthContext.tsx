@@ -46,15 +46,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         const { data: { session }, error } = await supabase.auth.getSession()
         if (error) {
-          console.error('Error al obtener sesión:', error)
+          console.error('Error al obtener sesión inicial:', error)
         } else {
           setSession(session)
           setUser(session?.user ?? null)
+          console.log('AuthContext: Sesión inicial establecida (getInitialSession):', session?.user?.email);
         }
       } catch (error) {
-        console.error('Error inesperado:', error)
+        console.error('Error inesperado al obtener sesión inicial:', error)
       } finally {
         setLoading(false)
+        console.log('AuthContext: loading es false (getInitialSession). User:', user?.email);
       }
     }
 
@@ -63,10 +65,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Escuchar cambios en la autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Cambio en autenticación:', event, session?.user?.email)
+        console.log('AuthContext: Cambio en autenticación (onAuthStateChange):', event, session?.user?.email)
         setSession(session)
         setUser(session?.user ?? null)
+        console.log('AuthContext: Estado de usuario después de cambio (onAuthStateChange):', session?.user?.email);
         setLoading(false)
+        console.log('AuthContext: loading es false (onAuthStateChange). User:', user?.email);
       }
     )
 
