@@ -72,6 +72,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setSession(session)
         setUser(session?.user ?? null)
         console.log('AuthContext: Estado de usuario después de cambio (onAuthStateChange):', session?.user?.email);
+        // Sincronizar sesión con el servidor para que el middleware/SSR la vea
+        try {
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event, session }),
+          })
+        } catch (syncError) {
+          console.error('Error sincronizando sesión con el servidor:', syncError)
+        }
         if (!initialized) setInitialized(true)
         setLoading(false)
         console.log('AuthContext: loading es false (onAuthStateChange). User:', user?.email);
