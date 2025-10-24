@@ -19,6 +19,7 @@ import {
   DollarSign,
   User
 } from 'lucide-react';
+import { parsearMontoCLP, formatearMontoCLP, validarMontoCLP, montoParaInput } from '@/lib/formateo';
 import { ESTADOS_DEUDA, ESTADOS_DEUDA_CONFIG } from '@/lib/database';
 
 interface FiltrosDeudoresProps {
@@ -160,22 +161,36 @@ export function FiltrosDeudores({ onFiltrosCambiados, onLimpiarFiltros }: Filtro
                 </label>
                 <div className="flex gap-2">
                   <Input
-                    type="number"
-                    placeholder="Mínimo"
-                    value={filtros.rangoMonto.min || ''}
-                    onChange={(e) => handleFiltroChange('rangoMonto', {
-                      ...filtros.rangoMonto,
-                      min: e.target.value ? Number(e.target.value) : null
-                    })}
+                    type="text"
+                    placeholder="Mínimo (ej: 1.000.000)"
+                    value={filtros.rangoMonto.min ? montoParaInput(filtros.rangoMonto.min) : ''}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+                      if (!valor) {
+                        handleFiltroChange('rangoMonto', { ...filtros.rangoMonto, min: null });
+                      } else if (validarMontoCLP(valor)) {
+                        handleFiltroChange('rangoMonto', { 
+                          ...filtros.rangoMonto, 
+                          min: parsearMontoCLP(valor) 
+                        });
+                      }
+                    }}
                   />
                   <Input
-                    type="number"
-                    placeholder="Máximo"
-                    value={filtros.rangoMonto.max || ''}
-                    onChange={(e) => handleFiltroChange('rangoMonto', {
-                      ...filtros.rangoMonto,
-                      max: e.target.value ? Number(e.target.value) : null
-                    })}
+                    type="text"
+                    placeholder="Máximo (ej: 5.000.000)"
+                    value={filtros.rangoMonto.max ? montoParaInput(filtros.rangoMonto.max) : ''}
+                    onChange={(e) => {
+                      const valor = e.target.value;
+                      if (!valor) {
+                        handleFiltroChange('rangoMonto', { ...filtros.rangoMonto, max: null });
+                      } else if (validarMontoCLP(valor)) {
+                        handleFiltroChange('rangoMonto', { 
+                          ...filtros.rangoMonto, 
+                          max: parsearMontoCLP(valor) 
+                        });
+                      }
+                    }}
                   />
                 </div>
               </div>

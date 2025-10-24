@@ -31,7 +31,8 @@ import {
   Phone,
   MoreHorizontal 
 } from 'lucide-react';
-import { Deudor, ESTADOS_DEUDA, ESTADOS_DEUDA_CONFIG, formatearMonto, formatearRUT, formatearTelefono, calcularDiasVencidos, getDeudores, deleteDeudor } from '@/lib/database';
+import { Deudor, ESTADOS_DEUDA, ESTADOS_DEUDA_CONFIG, formatearRUT, formatearTelefono, calcularDiasVencidos, getDeudores, deleteDeudor } from '@/lib/database';
+import { formatearMontoCLP } from '@/lib/formateo';
 import { toast } from 'sonner';
 import { EstadoBadge } from './EstadoBadge';
 import { SelectorEstado } from './SelectorEstado';
@@ -338,7 +339,7 @@ export function DeudoresTable({
                         </div>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {formatearMonto(deudor.monto_deuda)}
+                        {formatearMontoCLP(deudor.monto_deuda)}
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">

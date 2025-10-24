@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Deudor } from '@/lib/database'
+import { formatearMontoCLP } from '@/lib/formateo'
 import { Send, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 
 interface FormularioEmailProps {
@@ -94,7 +95,7 @@ export default function FormularioEmail({ deudorSeleccionado }: FormularioEmailP
       asunto: 'Recordatorio de pago pendiente',
       mensaje: `Estimado/a ${deudorSeleccionado?.nombre || '[Nombre]'},
 
-Le recordamos que tiene una deuda pendiente por un monto de $${deudorSeleccionado?.monto_deuda.toLocaleString() || '[Monto]'}.
+Le recordamos que tiene una deuda pendiente por un monto de ${deudorSeleccionado ? formatearMontoCLP(deudorSeleccionado.monto_deuda) : '[Monto]'}.
 
 Por favor, contacte con nosotros para regularizar su situación.
 
@@ -105,7 +106,7 @@ Saludos cordiales.`
       asunto: 'Aviso importante sobre su deuda',
       mensaje: `Estimado/a ${deudorSeleccionado?.nombre || '[Nombre]'},
 
-Le informamos que su deuda de $${deudorSeleccionado?.monto_deuda.toLocaleString() || '[Monto]'} está próxima a vencer.
+Le informamos que su deuda de ${deudorSeleccionado ? formatearMontoCLP(deudorSeleccionado.monto_deuda) : '[Monto]'} está próxima a vencer.
 
 Es importante que se ponga en contacto con nosotros a la brevedad.
 

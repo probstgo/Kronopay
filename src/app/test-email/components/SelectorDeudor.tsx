@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Deudor, getDeudores } from '@/lib/database'
+import { formatearMontoCLP } from '@/lib/formateo'
 
 interface SelectorDeudorProps {
   onDeudorSelect: (deudor: Deudor | null) => void
@@ -155,7 +156,7 @@ export default function SelectorDeudor({ onDeudorSelect, selectedDeudor }: Selec
                 {selectedDeudor.telefono && (
                   <p><strong>Teléfono:</strong> {selectedDeudor.telefono}</p>
                 )}
-                <p><strong>Monto deuda:</strong> ${selectedDeudor.monto_deuda.toLocaleString()}</p>
+                <p><strong>Monto deuda:</strong> {formatearMontoCLP(selectedDeudor.monto_deuda)}</p>
                 <p><strong>Estado:</strong> 
                   <Badge className={`ml-2 ${getEstadoColor(selectedDeudor.estado)}`}>
                     {selectedDeudor.estado?.replace('_', ' ') || 'Sin estado'}

@@ -25,6 +25,7 @@ import {
 import { toast } from 'sonner';
 import { parseCSVLine, downloadCSV, readCSVFile, validateCSVStructure, mapCSVColumns, parseAndValidateCSV, CSVParseResult } from '@/lib/csvUtils';
 import { createDeudoresMasivo, CreateDeudorData } from '@/lib/database';
+import { parsearMontoCLP, validarMontoCLP } from '@/lib/formateo';
 
 interface ImportCSVModalProps {
   isOpen: boolean;
@@ -119,7 +120,12 @@ export function ImportCSVModal({ isOpen, onClose, onSuccess }: ImportCSVModalPro
               row.telefono = value;
               break;
             case 'monto_deuda':
-              row.monto_deuda = parseFloat(value) || 0;
+              // Intentar parsear como monto CLP primero, luego como número normal
+              if (validarMontoCLP(value)) {
+                row.monto_deuda = parsearMontoCLP(value);
+              } else {
+                row.monto_deuda = parseFloat(value) || 0;
+              }
               break;
             case 'fecha_vencimiento':
               row.fecha_vencimiento = value;

@@ -42,6 +42,7 @@ import {
   ESTADOS_DEUDA,
   ESTADOS_DEUDA_CONFIG
 } from '@/lib/database';
+import { parsearMontoCLP, formatearMontoCLP, validarMontoCLP, montoParaInput } from '@/lib/formateo';
 import { toast } from 'sonner';
 
 interface DeudorFormProps {
@@ -95,7 +96,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
         rut: deudor.rut || '',
         email: deudor.email || '',
         telefono: deudor.telefono || '',
-        monto_deuda: deudor.monto_deuda?.toString() || '',
+        monto_deuda: deudor.monto_deuda ? montoParaInput(deudor.monto_deuda) : '',
         fecha_vencimiento: deudor.fecha_vencimiento || '',
         estado: deudor.estado || 'nueva',
         notas: ''
@@ -146,8 +147,9 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
 
       case 'monto_deuda':
         if (!value.trim()) return 'El monto es obligatorio';
-        const monto = parseFloat(value);
-        if (isNaN(monto) || monto <= 0) return 'El monto debe ser un número mayor a 0';
+        if (!validarMontoCLP(value)) return 'Formato de monto inválido (use números, puntos y comas)';
+        const monto = parsearMontoCLP(value);
+        if (monto <= 0) return 'El monto debe ser mayor a 0';
         return undefined;
 
       case 'fecha_vencimiento':
@@ -207,7 +209,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
         rut: formData.rut.trim() || undefined,
         email: formData.email.trim() || undefined,
         telefono: formData.telefono.trim() || undefined,
-        monto_deuda: parseFloat(formData.monto_deuda),
+        monto_deuda: parsearMontoCLP(formData.monto_deuda),
         fecha_vencimiento: formData.fecha_vencimiento || undefined,
         estado: formData.estado
       };
@@ -360,18 +362,22 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
               </Label>
               <Input
                 id="monto_deuda"
-                type="number"
-                min="0"
-                step="1"
+                type="text"
                 value={formData.monto_deuda}
                 onChange={(e) => handleInputChange('monto_deuda', e.target.value)}
-                placeholder="100000"
+                placeholder="1.500.000"
                 className={errors.monto_deuda ? 'border-red-500' : ''}
               />
               {errors.monto_deuda && (
                 <div className="flex items-center gap-1 mt-1 text-sm text-red-600">
                   <AlertCircle className="h-3 w-3" />
                   {errors.monto_deuda}
+                </div>
+              )}
+              {formData.monto_deuda && !errors.monto_deuda && (
+                <div className="flex items-center gap-1 mt-1 text-sm text-green-600">
+                  <CheckCircle className="h-3 w-3" />
+                  Monto: {formatearMontoCLP(parsearMontoCLP(formData.monto_deuda))}
                 </div>
               )}
             </div>

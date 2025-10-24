@@ -1531,9 +1531,9 @@ REDIS_URL=redis://default:TU_PASSWORD@fly-...-redis.upstash.io:6379
 - Integración completa en webhooks de Resend y ElevenLabs
 
 ### ✅ Frontend
-- [ ] Formateo CLP implementado
+- [x] Formateo CLP implementado
 - [ ] Ofuscación de teléfonos implementada
-- [ ] Componentes de deudores
+- [x] Componentes de deudores
 - [ ] Componentes de contactos
 - [ ] Componentes de deudas
 - [ ] Componentes de campañas
@@ -1582,5 +1582,51 @@ REDIS_URL=redis://default:TU_PASSWORD@fly-...-redis.upstash.io:6379
 
 ---
 
-**Última actualización:** Octubre 2025
+---
+
+## 📝 Nota de Resumen - Formateo CLP Implementado
+
+**Fecha:** Diciembre 2024
+
+### ✅ Implementación Completada
+
+Se ha implementado exitosamente el **formateo de montos CLP** en toda la aplicación de cobranza. Esta funcionalidad permite a los usuarios trabajar con montos en formato chileno estándar, mejorando significativamente la experiencia de usuario.
+
+### 🔧 Componentes Implementados
+
+**Archivo principal:** `/lib/formateo.ts`
+- `parsearMontoCLP()`: Convierte entrada del usuario (ej: "1.500.000") a número
+- `formatearMontoCLP()`: Formatea números a formato CLP (ej: "$1.500.000")
+- `validarMontoCLP()`: Valida formato de entrada
+- `montoParaInput()`: Convierte monto a formato de entrada
+- `formatearMontoInput()`: Formatea para mostrar en inputs
+
+### 📱 Componentes Actualizados
+
+1. **DeudorForm.tsx**: Campo de monto con formato CLP, validación en tiempo real y preview
+2. **DeudoresTable.tsx**: Montos mostrados con formato CLP estándar
+3. **FiltrosDeudores.tsx**: Filtros de rango con formato CLP y placeholders chilenos
+4. **ImportCSVModal.tsx**: Soporte para importar montos en formato CLP
+5. **SelectorDeudor.tsx**: Montos formateados en selección de deudores
+6. **FormularioEmail.tsx**: Plantillas de email con montos en formato CLP
+
+### 🎯 Características Implementadas
+
+- ✅ **Formato de entrada flexible**: Acepta "1.500.000", "1,5", "1500000"
+- ✅ **Validación en tiempo real**: Mensajes de error específicos
+- ✅ **Preview del monto**: Muestra el formato final mientras se escribe
+- ✅ **Consistencia**: Todos los componentes usan el mismo formateo
+- ✅ **Compatibilidad**: Funciona con datos existentes
+- ✅ **Sin errores de linting**: Código limpio y sin problemas
+
+### 💡 Beneficios para el Usuario
+
+- **Entrada natural**: Los usuarios pueden escribir montos como "1.500.000" (formato chileno)
+- **Validación inteligente**: Acepta múltiples formatos y los convierte automáticamente
+- **Visualización clara**: Montos siempre mostrados en formato CLP estándar
+- **Experiencia consistente**: Mismo comportamiento en toda la aplicación
+
+---
+
+**Última actualización:** Diciembre 2024
 
