@@ -333,29 +333,51 @@ export default function Home() {
             <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6 tracking-tight">¿Cómo funciona?</h2>
             <p className="text-lg text-gray-600">Empieza en minutos y optimiza continuamente.</p>
           </div>
-          <div className="grid md:grid-cols-4 gap-8">
-            <div className="bg-white border border-gray-100 rounded-2xl p-6 text-center">
+          <div className="grid md:grid-cols-5 gap-6">
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 text-center relative">
+              <div className="absolute -top-3 -left-3 w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                1
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center mx-auto mb-4">
+                <LogIn className="w-6 h-6" />
+              </div>
+              <h3 className="font-semibold text-gray-900 mb-2">Regístrate</h3>
+              <p className="text-gray-600 text-sm">Crea tu cuenta gratis y accede a la plataforma.</p>
+            </div>
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 text-center relative">
+              <div className="absolute -top-3 -left-3 w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                2
+              </div>
               <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center mx-auto mb-4">
                 <Upload className="w-6 h-6" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Conecta</h3>
               <p className="text-gray-600 text-sm">Integra tu cartera vía API o subiendo un archivo.</p>
             </div>
-            <div className="bg-white border border-gray-100 rounded-2xl p-6 text-center">
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 text-center relative">
+              <div className="absolute -top-3 -left-3 w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                3
+              </div>
               <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center mx-auto mb-4">
                 <Sliders className="w-6 h-6" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Configura</h3>
               <p className="text-gray-600 text-sm">Diseña estrategias omnicanal o usa plantillas.</p>
             </div>
-            <div className="bg-white border border-gray-100 rounded-2xl p-6 text-center">
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 text-center relative">
+              <div className="absolute -top-3 -left-3 w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                4
+              </div>
               <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center mx-auto mb-4">
                 <PlayCircle className="w-6 h-6" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Recupera</h3>
               <p className="text-gray-600 text-sm">Activa campañas y mira cómo llegan los pagos.</p>
             </div>
-            <div className="bg-white border border-gray-100 rounded-2xl p-6 text-center">
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 text-center relative">
+              <div className="absolute -top-3 -left-3 w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                5
+              </div>
               <div className="w-12 h-12 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center mx-auto mb-4">
                 <BarChart3 className="w-6 h-6" />
               </div>
