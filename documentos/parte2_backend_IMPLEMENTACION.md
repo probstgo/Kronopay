@@ -1514,13 +1514,15 @@ REDIS_URL=redis://default:TU_PASSWORD@fly-...-redis.upstash.io:6379
 - [x] Auditoría configurada
 
 ### ✅ Automatizaciones
-- [ ] Job programado implementado
+- [x] Job programado implementado
 - [ ] Webhook Resend configurado
 - [ ] Webhook ElevenLabs configurado
 - [ ] Webhook Twilio configurado (SMS/WhatsApp)
 - [ ] Reintentos con backoff implementados
 - [ ] Guardrails validados
 - [ ] Rate limiting activo
+
+**Nota:** Las funciones auxiliares `enviarSMS()` y `enviarWhatsApp()` están pendientes de implementación. El sistema funciona con email y llamadas.
 
 ### ✅ Frontend
 - [ ] Formateo CLP implementado
