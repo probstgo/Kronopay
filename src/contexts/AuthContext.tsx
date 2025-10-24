@@ -9,6 +9,7 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
+  initialized: boolean
   signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<{ error: AuthError | null }>
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
+  const [initialized, setInitialized] = useState(false)
 
   // Efecto para manejar cambios en la autenticación
   useEffect(() => {
@@ -55,6 +57,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } catch (error) {
         console.error('Error inesperado al obtener sesión inicial:', error)
       } finally {
+        setInitialized(true)
         setLoading(false)
         console.log('AuthContext: loading es false (getInitialSession). User:', user?.email);
       }
@@ -69,6 +72,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setSession(session)
         setUser(session?.user ?? null)
         console.log('AuthContext: Estado de usuario después de cambio (onAuthStateChange):', session?.user?.email);
+        if (!initialized) setInitialized(true)
         setLoading(false)
         console.log('AuthContext: loading es false (onAuthStateChange). User:', user?.email);
       }
@@ -162,6 +166,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     session,
     loading,
+    initialized,
     signUp,
     signIn,
     signOut,
