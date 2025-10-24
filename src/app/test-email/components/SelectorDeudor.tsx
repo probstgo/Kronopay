@@ -136,7 +136,7 @@ export default function SelectorDeudor({ onDeudorSelect, selectedDeudor }: Selec
                   <div className="flex items-center justify-between w-full">
                     <span>{deudor.nombre}</span>
                     <Badge className={`ml-2 ${getEstadoColor(deudor.estado)}`}>
-                      {deudor.estado.replace('_', ' ')}
+                      {deudor.estado?.replace('_', ' ') || 'Sin estado'}
                     </Badge>
                   </div>
                 </SelectItem>
@@ -158,7 +158,7 @@ export default function SelectorDeudor({ onDeudorSelect, selectedDeudor }: Selec
                 <p><strong>Monto deuda:</strong> ${selectedDeudor.monto_deuda.toLocaleString()}</p>
                 <p><strong>Estado:</strong> 
                   <Badge className={`ml-2 ${getEstadoColor(selectedDeudor.estado)}`}>
-                    {selectedDeudor.estado.replace('_', ' ')}
+                    {selectedDeudor.estado?.replace('_', ' ') || 'Sin estado'}
                   </Badge>
                 </p>
               </div>
