@@ -404,9 +404,6 @@ export default function Home() {
               <Link href="/login">Ya tengo cuenta</Link>
             </Button>
           </div>
-          <p className="text-sm text-gray-400 mt-6">
-            ✅ Configuración en 5 minutos • ✅ Sin compromiso • ✅ Resultados en 24 horas
-          </p>
         </div>
       </section>
 
