@@ -33,6 +33,7 @@ export interface ProgramaEjecucion {
 // Tipos para webhooks de ElevenLabs
 export interface HistorialConversacion {
   id: string;
+  usuario_id: string;
   agente_id: string;
   deudor_id: string;
   estado: string;
@@ -44,10 +45,14 @@ export interface EventoWebhook {
       role: 'agent' | 'user';
       message: string;
       start_time: string;
+      end_time: string;
     }>;
   };
   call_id?: string;
   status?: string;
+  conversation_id?: string;
+  duration?: number;
+  cost?: number;
 }
 
 // Tipos para configuración de reintentos
