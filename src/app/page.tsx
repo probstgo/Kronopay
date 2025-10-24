@@ -342,7 +342,7 @@ export default function Home() {
                 <LogIn className="w-6 h-6" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Regístrate</h3>
-              <p className="text-gray-600 text-sm">Crea tu cuenta gratis y accede a la plataforma.</p>
+              <p className="text-gray-600 text-sm">Crea tu cuenta y accede a la plataforma.</p>
             </div>
             <div className="bg-white border border-gray-100 rounded-2xl p-6 text-center relative">
               <div className="absolute -top-3 -left-3 w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
