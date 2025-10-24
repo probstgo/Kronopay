@@ -1518,11 +1518,17 @@ REDIS_URL=redis://default:TU_PASSWORD@fly-...-redis.upstash.io:6379
 - [x] Webhook Resend configurado
 - [x] Webhook ElevenLabs configurado
 - [ ] Webhook Twilio configurado (SMS/WhatsApp) - ⏳ PENDIENTE
-- [ ] Reintentos con backoff implementados
-- [ ] Guardrails validados
-- [ ] Rate limiting activo
+- [x] Reintentos con backoff implementados
+- [x] Guardrails validados
+- [x] Rate limiting activo
+- [x] Integrar sistemas de protección en webhooks existentes
 
-**Nota:** Los webhooks de Resend y ElevenLabs están completados. El webhook de Twilio está pendiente de implementación si se integra SMS/WhatsApp en el futuro.
+**Nota:** Los sistemas de reintentos, guardrails y rate limiting están completamente implementados y funcionando. Incluyen:
+- Reintentos automáticos con backoff progresivo
+- Validaciones de horarios, límites y días bloqueados
+- Protección contra abuso con rate limiting
+- Configuraciones personalizables por usuario
+- Integración completa en webhooks de Resend y ElevenLabs
 
 ### ✅ Frontend
 - [ ] Formateo CLP implementado
@@ -1567,12 +1573,12 @@ REDIS_URL=redis://default:TU_PASSWORD@fly-...-redis.upstash.io:6379
 
 ## 🚀 Próximos Pasos Recomendados
 
-1. **Implementar Job Programado** (crítico)
-2. **Configurar Webhooks** (crítico)
-3. **Integrar Twilio** (para SMS/WhatsApp)
-4. **Pruebas end-to-end** (validar todo)
-5. **Monitoreo y logs** (Sentry, LogRocket)
-6. **Optimizaciones** (caché, CDN)
+1. **Integrar Twilio** (para SMS/WhatsApp)
+2. **Pruebas end-to-end** (validar todo)
+3. **Monitoreo y logs** (Sentry, LogRocket)
+4. **Optimizaciones** (caché, CDN)
+5. **Implementar formateo CLP** (frontend)
+6. **Implementar ofuscación de teléfonos** (frontend)
 
 ---
 

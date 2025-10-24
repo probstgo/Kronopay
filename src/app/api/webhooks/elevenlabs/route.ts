@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { verificarRateLimit, obtenerIP } from '@/lib/rate-limiter'
+import { validarGuardrails } from '@/lib/guardrails'
+import { obtenerConfigReintento, calcularProximoIntento } from '@/lib/reintentos'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,6 +11,12 @@ const supabase = createClient(
 
 export async function POST(request: Request) {
   try {
+    // 1. Rate Limiting
+    const ip = obtenerIP(request)
+    if (!(await verificarRateLimit(ip, 'webhook'))) {
+      return NextResponse.json({ error: 'Rate limit excedido' }, { status: 429 })
+    }
+
     const evento = await request.json()
 
     // Buscar historial por external_call_id
@@ -19,6 +28,19 @@ export async function POST(request: Request) {
 
     if (!historial) {
       return NextResponse.json({ error: 'Historial no encontrado' }, { status: 404 })
+    }
+
+    // 2. Guardrails (solo para llamadas fallidas)
+    if (evento.status === 'failed' || evento.status === 'no-answer') {
+      const validacion = await validarGuardrails(
+        historial.usuario_id, 
+        historial.deuda_id, 
+        'llamada'
+      )
+      if (!validacion.permitido) {
+        console.log(`Guardrails bloqueado: ${validacion.razon}`)
+        // Continuar procesando pero marcar como bloqueado por guardrails
+      }
     }
 
     let nuevoEstado = historial.estado
@@ -35,6 +57,37 @@ export async function POST(request: Request) {
       case 'no-answer':
         nuevoEstado = 'fallido'
         detallesActualizados.error = evento.error || evento.status
+        
+        // 3. Reintentos para llamadas fallidas
+        try {
+          const config = await obtenerConfigReintento(historial.usuario_id, 'llamada')
+          const intentoActual = (historial.detalles?.intento_actual || 0) + 1
+          
+          if (intentoActual < config.max_intentos) {
+            const proximoIntento = calcularProximoIntento(intentoActual, config.backoff)
+            
+            // Programar reintento
+            await supabase.from('programaciones').insert({
+              usuario_id: historial.usuario_id,
+              deuda_id: historial.deuda_id,
+              contacto_id: historial.contacto_id,
+              campana_id: historial.campana_id,
+              tipo_accion: 'llamada',
+              plantilla_id: historial.plantilla_id,
+              agente_id: historial.agente_id,
+              vars: historial.detalles?.vars,
+              voz_config: historial.detalles?.voz_config,
+              fecha_programada: proximoIntento.toISOString(),
+              estado: 'pendiente',
+              intento_actual: intentoActual
+            })
+            
+            detallesActualizados.reintento_programado = proximoIntento.toISOString()
+            detallesActualizados.intento_actual = intentoActual
+          }
+        } catch (reintentoError) {
+          console.error('Error programando reintento:', reintentoError)
+        }
         break
     }
 
