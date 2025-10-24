@@ -1,456 +1,100 @@
 /**
  * Configuración y utilidades para la base de datos
- * Incluye tipos TypeScript y funciones helper
+ * Tipos TypeScript y funciones helper para la nueva estructura de BD
  */
 
-import { supabase } from './supabase';
+// =============================================
+// TIPOS TYPESCRIPT PARA LAS TABLAS (NUEVA ESTRUCTURA)
+// =============================================
 
-// =============================================
-// TIPOS TYPESCRIPT PARA LAS TABLAS
-// =============================================
+export interface Usuario {
+  id: string;
+  email: string;
+  nombre_empresa: string;
+  plan_suscripcion_id?: string;
+  created_at: string;
+}
 
 export interface Deudor {
   id: string;
   usuario_id: string;
+  rut: string;  // Normalizado: "19090595-0"
   nombre: string;
-  rut?: string;
-  email?: string;
-  telefono?: string;
-  monto_deuda: number;
-  fecha_vencimiento?: string;
-  estado: 'nueva' | 'en_proceso' | 'parcialmente_pagada' | 'pagada' | 'vencida' | 'cancelada';
   created_at: string;
-  updated_at: string;
 }
 
-export interface HistorialEmail {
+export interface Contacto {
   id: string;
   usuario_id: string;
   deudor_id: string;
-  email_destinatario: string;
-  asunto: string;
-  estado: 'enviado' | 'fallido' | 'abierto' | 'rebotado';
-  fecha_envio: string;
-  detalles?: unknown;
+  rut: string;
+  tipo_contacto: 'email' | 'telefono' | 'sms' | 'whatsapp';
+  valor: string;  // El email o teléfono
+  preferido: boolean;
   created_at: string;
 }
 
-export interface CreateDeudorData {
-  nombre: string;
-  rut?: string;
-  email?: string;
-  telefono?: string;
-  monto_deuda: number;
-  fecha_vencimiento?: string;
-  estado?: 'nueva' | 'en_proceso' | 'parcialmente_pagada' | 'pagada' | 'vencida' | 'cancelada';
-}
-
-export interface CreateEmailData {
-  deudor_id: string;
-  email_destinatario: string;
-  asunto: string;
-  estado?: 'enviado' | 'fallido' | 'abierto' | 'rebotado';
-  detalles?: unknown;
-}
-
-export interface UserStats {
-  total_deudores: number;
-  deuda_total: number;
-  emails_enviados: number;
-  emails_abiertos: number;
-  emails_fallidos: number;
-}
-
-export interface DeudorVencido {
+export interface Deuda {
   id: string;
-  nombre: string;
-  monto_deuda: number;
+  usuario_id: string;
+  deudor_id: string;
+  rut: string;
+  monto: number;
   fecha_vencimiento: string;
-  dias_vencido: number;
+  estado: 'nueva' | 'pendiente' | 'pagado';
+  created_at: string;
+}
+
+export interface Campana {
+  id: string;
+  usuario_id: string;
+  nombre: string;
+  tipo: 'email' | 'llamada' | 'sms' | 'whatsapp' | 'mixto';
+  plantilla_id?: string;
+  programacion: any;  // JSONB
+  deudas_asignadas: string[];  // Array de UUIDs
+  activa: boolean;
+  created_at: string;
+}
+
+export interface Plantilla {
+  id: string;
+  usuario_id: string;
+  nombre: string;
+  tipo: 'email' | 'voz' | 'sms' | 'whatsapp';
+  contenido: string;
+  created_at: string;
+}
+
+export interface Historial {
+  id: string;
+  usuario_id: string;
+  deuda_id: string;
+  rut: string;
+  contacto_id?: string;
+  campana_id?: string;
+  tipo_accion: 'email' | 'llamada' | 'sms' | 'whatsapp';
+  fecha: string;
+  estado: string;
+  detalles?: any;  // JSONB
+  created_at: string;
+}
+
+export interface Pago {
+  id: string;
+  usuario_id: string;
+  deuda_id: string;
+  rut: string;
+  monto_pagado: number;
+  fecha_pago: string;
+  metodo: string;
+  estado: 'confirmado' | 'pendiente';
+  referencia_externa?: string;
+  created_at: string;
 }
 
 // =============================================
-// FUNCIONES PARA DEUDORES
-// =============================================
-
-export async function createDeudor(data: CreateDeudorData) {
-  // Validar sesión y obtener usuario (requerido por RLS)
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData?.user?.id) {
-    throw new Error('No hay sesión activa. Inicia sesión para crear deudores.');
-  }
-
-  // Determinar estado automático si no se proporciona
-  const estadoAutomatico = data.estado || determinarEstadoAutomatico(data.fecha_vencimiento);
-
-  // Normalizar datos antes de insertar
-  const payload = {
-    usuario_id: userData.user.id,
-    nombre: data.nombre.trim(),
-    rut: data.rut ? normalizarRUT(data.rut) : null,
-    email: data.email?.trim() || null,
-    telefono: data.telefono?.trim() || null,
-    monto_deuda: data.monto_deuda,
-    fecha_vencimiento: data.fecha_vencimiento || null,
-    estado: estadoAutomatico,
-  };
-
-  const { data: result, error } = await supabase
-    .from('deudores')
-    .insert([payload])
-    .select()
-    .single();
-
-  if (error) {
-    // Log adicional para depuración
-    console.error('Error al crear deudor:', error, 'payload:', payload);
-    throw error;
-  }
-  return result;
-}
-
-export async function getDeudores() {
-  const { data, error } = await supabase
-    .from('deudores')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data;
-}
-
-export async function getDeudorById(id: string) {
-  const { data, error } = await supabase
-    .from('deudores')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function updateDeudor(id: string, updates: Partial<CreateDeudorData>) {
-  const updatesToSave: Partial<CreateDeudorData> = { ...updates };
-
-  // Normalizar/eliminar RUT si viene en la actualización
-  if (Object.prototype.hasOwnProperty.call(updatesToSave, 'rut')) {
-    const nuevoRut = updatesToSave.rut as string | undefined;
-    updatesToSave.rut = nuevoRut ? normalizarRUT(nuevoRut) : undefined;
-  }
-
-  const { data, error } = await supabase
-    .from('deudores')
-    .update(updatesToSave)
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function deleteDeudor(id: string) {
-  const { error } = await supabase
-    .from('deudores')
-    .delete()
-    .eq('id', id);
-
-  if (error) throw error;
-}
-
-export async function createDeudoresMasivo(deudores: CreateDeudorData[]) {
-  if (deudores.length === 0) {
-    throw new Error('No hay deudores para insertar');
-  }
-
-  // Obtener usuario actual para cumplir RLS (usuario_id es obligatorio)
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  if (userError || !userData?.user?.id) {
-    throw new Error('No hay sesión activa. Inicia sesión para importar deudores.');
-  }
-  const usuarioId = userData.user.id;
-
-  // Validar y preparar datos para inserción masiva
-  const datosParaInsertar = deudores.map((deudor, index) => {
-    // Validar campos obligatorios
-    if (!deudor.nombre || deudor.nombre.trim() === '') {
-      throw new Error(`Deudor ${index + 1}: El nombre es obligatorio`);
-    }
-    if (!deudor.monto_deuda || deudor.monto_deuda <= 0) {
-      throw new Error(`Deudor ${index + 1}: El monto debe ser mayor a 0`);
-    }
-
-    // Preparar datos con valores por defecto
-    return {
-      usuario_id: usuarioId,
-      nombre: deudor.nombre.trim(),
-      rut: deudor.rut ? normalizarRUT(deudor.rut) : null,
-      email: deudor.email?.trim() || null,
-      telefono: deudor.telefono?.trim() || null,
-      monto_deuda: deudor.monto_deuda,
-      fecha_vencimiento: deudor.fecha_vencimiento || null,
-      estado: deudor.estado || 'nueva'
-    };
-  });
-
-  console.log('Datos preparados para inserción:', datosParaInsertar.slice(0, 2)); // Log de los primeros 2 para debug
-
-  const { data, error } = await supabase
-    .from('deudores')
-    .insert(datosParaInsertar)
-    .select();
-
-  if (error) {
-    console.error('Error en inserción masiva:', error);
-    console.error('Datos que causaron el error:', datosParaInsertar);
-    throw new Error(`Error al insertar deudores: ${error.message || 'Error desconocido'}`);
-  }
-
-  return data;
-}
-
-// =============================================
-// FUNCIONES PARA GESTIÓN DE ESTADOS
-// =============================================
-
-export async function cambiarEstadoDeuda(deudorId: string, nuevoEstado: string) {
-  const { data, error } = await supabase.rpc('cambiar_estado_deuda', {
-    deudor_id_param: deudorId,
-    nuevo_estado: nuevoEstado,
-    usuario_uuid: (await supabase.auth.getUser()).data.user?.id
-  });
-
-  if (error) throw error;
-  return data;
-}
-
-export async function getDeudoresPorEstado(estado?: string) {
-  const { data, error } = await supabase.rpc('get_deudores_por_estado', {
-    user_uuid: (await supabase.auth.getUser()).data.user?.id,
-    estado_filtro: estado || null
-  });
-
-  if (error) throw error;
-  return data;
-}
-
-export async function getEstadisticasEstados() {
-  const { data, error } = await supabase.rpc('get_user_stats', {
-    user_uuid: (await supabase.auth.getUser()).data.user?.id
-  });
-
-  if (error) throw error;
-  return data;
-}
-
-// =============================================
-// FUNCIONES PARA HISTORIAL DE EMAILS
-// =============================================
-
-export async function createEmailRecord(data: CreateEmailData) {
-  const { data: result, error } = await supabase
-    .from('historial_emails')
-    .insert([data])
-    .select()
-    .single();
-
-  if (error) throw error;
-  return result;
-}
-
-export async function getEmailHistory(deudorId?: string) {
-  let query = supabase
-    .from('historial_emails')
-    .select(`
-      *,
-      deudores (
-        id,
-        nombre
-      )
-    `)
-    .order('fecha_envio', { ascending: false });
-
-  if (deudorId) {
-    query = query.eq('deudor_id', deudorId);
-  }
-
-  const { data, error } = await query;
-
-  if (error) throw error;
-  return data;
-}
-
-export async function updateEmailStatus(id: string, estado: HistorialEmail['estado'], detalles?: unknown) {
-  const { data, error } = await supabase
-    .from('historial_emails')
-    .update({ estado, detalles })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-// =============================================
-// FUNCIONES DE ESTADÍSTICAS
-// =============================================
-
-export async function getUserStats(): Promise<UserStats> {
-  const { data, error } = await supabase.rpc('get_user_stats');
-
-  if (error) throw error;
-  return data;
-}
-
-export async function getDeudoresVencidos(): Promise<DeudorVencido[]> {
-  const { data, error } = await supabase.rpc('get_deudores_vencidos');
-
-  if (error) throw error;
-  return data;
-}
-
-// =============================================
-// FUNCIONES DE BÚSQUEDA Y FILTROS
-// =============================================
-
-export async function searchDeudores(searchTerm: string) {
-  const { data, error } = await supabase
-    .from('deudores')
-    .select('*')
-    .ilike('nombre', `%${searchTerm}%`)
-    .order('nombre');
-
-  if (error) throw error;
-  return data;
-}
-
-export async function getDeudoresByVencimiento(dias: number) {
-  const fechaLimite = new Date();
-  fechaLimite.setDate(fechaLimite.getDate() + dias);
-
-  const { data, error } = await supabase
-    .from('deudores')
-    .select('*')
-    .lte('fecha_vencimiento', fechaLimite.toISOString().split('T')[0])
-    .order('fecha_vencimiento');
-
-  if (error) throw error;
-  return data;
-}
-
-// =============================================
-// FUNCIONES DE UTILIDAD
-// =============================================
-
-export async function getDeudorWithEmails(deudorId: string) {
-  const { data, error } = await supabase
-    .from('deudores')
-    .select(`
-      *,
-      historial_emails (
-        id,
-        email_destinatario,
-        asunto,
-        estado,
-        fecha_envio
-      )
-    `)
-    .eq('id', deudorId)
-    .single();
-
-  if (error) throw error;
-  return data;
-}
-
-export async function getEmailStats() {
-  const { data, error } = await supabase
-    .from('historial_emails')
-    .select('estado')
-    .order('fecha_envio', { ascending: false });
-
-  if (error) throw error;
-
-  const stats = data.reduce((acc, email) => {
-    acc[email.estado] = (acc[email.estado] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  return stats;
-}
-
-// =============================================
-// CONSTANTES ÚTILES
-// =============================================
-
-export const EMAIL_ESTADOS = {
-  ENVIADO: 'enviado' as const,
-  FALLIDO: 'fallido' as const,
-  ABIERTO: 'abierto' as const,
-  REBOTADO: 'rebotado' as const,
-} as const;
-
-export const DEUDA_ESTADOS = {
-  VIGENTE: 'vigente',
-  VENCIDA: 'vencida',
-  PRONTO_VENCER: 'pronto_vencer',
-} as const;
-
-// =============================================
-// CONSTANTES PARA ESTADOS DE DEUDAS
-// =============================================
-
-export const ESTADOS_DEUDA = {
-  NUEVA: 'nueva',
-  EN_PROCESO: 'en_proceso',
-  PARCIALMENTE_PAGADA: 'parcialmente_pagada',
-  PAGADA: 'pagada',
-  VENCIDA: 'vencida',
-  CANCELADA: 'cancelada',
-} as const;
-
-export const ESTADOS_DEUDA_CONFIG = {
-  [ESTADOS_DEUDA.NUEVA]: {
-    label: 'Nueva',
-    color: 'bg-blue-100 text-blue-800',
-    icon: '🆕',
-    description: 'Deuda recién registrada'
-  },
-  [ESTADOS_DEUDA.EN_PROCESO]: {
-    label: 'En Proceso',
-    color: 'bg-yellow-100 text-yellow-800',
-    icon: '🔄',
-    description: 'Cobrando activamente'
-  },
-  [ESTADOS_DEUDA.PARCIALMENTE_PAGADA]: {
-    label: 'Parcialmente Pagada',
-    color: 'bg-orange-100 text-orange-800',
-    icon: '🟠',
-    description: 'Pago parcial recibido'
-  },
-  [ESTADOS_DEUDA.PAGADA]: {
-    label: 'Pagada',
-    color: 'bg-green-100 text-green-800',
-    icon: '✅',
-    description: 'Completamente saldada'
-  },
-  [ESTADOS_DEUDA.VENCIDA]: {
-    label: 'Vencida',
-    color: 'bg-red-100 text-red-800',
-    icon: '🔴',
-    description: 'Pasó la fecha límite'
-  },
-  [ESTADOS_DEUDA.CANCELADA]: {
-    label: 'Cancelada',
-    color: 'bg-gray-100 text-gray-800',
-    icon: '⚫',
-    description: 'No se puede cobrar'
-  },
-} as const;
-
-// =============================================
-// FUNCIONES DE UTILIDAD PARA DEUDORES
+// FUNCIONES DE UTILIDAD (MANTENIDAS DEL ARCHIVO ANTERIOR)
 // =============================================
 
 /**

@@ -57,26 +57,22 @@ Ya tienes instalados y funcionando:
 
 ## 2. ¿Qué debes modificar/eliminar?
 
-### 🔴 Archivos/Código a ELIMINAR:
+### ✅ Archivos/Código YA IMPLEMENTADOS:
 
-#### A) Página principal default
+#### A) Página principal landing page
 **Archivo:** `src/app/page.tsx`
 
-**Problema:** Tiene el contenido de ejemplo de Next.js (logo, "Deploy now", etc.)
+**Estado:** ✅ **COMPLETADO** - Landing page profesional implementada
 
-**Qué hacer:**
-```typescript
-// ELIMINAR todo el contenido actual y reemplazar con:
+**Implementación actual:**
+- Landing page completa con hero section
+- Secciones de problema/solución
+- Características del producto
+- Testimonios y métricas
+- CTAs para registro y demo
+- Footer completo
 
-import { redirect } from 'next/navigation'
-
-export default function HomePage() {
-  // Redirigir automáticamente a dashboard
-  redirect('/dashboard')
-}
-```
-
-**Explicación:** La página raíz `/` debe redirigir directamente al dashboard. Los usuarios no autenticados serán redirigidos a `/login` por el middleware.
+**Explicación:** La página raíz `/` ahora es una landing page profesional que captura leads y explica el valor de Kronopay antes del registro. Los usuarios no autenticados pueden ver la landing, y al hacer clic en "Iniciar Sesión" van a `/login`.
 
 ---
 
