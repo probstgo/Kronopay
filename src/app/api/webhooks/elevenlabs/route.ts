@@ -108,16 +108,26 @@ export async function POST(request: Request) {
 
     // Actualizar métricas
     if (nuevoEstado === 'completado') {
-      await supabase
+      // Obtener valores actuales primero
+      const { data: usoActual } = await supabase
         .from('usos')
-        .update({
-          llamadas_ejecutadas: supabase.sql`llamadas_ejecutadas + 1`,
-          duracion_llamadas: supabase.sql`duracion_llamadas + ${evento.duration}`,
-          costo_llamadas: supabase.sql`costo_llamadas + ${evento.cost}`,
-          costo_total: supabase.sql`costo_total + ${evento.cost}`
-        })
+        .select('llamadas_ejecutadas, duracion_llamadas, costo_llamadas, costo_total')
         .eq('usuario_id', historial.usuario_id)
         .eq('periodo', obtenerPeriodoActual())
+        .single()
+
+      if (usoActual) {
+        await supabase
+          .from('usos')
+          .update({
+            llamadas_ejecutadas: (usoActual.llamadas_ejecutadas || 0) + 1,
+            duracion_llamadas: (usoActual.duracion_llamadas || 0) + (evento.duration || 0),
+            costo_llamadas: (usoActual.costo_llamadas || 0) + (evento.cost || 0),
+            costo_total: (usoActual.costo_total || 0) + (evento.cost || 0)
+          })
+          .eq('usuario_id', historial.usuario_id)
+          .eq('periodo', obtenerPeriodoActual())
+      }
     }
 
     return NextResponse.json({ success: true })
