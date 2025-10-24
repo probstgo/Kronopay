@@ -4,6 +4,34 @@
  */
 
 // =============================================
+// CONSTANTES DE ESTADOS DE DEUDA
+// =============================================
+
+export const ESTADOS_DEUDA = {
+  NUEVA: 'nueva',
+  PENDIENTE: 'pendiente',
+  PAGADO: 'pagado',
+} as const;
+
+export const ESTADOS_DEUDA_CONFIG = {
+  nueva: {
+    label: 'Nueva',
+    color: 'bg-blue-100 text-blue-800',
+    icon: '🆕',
+  },
+  pendiente: {
+    label: 'Pendiente',
+    color: 'bg-yellow-100 text-yellow-800',
+    icon: '⏳',
+  },
+  pagado: {
+    label: 'Pagado',
+    color: 'bg-green-100 text-green-800',
+    icon: '✅',
+  },
+} as const;
+
+// =============================================
 // TIPOS TYPESCRIPT PARA LAS TABLAS (NUEVA ESTRUCTURA)
 // =============================================
 
