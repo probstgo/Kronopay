@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { ProgramaEjecucion } from '../../../../types/programa'
 
 // Cliente con service_role (bypass RLS)
 const supabase = createClient(
@@ -53,19 +54,19 @@ export async function GET(request: Request) {
         if (lockError) continue // Ya fue tomada por otro proceso
 
         // 3. Ejecutar acción según tipo
-        let resultado
+        let resultado: { exito: boolean; error?: string; detalles?: unknown } = { exito: false, error: 'Tipo de acción no válido' }
         switch (prog.tipo_accion) {
           case 'email':
-            resultado = await enviarEmail(prog)
+            resultado = await enviarEmail(prog as ProgramaEjecucion)
             break
           case 'llamada':
-            resultado = await ejecutarLlamada(prog)
+            resultado = await ejecutarLlamada(prog as ProgramaEjecucion)
             break
           case 'sms':
-            resultado = await enviarSMS(prog)
+            resultado = await enviarSMS(prog as ProgramaEjecucion)
             break
           case 'whatsapp':
-            resultado = await enviarWhatsApp(prog)
+            resultado = await enviarWhatsApp(prog as ProgramaEjecucion)
             break
         }
 
@@ -73,7 +74,7 @@ export async function GET(request: Request) {
         await supabase.from('historial').insert({
           usuario_id: prog.usuario_id,
           deuda_id: prog.deuda_id,
-          rut: prog.deudas?.rut,
+          rut: (prog as ProgramaEjecucion).deudas?.[0]?.rut,
           contacto_id: prog.contacto_id,
           campana_id: prog.campana_id,
           tipo_accion: prog.tipo_accion,
@@ -112,15 +113,15 @@ export async function GET(request: Request) {
 }
 
 // Funciones auxiliares
-async function enviarEmail(prog: any) {
+async function enviarEmail(prog: ProgramaEjecucion) {
   // Implementar con Resend (ya configurado)
   const resend = new Resend(process.env.RESEND_API_KEY)
   
-  const contenido = resolverPlantilla(prog.plantillas.contenido, prog.vars)
+  const contenido = resolverPlantilla(prog.plantillas[0].contenido, prog.vars)
   
   const { data, error } = await resend.emails.send({
     from: 'cobranza@tudominio.com',
-    to: prog.contactos.valor,
+    to: prog.contactos[0].valor,
     subject: 'Recordatorio de Pago',
     html: contenido
   })
@@ -135,35 +136,33 @@ async function enviarEmail(prog: any) {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function ejecutarLlamada(prog: any) {
   // Implementar con ElevenLabs (ya configurado)
-  const elevenLabs = await import('../../../../lib/elevenlabs')
+  const { startOutboundCall } = await import('../../../../lib/elevenlabs')
   
-  const prompt = resolverPlantilla(prog.plantillas.contenido, prog.vars)
+  const prompt = resolverPlantilla(prog.plantillas[0].contenido, prog.vars)
   
-  const resultado = await elevenLabs.iniciarLlamada({
-    agente_id: prog.agente_id,
-    numero_destino: prog.contactos.valor,
-    prompt,
-    voz_config: prog.voz_config
+  const resultado = await startOutboundCall({
+    agentId: prog.agente_id,
+    toNumber: prog.contactos[0].valor
   })
 
   return {
     exito: resultado.success,
-    external_id: resultado.call_id,
+    external_id: resultado.callId,
     detalles: resultado
   }
 }
 
-async function enviarSMS(prog: any) {
+async function enviarSMS(prog: ProgramaEjecucion) {
   // TODO: Implementar con Twilio
   return { exito: false, error: 'No implementado' }
 }
 
-async function enviarWhatsApp(prog: any) {
+async function enviarWhatsApp(prog: ProgramaEjecucion) {
   // TODO: Implementar con Twilio WhatsApp
   return { exito: false, error: 'No implementado' }
 }
 
-function resolverPlantilla(contenido: string, vars: any): string {
+function resolverPlantilla(contenido: string, vars: Record<string, string>): string {
   if (!vars) return contenido
   
   let resultado = contenido

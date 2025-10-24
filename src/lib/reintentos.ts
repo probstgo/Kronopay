@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { ConfigReintento } from '../types/programa'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,7 +26,7 @@ export async function obtenerConfigReintento(
   }
 
   // Si no hay config del usuario, usar defaults
-  const defaults: Record<string, any> = {
+  const defaults: Record<string, ConfigReintento> = {
     email: { max: 3, backoff: ['1m', '5m', '30m'] },
     sms: { max: 3, backoff: ['1m', '5m', '30m'] },
     whatsapp: { max: 3, backoff: ['1m', '5m', '30m'] },

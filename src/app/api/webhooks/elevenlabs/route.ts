@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { HistorialConversacion, EventoWebhook } from '../../../../types/programa'
 import { verificarRateLimit, obtenerIP } from '@/lib/rate-limiter'
 import { validarGuardrails } from '@/lib/guardrails'
 import { obtenerConfigReintento, calcularProximoIntento } from '@/lib/reintentos'
@@ -127,7 +128,7 @@ export async function POST(request: Request) {
   }
 }
 
-async function guardarTranscripcion(historial: any, evento: any) {
+async function guardarTranscripcion(historial: HistorialConversacion, evento: EventoWebhook) {
   // Crear conversación
   const { data: conversacion } = await supabase
     .from('agente_conversaciones')
@@ -146,7 +147,7 @@ async function guardarTranscripcion(historial: any, evento: any) {
 
   // Guardar turnos de la conversación
   if (conversacion && evento.transcript?.turns) {
-    const turnos = evento.transcript.turns.map((turno: any, idx: number) => ({
+    const turnos = evento.transcript.turns.map((turno, idx: number) => ({
       conversacion_id: conversacion.id,
       turno: idx,
       who: turno.role === 'agent' ? 'agente' : 'deudor',
