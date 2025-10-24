@@ -132,9 +132,10 @@ async function enviarEmail(prog: any) {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function ejecutarLlamada(prog: any) {
   // Implementar con ElevenLabs (ya configurado)
-  const elevenLabs = require('../../../lib/elevenlabs')
+  const elevenLabs = await import('../../../../lib/elevenlabs')
   
   const prompt = resolverPlantilla(prog.plantillas.contenido, prog.vars)
   
