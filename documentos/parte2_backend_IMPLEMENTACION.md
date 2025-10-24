@@ -1515,14 +1515,14 @@ REDIS_URL=redis://default:TU_PASSWORD@fly-...-redis.upstash.io:6379
 
 ### ✅ Automatizaciones
 - [x] Job programado implementado
-- [ ] Webhook Resend configurado
-- [ ] Webhook ElevenLabs configurado
-- [ ] Webhook Twilio configurado (SMS/WhatsApp)
+- [x] Webhook Resend configurado
+- [x] Webhook ElevenLabs configurado
+- [ ] Webhook Twilio configurado (SMS/WhatsApp) - ⏳ PENDIENTE
 - [ ] Reintentos con backoff implementados
 - [ ] Guardrails validados
 - [ ] Rate limiting activo
 
-**Nota:** Las funciones auxiliares `enviarSMS()` y `enviarWhatsApp()` están pendientes de implementación. El sistema funciona con email y llamadas.
+**Nota:** Los webhooks de Resend y ElevenLabs están completados. El webhook de Twilio está pendiente de implementación si se integra SMS/WhatsApp en el futuro.
 
 ### ✅ Frontend
 - [ ] Formateo CLP implementado
