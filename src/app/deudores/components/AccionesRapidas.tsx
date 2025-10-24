@@ -27,16 +27,22 @@ import {
   MessageSquare,
   AlertTriangle 
 } from 'lucide-react';
-import { Deudor } from '@/lib/database';
+import { Deudor, Contacto } from '@/lib/database';
 import { toast } from 'sonner';
 
+// Tipo para deudor con datos combinados
+interface DeudorConContactos extends Deudor {
+  email?: string;
+  telefono?: string;
+}
+
 interface AccionesRapidasProps {
-  deudor: Deudor;
-  onEditar?: (deudor: Deudor) => void;
-  onEliminar?: (deudor: Deudor) => void;
-  onEnviarEmail?: (deudor: Deudor) => void;
-  onLlamar?: (deudor: Deudor) => void;
-  onEnviarSMS?: (deudor: Deudor) => void;
+  deudor: DeudorConContactos;
+  onEditar?: (deudor: DeudorConContactos) => void;
+  onEliminar?: (deudor: DeudorConContactos) => void;
+  onEnviarEmail?: (deudor: DeudorConContactos) => void;
+  onLlamar?: (deudor: DeudorConContactos) => void;
+  onEnviarSMS?: (deudor: DeudorConContactos) => void;
 }
 
 export function AccionesRapidas({

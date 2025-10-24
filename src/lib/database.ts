@@ -51,7 +51,7 @@ export interface Campana {
   nombre: string;
   tipo: 'email' | 'llamada' | 'sms' | 'whatsapp' | 'mixto';
   plantilla_id?: string;
-  programacion: any;  // JSONB
+  programacion: Record<string, unknown>;  // JSONB
   deudas_asignadas: string[];  // Array de UUIDs
   activa: boolean;
   created_at: string;
@@ -76,7 +76,7 @@ export interface Historial {
   tipo_accion: 'email' | 'llamada' | 'sms' | 'whatsapp';
   fecha: string;
   estado: string;
-  detalles?: any;  // JSONB
+  detalles?: Record<string, unknown>;  // JSONB
   created_at: string;
 }
 

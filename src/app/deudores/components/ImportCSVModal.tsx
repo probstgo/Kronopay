@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseCSVLine, downloadCSV, readCSVFile, validateCSVStructure, mapCSVColumns, parseAndValidateCSV, CSVParseResult } from '@/lib/csvUtils';
-import { createDeudoresMasivo, CreateDeudorData } from '@/lib/database';
+import { supabase } from '@/lib/supabase';
 import { parsearMontoCLP, validarMontoCLP } from '@/lib/formateo';
 
 interface ImportCSVModalProps {
@@ -250,25 +250,81 @@ export function ImportCSVModal({ isOpen, onClose, onSuccess }: ImportCSVModalPro
 
     setIsProcessing(true);
     try {
-      // Preparar datos para inserción
-      const datosParaImportar: CreateDeudorData[] = csvData.map(deudor => ({
-        nombre: deudor.nombre,
-        rut: deudor.rut || undefined,
-        email: deudor.email || undefined,
-        telefono: deudor.telefono || undefined,
-        monto_deuda: deudor.monto_deuda,
-        fecha_vencimiento: deudor.fecha_vencimiento || undefined,
-        estado: 'nueva' as const
-      }));
+      // Obtener el usuario actual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
 
-      // Insertar deudores en la base de datos
-      const deudoresInsertados = await createDeudoresMasivo(datosParaImportar);
+      let deudoresInsertados = 0;
+      let errores = 0;
+
+      // Procesar cada deudor individualmente
+      for (const deudor of csvData) {
+        try {
+          // Insertar el deudor básico
+          const { data: deudorData, error: deudorError } = await supabase
+            .from('deudores')
+            .insert({
+              usuario_id: user.id,
+              nombre: deudor.nombre,
+              rut: deudor.rut || null
+            })
+            .select()
+            .single();
+
+          if (deudorError) throw deudorError;
+
+          // Si hay email, crear contacto
+          if (deudor.email) {
+            await supabase
+              .from('contactos')
+              .insert({
+                usuario_id: user.id,
+                deudor_id: deudorData.id,
+                rut: deudor.rut || '',
+                tipo_contacto: 'email',
+                valor: deudor.email,
+                preferido: true
+              });
+          }
+
+          // Si hay teléfono, crear contacto
+          if (deudor.telefono) {
+            await supabase
+              .from('contactos')
+              .insert({
+                usuario_id: user.id,
+                deudor_id: deudorData.id,
+                rut: deudor.rut || '',
+                tipo_contacto: 'telefono',
+                valor: deudor.telefono,
+                preferido: true
+              });
+          }
+
+          // Crear la deuda
+          await supabase
+            .from('deudas')
+            .insert({
+              usuario_id: user.id,
+              deudor_id: deudorData.id,
+              rut: deudor.rut || '',
+              monto: deudor.monto_deuda,
+              fecha_vencimiento: deudor.fecha_vencimiento || null,
+              estado: 'nueva'
+            });
+
+          deudoresInsertados++;
+        } catch (error) {
+          console.error('Error al importar deudor:', deudor.nombre, error);
+          errores++;
+        }
+      }
       
       // Generar reporte de importación
       const reporte = {
         total: csvData.length,
-        insertados: deudoresInsertados?.length || 0,
-        errores: parseResult?.invalidRows || 0,
+        insertados: deudoresInsertados,
+        errores: errores + (parseResult?.invalidRows || 0),
         fecha: new Date().toLocaleString('es-CL')
       };
 

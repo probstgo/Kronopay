@@ -31,18 +31,14 @@ import {
 } from 'lucide-react';
 import { 
   Deudor, 
-  CreateDeudorData, 
-  createDeudor, 
-  updateDeudor,
   validarRUT, 
   validarEmail, 
   validarTelefono,
   formatearRUT,
   formatearTelefono,
-  ESTADOS_DEUDA,
-  ESTADOS_DEUDA_CONFIG
+  normalizarRUT
 } from '@/lib/database';
-import { parsearMontoCLP, formatearMontoCLP, validarMontoCLP, montoParaInput } from '@/lib/formateo';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 interface DeudorFormProps {
@@ -55,34 +51,17 @@ interface DeudorFormProps {
 interface FormData {
   nombre: string;
   rut: string;
-  email: string;
-  telefono: string;
-  monto_deuda: string;
-  fecha_vencimiento: string;
-  estado: Deudor['estado'];
-  notas?: string;
 }
 
 interface FormErrors {
   nombre?: string;
   rut?: string;
-  email?: string;
-  telefono?: string;
-  monto_deuda?: string;
-  fecha_vencimiento?: string;
-  estado?: string;
 }
 
 export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormProps) {
   const [formData, setFormData] = useState<FormData>({
     nombre: '',
-    rut: '',
-    email: '',
-    telefono: '',
-    monto_deuda: '',
-    fecha_vencimiento: '',
-    estado: 'nueva',
-    notas: ''
+    rut: ''
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -93,25 +72,13 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
     if (deudor && isOpen) {
       setFormData({
         nombre: deudor.nombre || '',
-        rut: deudor.rut || '',
-        email: deudor.email || '',
-        telefono: deudor.telefono || '',
-        monto_deuda: deudor.monto_deuda ? montoParaInput(deudor.monto_deuda) : '',
-        fecha_vencimiento: deudor.fecha_vencimiento || '',
-        estado: deudor.estado || 'nueva',
-        notas: ''
+        rut: deudor.rut || ''
       });
     } else if (isOpen) {
       // Resetear formulario para modo agregar
       setFormData({
         nombre: '',
-        rut: '',
-        email: '',
-        telefono: '',
-        monto_deuda: '',
-        fecha_vencimiento: '',
-        estado: 'nueva',
-        notas: ''
+        rut: ''
       });
     }
     setErrors({});
@@ -137,26 +104,6 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
         if (value && !validarRUT(value)) return 'RUT inválido';
         return undefined;
 
-      case 'email':
-        if (value && !validarEmail(value)) return 'Email inválido';
-        return undefined;
-
-      case 'telefono':
-        if (value && !validarTelefono(value)) return 'Teléfono inválido (8-9 dígitos o con prefijo +56)';
-        return undefined;
-
-      case 'monto_deuda':
-        if (!value.trim()) return 'El monto es obligatorio';
-        if (!validarMontoCLP(value)) return 'Formato de monto inválido (use números, puntos y comas)';
-        const monto = parsearMontoCLP(value);
-        if (monto <= 0) return 'El monto debe ser mayor a 0';
-        return undefined;
-
-      case 'fecha_vencimiento':
-        // Permitir cualquier fecha (pasada, presente o futura)
-        // Las deudas pueden haberse vencido hace tiempo y seguir siendo válidas
-        return undefined;
-
       default:
         return undefined;
     }
@@ -167,7 +114,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
     let isValid = true;
 
     // Validar campos obligatorios
-    const requiredFields: (keyof FormData)[] = ['nombre', 'monto_deuda'];
+    const requiredFields: (keyof FormData)[] = ['nombre'];
     requiredFields.forEach(field => {
       const value = formData[field] || '';
       const error = validateField(field, value);
@@ -178,7 +125,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
     });
 
     // Validar campos opcionales
-    const optionalFields: (keyof FormData)[] = ['rut', 'email', 'telefono', 'fecha_vencimiento'];
+    const optionalFields: (keyof FormData)[] = ['rut'];
     optionalFields.forEach(field => {
       const value = formData[field];
       if (value) {
@@ -204,23 +151,33 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
 
     setIsLoading(true);
     try {
-      const dataToSave: CreateDeudorData = {
+      const dataToSave = {
         nombre: formData.nombre.trim(),
-        rut: formData.rut.trim() || undefined,
-        email: formData.email.trim() || undefined,
-        telefono: formData.telefono.trim() || undefined,
-        monto_deuda: parsearMontoCLP(formData.monto_deuda),
-        fecha_vencimiento: formData.fecha_vencimiento || undefined,
-        estado: formData.estado
+        rut: formData.rut.trim() ? normalizarRUT(formData.rut.trim()) : undefined
       };
 
       if (deudor) {
         // Modo edición
-        await updateDeudor(deudor.id, dataToSave);
+        const { error } = await supabase
+          .from('deudores')
+          .update(dataToSave)
+          .eq('id', deudor.id);
+        
+        if (error) throw error;
         toast.success('Deudor actualizado exitosamente');
       } else {
-        // Modo agregar
-        await createDeudor(dataToSave);
+        // Modo agregar - necesitamos el usuario_id
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Usuario no autenticado');
+
+        const { error } = await supabase
+          .from('deudores')
+          .insert({
+            ...dataToSave,
+            usuario_id: user.id
+          });
+        
+        if (error) throw error;
         toast.success('Deudor creado exitosamente');
       }
 
@@ -250,8 +207,8 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
           </DialogTitle>
           <DialogDescription>
             {deudor 
-              ? 'Modifica la información del deudor seleccionado.'
-              : 'Completa la información del nuevo deudor. Los campos marcados con * son obligatorios.'
+              ? 'Modifica la información básica del deudor seleccionado.'
+              : 'Completa la información básica del nuevo deudor. Los contactos y deudas se pueden agregar después.'
             }
           </DialogDescription>
         </DialogHeader>
@@ -280,7 +237,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
             </div>
 
             {/* RUT */}
-            <div>
+            <div className="md:col-span-2">
               <Label htmlFor="rut" className="flex items-center gap-1">
                 RUT
               </Label>
@@ -303,139 +260,6 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
                   RUT válido: {formatearRUT(formData.rut)}
                 </div>
               )}
-            </div>
-
-            {/* Email */}
-            <div>
-              <Label htmlFor="email" className="flex items-center gap-1">
-                <Mail className="h-4 w-4" />
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="juan@ejemplo.com"
-                className={errors.email ? 'border-red-500' : ''}
-              />
-              {errors.email && (
-                <div className="flex items-center gap-1 mt-1 text-sm text-red-600">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.email}
-                </div>
-              )}
-            </div>
-
-            {/* Teléfono */}
-            <div>
-              <Label htmlFor="telefono" className="flex items-center gap-1">
-                <Phone className="h-4 w-4" />
-                Teléfono
-              </Label>
-              <Input
-                id="telefono"
-                value={formData.telefono}
-                onChange={(e) => handleInputChange('telefono', e.target.value)}
-                placeholder="912345678 o +56912345678"
-                className={errors.telefono ? 'border-red-500' : ''}
-              />
-              {errors.telefono && (
-                <div className="flex items-center gap-1 mt-1 text-sm text-red-600">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.telefono}
-                </div>
-              )}
-              {formData.telefono && !errors.telefono && validarTelefono(formData.telefono) && (
-                <div className="flex items-center gap-1 mt-1 text-sm text-green-600">
-                  <CheckCircle className="h-3 w-3" />
-                  Teléfono válido: {formatearTelefono(formData.telefono)}
-                </div>
-              )}
-            </div>
-
-            {/* Monto deuda */}
-            <div>
-              <Label htmlFor="monto_deuda" className="flex items-center gap-1">
-                <DollarSign className="h-4 w-4" />
-                Monto de la deuda *
-              </Label>
-              <Input
-                id="monto_deuda"
-                type="text"
-                value={formData.monto_deuda}
-                onChange={(e) => handleInputChange('monto_deuda', e.target.value)}
-                placeholder="1.500.000"
-                className={errors.monto_deuda ? 'border-red-500' : ''}
-              />
-              {errors.monto_deuda && (
-                <div className="flex items-center gap-1 mt-1 text-sm text-red-600">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.monto_deuda}
-                </div>
-              )}
-              {formData.monto_deuda && !errors.monto_deuda && (
-                <div className="flex items-center gap-1 mt-1 text-sm text-green-600">
-                  <CheckCircle className="h-3 w-3" />
-                  Monto: {formatearMontoCLP(parsearMontoCLP(formData.monto_deuda))}
-                </div>
-              )}
-            </div>
-
-            {/* Fecha vencimiento */}
-            <div>
-              <Label htmlFor="fecha_vencimiento" className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                Fecha de vencimiento
-              </Label>
-              <Input
-                id="fecha_vencimiento"
-                type="date"
-                value={formData.fecha_vencimiento}
-                onChange={(e) => handleInputChange('fecha_vencimiento', e.target.value)}
-                className={errors.fecha_vencimiento ? 'border-red-500' : ''}
-              />
-              {errors.fecha_vencimiento && (
-                <div className="flex items-center gap-1 mt-1 text-sm text-red-600">
-                  <AlertCircle className="h-3 w-3" />
-                  {errors.fecha_vencimiento}
-                </div>
-              )}
-            </div>
-
-            {/* Estado */}
-            <div className="md:col-span-2">
-              <Label htmlFor="estado">Estado de la deuda</Label>
-              <Select value={formData.estado} onValueChange={(value) => handleInputChange('estado', value as Deudor['estado'])}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(ESTADOS_DEUDA).map(([key, value]) => {
-                    const config = ESTADOS_DEUDA_CONFIG[value as keyof typeof ESTADOS_DEUDA_CONFIG];
-                    return (
-                      <SelectItem key={key} value={value}>
-                        <div className="flex items-center gap-2">
-                          <span>{config.icon}</span>
-                          <span>{config.label}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Notas */}
-            <div className="md:col-span-2">
-              <Label htmlFor="notas">Notas adicionales</Label>
-              <Textarea
-                id="notas"
-                value={formData.notas}
-                onChange={(e) => handleInputChange('notas', e.target.value)}
-                placeholder="Información adicional sobre el deudor..."
-                rows={3}
-              />
             </div>
           </div>
 

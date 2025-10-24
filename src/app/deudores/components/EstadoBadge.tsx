@@ -1,16 +1,41 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { ESTADOS_DEUDA_CONFIG } from '@/lib/database';
+
+// Configuración de estados para la nueva estructura
+const ESTADOS_CONFIG = {
+  sin_deudas: {
+    label: 'Sin deudas',
+    icon: '✅',
+    color: 'bg-green-100 text-green-800 border-green-200'
+  },
+  pendiente: {
+    label: 'Pendiente',
+    icon: '⏳',
+    color: 'bg-yellow-100 text-yellow-800 border-yellow-200'
+  },
+  vencida: {
+    label: 'Vencida',
+    icon: '⚠️',
+    color: 'bg-red-100 text-red-800 border-red-200'
+  },
+  pagada: {
+    label: 'Pagada',
+    icon: '✅',
+    color: 'bg-blue-100 text-blue-800 border-blue-200'
+  }
+} as const;
+
+type EstadoType = keyof typeof ESTADOS_CONFIG;
 
 interface EstadoBadgeProps {
-  estado: keyof typeof ESTADOS_DEUDA_CONFIG;
+  estado: EstadoType | string;
   showIcon?: boolean;
   size?: 'sm' | 'md' | 'lg';
 }
 
 export function EstadoBadge({ estado, showIcon = true, size = 'md' }: EstadoBadgeProps) {
-  const config = ESTADOS_DEUDA_CONFIG[estado];
+  const config = ESTADOS_CONFIG[estado as EstadoType];
   
   if (!config) {
     return (

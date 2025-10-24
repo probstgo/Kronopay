@@ -20,7 +20,25 @@ import {
   User
 } from 'lucide-react';
 import { parsearMontoCLP, formatearMontoCLP, validarMontoCLP, montoParaInput } from '@/lib/formateo';
-import { ESTADOS_DEUDA, ESTADOS_DEUDA_CONFIG } from '@/lib/database';
+// Configuración de estados para la nueva estructura
+const ESTADOS_CONFIG = {
+  sin_deudas: {
+    label: 'Sin deudas',
+    icon: '✅'
+  },
+  pendiente: {
+    label: 'Pendiente',
+    icon: '⏳'
+  },
+  vencida: {
+    label: 'Vencida',
+    icon: '⚠️'
+  },
+  pagada: {
+    label: 'Pagada',
+    icon: '✅'
+  }
+} as const;
 
 interface FiltrosDeudoresProps {
   onFiltrosCambiados: (filtros: FiltrosAplicados) => void;
@@ -134,17 +152,14 @@ export function FiltrosDeudores({ onFiltrosCambiados, onLimpiarFiltros }: Filtro
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos los estados</SelectItem>
-                  {Object.entries(ESTADOS_DEUDA).map(([key, value]) => {
-                    const config = ESTADOS_DEUDA_CONFIG[value as keyof typeof ESTADOS_DEUDA_CONFIG];
-                    return (
-                      <SelectItem key={key} value={value}>
-                        <div className="flex items-center gap-2">
-                          <span>{config.icon}</span>
-                          <span>{config.label}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
+                  {Object.entries(ESTADOS_CONFIG).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>
+                      <div className="flex items-center gap-2">
+                        <span>{config.icon}</span>
+                        <span>{config.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -260,7 +275,7 @@ export function FiltrosDeudores({ onFiltrosCambiados, onLimpiarFiltros }: Filtro
               )}
               {filtros.estado !== 'todos' && (
                 <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
-                  Estado: {ESTADOS_DEUDA_CONFIG[filtros.estado as keyof typeof ESTADOS_DEUDA_CONFIG]?.label}
+                  Estado: {ESTADOS_CONFIG[filtros.estado as keyof typeof ESTADOS_CONFIG]?.label}
                 </span>
               )}
               {(filtros.rangoMonto.min !== null || filtros.rangoMonto.max !== null) && (

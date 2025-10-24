@@ -1276,3 +1276,154 @@ export function ContactoForm({ open, onClose, deudor, onSuccess }: Props) {
 
 **Última actualización:** Octubre 2025
 
+---
+
+## 📝 Registro de Cambios Implementados
+
+### ✅ **2.B) Tipos y funciones desactualizadas** - COMPLETADO
+**Fecha:** 2025-10-24 15:30:00
+
+**Archivo:** `src/lib/database.ts`
+
+**Cambios realizados:**
+- ✅ **Eliminado** archivo anterior y creado nuevo con estructura actualizada
+- ✅ **Agregados** nuevos tipos TypeScript:
+  - `Usuario` - Estructura de usuarios
+  - `Deudor` - Estructura básica de deudores (solo id, usuario_id, rut, nombre, created_at)
+  - `Contacto` - Tabla de contactos (email, teléfono, SMS, WhatsApp)
+  - `Deuda` - Tabla de deudas separada
+  - `Campana` - Campañas de cobranza
+  - `Plantilla` - Plantillas de mensajes
+  - `Historial` - Historial de acciones
+  - `Pago` - Registro de pagos
+- ✅ **Mantenidas** funciones de utilidad:
+  - `validarRUT()`, `formatearRUT()`, `normalizarRUT()`
+  - `validarEmail()`, `validarTelefono()`, `formatearTelefono()`
+  - `formatearMonto()`, `calcularDiasVencidos()`, `determinarEstadoAutomatico()`
+- ✅ **Eliminadas** funciones obsoletas:
+  - `createDeudor()`, `getDeudores()`, `deleteDeudor()`
+  - Todas las funciones de `historial_emails`
+  - `ESTADOS_DEUDA`, `ESTADOS_DEUDA_CONFIG`
+- ✅ **Corregidos** tipos `any` por `Record<string, unknown>` para campos JSONB
+
+---
+
+### ✅ **2.C) Componentes de deudores desactualizados** - COMPLETADO
+**Fecha:** 2025-10-24 15:45:00 - 16:30:00
+
+#### **DeudoresTable.tsx** - ACTUALIZADO
+**Cambios realizados:**
+- ✅ **Creada** interfaz `DeudorConDatos` que combina datos de deudor + deudas + contactos
+- ✅ **Actualizada** función `cargarDeudores()` para consultar datos desde múltiples tablas
+- ✅ **Implementada** lógica para calcular campos derivados:
+  - `email` y `telefono` (desde contactos preferidos)
+  - `monto_total` (suma de deudas)
+  - `fecha_vencimiento_mas_reciente`
+  - `estado_general` (calculado automáticamente)
+- ✅ **Reemplazadas** llamadas a funciones obsoletas por consultas directas a Supabase
+- ✅ **Actualizada** lógica de eliminación para borrar deudas y contactos asociados
+- ✅ **Corregidos** filtros para usar nueva estructura de estados
+
+#### **DeudorForm.tsx** - ACTUALIZADO
+**Cambios realizados:**
+- ✅ **Simplificado** formulario para crear solo deudores básicos (nombre + RUT)
+- ✅ **Eliminadas** referencias a campos obsoletos (`monto_deuda`, `fecha_vencimiento`)
+- ✅ **Actualizada** validación para usar solo campos básicos
+- ✅ **Implementada** lógica de creación/edición con Supabase directo
+
+#### **EstadoBadge.tsx** - ACTUALIZADO
+**Cambios realizados:**
+- ✅ **Reemplazada** configuración de estados obsoleta
+- ✅ **Implementada** nueva configuración de estados:
+  - `sin_deudas`, `pendiente`, `vencida`, `pagada`
+- ✅ **Actualizada** lógica de colores y etiquetas
+
+#### **ImportCSVModal.tsx** - ACTUALIZADO
+**Cambios realizados:**
+- ✅ **Actualizada** estructura de datos para nueva BD
+- ✅ **Corregidas** referencias a campos obsoletos
+- ✅ **Implementada** lógica para crear deudores + contactos + deudas por separado
+
+#### **SelectorDeudor.tsx** - ACTUALIZADO
+**Cambios realizados:**
+- ✅ **Creada** interfaz `DeudorConDatos` para datos combinados
+- ✅ **Implementada** consulta con JOIN para obtener deudores + deudas + contactos
+- ✅ **Actualizada** lógica de transformación de datos
+- ✅ **Corregidos** tipos TypeScript para evitar errores de compilación
+
+#### **FormularioEmail.tsx** - ACTUALIZADO
+**Cambios realizados:**
+- ✅ **Creada** interfaz `DeudorConDatos` para datos combinados
+- ✅ **Actualizada** lógica para trabajar con nueva estructura
+- ✅ **Corregidas** referencias a campos obsoletos
+
+#### **FiltrosDeudores.tsx** - ACTUALIZADO
+**Cambios realizados:**
+- ✅ **Reemplazada** configuración de estados obsoleta
+- ✅ **Implementada** nueva configuración de estados
+- ✅ **Actualizada** lógica de filtrado
+
+#### **SelectorEstado.tsx** - ACTUALIZADO
+**Cambios realizados:**
+- ✅ **Reemplazada** configuración de estados obsoleta
+- ✅ **Implementada** nueva configuración de estados
+- ✅ **Actualizada** lógica de cambio de estado
+
+#### **AccionesRapidas.tsx** - ACTUALIZADO
+**Cambios realizados:**
+- ✅ **Creada** interfaz `DeudorConContactos` para datos combinados
+- ✅ **Actualizada** lógica para trabajar con nueva estructura
+- ✅ **Corregidas** referencias a campos obsoletos
+
+---
+
+### ✅ **Build y Compilación** - COMPLETADO
+**Fecha:** 2025-10-24 16:30:00
+
+**Resultado:**
+- ✅ **Build exitoso** sin errores de compilación
+- ✅ **Solo warnings** de ESLint (variables no utilizadas) que no afectan funcionalidad
+- ✅ **Todos los componentes** actualizados y funcionando
+- ✅ **Tipos TypeScript** corregidos y validados
+
+**Archivos corregidos durante el proceso:**
+- `src/lib/database.ts` - Tipos actualizados
+- `src/app/deudores/components/DeudoresTable.tsx` - Lógica de datos actualizada
+- `src/app/deudores/components/DeudorForm.tsx` - Formulario simplificado
+- `src/app/deudores/components/EstadoBadge.tsx` - Estados actualizados
+- `src/app/deudores/components/ImportCSVModal.tsx` - Estructura actualizada
+- `src/app/deudores/components/SelectorEstado.tsx` - Estados actualizados
+- `src/app/deudores/components/FiltrosDeudores.tsx` - Filtros actualizados
+- `src/app/deudores/components/AccionesRapidas.tsx` - Lógica actualizada
+- `src/app/test-email/components/FormularioEmail.tsx` - Estructura actualizada
+- `src/app/test-email/components/SelectorDeudor.tsx` - Lógica de datos actualizada
+
+---
+
+### 📋 **Próximos Pasos Recomendados**
+
+Según el documento `parte3_front_app.md`, los siguientes pasos serían:
+
+1. **2.D) Páginas principales desactualizadas**
+   - Actualizar páginas principales para usar nueva estructura
+   - Implementar lógica de carga de datos desde nuevas tablas
+   - Actualizar navegación y flujos de usuario
+
+2. **Implementar páginas faltantes:**
+   - Dashboard con estadísticas
+   - Campañas
+   - Historial
+   - Plantillas
+   - Teléfono (agentes)
+   - Pagos
+   - Billing
+
+3. **Implementar backend:**
+   - Job programado (`/api/cron/ejecutor-programado`)
+   - Webhooks (`/api/webhooks/...`)
+   - Funciones de negocio (guardrails, reintentos, etc.)
+
+---
+
+**Registro completado:** 2025-10-24 16:35:00
+

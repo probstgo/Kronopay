@@ -4,16 +4,24 @@ import { useState, useEffect } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Deudor, getDeudores } from '@/lib/database'
-import { formatearMontoCLP } from '@/lib/formateo'
+import { Deudor, formatearMonto } from '@/lib/database'
+import { supabase } from '@/lib/supabase'
+
+// Tipo para deudor con datos combinados
+interface DeudorConDatos extends Deudor {
+  email?: string;
+  telefono?: string;
+  monto_deuda?: number;
+  estado?: string;
+}
 
 interface SelectorDeudorProps {
-  onDeudorSelect: (deudor: Deudor | null) => void
-  selectedDeudor: Deudor | null
+  onDeudorSelect: (deudor: DeudorConDatos | null) => void
+  selectedDeudor: DeudorConDatos | null
 }
 
 export default function SelectorDeudor({ onDeudorSelect, selectedDeudor }: SelectorDeudorProps) {
-  const [deudores, setDeudores] = useState<Deudor[]>([])
+  const [deudores, setDeudores] = useState<DeudorConDatos[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -21,11 +29,37 @@ export default function SelectorDeudor({ onDeudorSelect, selectedDeudor }: Selec
     const cargarDeudores = async () => {
       try {
         setLoading(true)
-        console.log('🔍 Cargando deudores directamente desde database.ts...')
+        console.log('🔍 Cargando deudores desde Supabase...')
         
-        const data = await getDeudores()
-        console.log('📊 Deudores obtenidos:', data?.length || 0)
-        setDeudores(data || [])
+        // Obtener deudores con sus deudas y contactos
+        const { data: deudoresData, error: deudoresError } = await supabase
+          .from('deudores')
+          .select(`
+            *,
+            deudas(*),
+            contactos(*)
+          `)
+          .order('created_at', { ascending: false });
+
+        if (deudoresError) throw deudoresError;
+
+        // Transformar datos al formato esperado por el componente
+        const deudoresTransformados: DeudorConDatos[] = (deudoresData || []).map(deudor => {
+          const emailPreferido = deudor.contactos?.find((c: { tipo_contacto: string; preferido: boolean }) => c.tipo_contacto === 'email' && c.preferido);
+          const telefonoPreferido = deudor.contactos?.find((c: { tipo_contacto: string; preferido: boolean }) => c.tipo_contacto === 'telefono' && c.preferido);
+          const montoTotal = deudor.deudas?.reduce((sum: number, deuda: { monto: number }) => sum + deuda.monto, 0) || 0;
+          
+          return {
+            ...deudor,
+            email: emailPreferido?.valor,
+            telefono: telefonoPreferido?.valor,
+            monto_deuda: montoTotal,
+            estado: montoTotal > 0 ? 'pendiente' : 'sin_deudas'
+          };
+        });
+
+        console.log('📊 Deudores obtenidos:', deudoresTransformados.length)
+        setDeudores(deudoresTransformados)
       } catch (err) {
         console.error('❌ Error al cargar deudores:', err)
         setError(err instanceof Error ? err.message : 'Error desconocido')
@@ -39,12 +73,10 @@ export default function SelectorDeudor({ onDeudorSelect, selectedDeudor }: Selec
 
   const getEstadoColor = (estado: string) => {
     const colors = {
-      nueva: 'bg-blue-100 text-blue-800',
-      en_proceso: 'bg-yellow-100 text-yellow-800',
-      parcialmente_pagada: 'bg-orange-100 text-orange-800',
-      pagada: 'bg-green-100 text-green-800',
+      sin_deudas: 'bg-gray-100 text-gray-800',
+      pendiente: 'bg-yellow-100 text-yellow-800',
       vencida: 'bg-red-100 text-red-800',
-      cancelada: 'bg-gray-100 text-gray-800'
+      pagada: 'bg-green-100 text-green-800'
     }
     return colors[estado as keyof typeof colors] || 'bg-gray-100 text-gray-800'
   }
@@ -136,8 +168,8 @@ export default function SelectorDeudor({ onDeudorSelect, selectedDeudor }: Selec
                 <SelectItem key={deudor.id} value={deudor.id}>
                   <div className="flex items-center justify-between w-full">
                     <span>{deudor.nombre}</span>
-                    <Badge className={`ml-2 ${getEstadoColor(deudor.estado)}`}>
-                      {deudor.estado?.replace('_', ' ') || 'Sin estado'}
+                    <Badge className={`ml-2 ${getEstadoColor(deudor.estado || 'sin_deudas')}`}>
+                      {(deudor.estado || 'sin_deudas').replace('_', ' ')}
                     </Badge>
                   </div>
                 </SelectItem>
@@ -156,10 +188,10 @@ export default function SelectorDeudor({ onDeudorSelect, selectedDeudor }: Selec
                 {selectedDeudor.telefono && (
                   <p><strong>Teléfono:</strong> {selectedDeudor.telefono}</p>
                 )}
-                <p><strong>Monto deuda:</strong> {formatearMontoCLP(selectedDeudor.monto_deuda)}</p>
+                <p><strong>Monto deuda:</strong> {selectedDeudor.monto_deuda ? formatearMonto(selectedDeudor.monto_deuda) : '$0'}</p>
                 <p><strong>Estado:</strong> 
-                  <Badge className={`ml-2 ${getEstadoColor(selectedDeudor.estado)}`}>
-                    {selectedDeudor.estado?.replace('_', ' ') || 'Sin estado'}
+                  <Badge className={`ml-2 ${getEstadoColor(selectedDeudor.estado || 'sin_deudas')}`}>
+                    {(selectedDeudor.estado || 'sin_deudas').replace('_', ' ')}
                   </Badge>
                 </p>
               </div>

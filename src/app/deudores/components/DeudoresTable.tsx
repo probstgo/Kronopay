@@ -31,14 +31,30 @@ import {
   Phone,
   MoreHorizontal 
 } from 'lucide-react';
-import { Deudor, ESTADOS_DEUDA, ESTADOS_DEUDA_CONFIG, formatearRUT, formatearTelefono, calcularDiasVencidos, getDeudores, deleteDeudor } from '@/lib/database';
-import { formatearMontoCLP } from '@/lib/formateo';
+import { Deudor, Deuda, Contacto, formatearRUT, formatearTelefono, calcularDiasVencidos, formatearMonto } from '@/lib/database';
 import { toast } from 'sonner';
 import { EstadoBadge } from './EstadoBadge';
 import { SelectorEstado } from './SelectorEstado';
 import { DeudorForm } from './DeudorForm';
 import { ConfirmarEliminacion } from './ConfirmarEliminacion';
 import { ImportCSVModal } from './ImportCSVModal';
+import { supabase } from '@/lib/supabase';
+
+// Tipos para la vista combinada
+interface DeudorConDatos {
+  id: string;
+  usuario_id: string;
+  rut: string;
+  nombre: string;
+  created_at: string;
+  deudas: Deuda[];
+  contactos: Contacto[];
+  email?: string;
+  telefono?: string;
+  monto_total?: number;
+  fecha_vencimiento_mas_reciente?: string;
+  estado_general?: string;
+}
 
 interface DeudoresTableProps {
   onAgregarDeudor?: () => void;
@@ -57,8 +73,8 @@ export function DeudoresTable({
   onImportarCSV,
   onExportarDatos
 }: DeudoresTableProps) {
-  const [deudores, setDeudores] = useState<Deudor[]>([]);
-  const [filtrados, setFiltrados] = useState<Deudor[]>([]);
+  const [deudores, setDeudores] = useState<DeudorConDatos[]>([]);
+  const [filtrados, setFiltrados] = useState<DeudorConDatos[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<string>('todos');
   const [paginaActual, setPaginaActual] = useState(1);
@@ -97,7 +113,7 @@ export function DeudoresTable({
 
     // Filtro por estado
     if (filtroEstado !== 'todos') {
-      resultado = resultado.filter(deudor => deudor.estado === filtroEstado);
+      resultado = resultado.filter(deudor => deudor.estado_general === filtroEstado);
     }
 
     setFiltrados(resultado);
@@ -107,11 +123,70 @@ export function DeudoresTable({
   const cargarDeudores = async () => {
     try {
       setIsLoading(true);
-      const data = await getDeudores();
-      setDeudores(data || []);
+      
+      // Obtener deudores
+      const { data: deudoresData, error: deudoresError } = await supabase
+        .from('deudores')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (deudoresError) throw deudoresError;
+
+      // Para cada deudor, obtener sus deudas y contactos
+      const deudoresConDatos: DeudorConDatos[] = await Promise.all(
+        (deudoresData || []).map(async (deudor) => {
+          // Obtener deudas del deudor
+          const { data: deudasData } = await supabase
+            .from('deudas')
+            .select('*')
+            .eq('deudor_id', deudor.id)
+            .order('fecha_vencimiento', { ascending: true });
+
+          // Obtener contactos del deudor
+          const { data: contactosData } = await supabase
+            .from('contactos')
+            .select('*')
+            .eq('deudor_id', deudor.id);
+
+          // Encontrar email y teléfono preferidos
+          const emailPreferido = contactosData?.find(c => c.tipo_contacto === 'email' && c.preferido);
+          const telefonoPreferido = contactosData?.find(c => c.tipo_contacto === 'telefono' && c.preferido);
+
+          // Calcular monto total y fecha de vencimiento más reciente
+          const montoTotal = deudasData?.reduce((sum, deuda) => sum + deuda.monto, 0) || 0;
+          const fechaVencimientoMasReciente = deudasData?.[0]?.fecha_vencimiento;
+
+          // Determinar estado general basado en las deudas
+          let estadoGeneral = 'sin_deudas';
+          if (deudasData && deudasData.length > 0) {
+            const tieneDeudasPendientes = deudasData.some(d => d.estado === 'pendiente');
+            const tieneDeudasVencidas = deudasData.some(d => {
+              const diasVencidos = calcularDiasVencidos(d.fecha_vencimiento);
+              return diasVencidos > 0 && d.estado === 'pendiente';
+            });
+            
+            if (tieneDeudasVencidas) estadoGeneral = 'vencida';
+            else if (tieneDeudasPendientes) estadoGeneral = 'pendiente';
+            else estadoGeneral = 'pagada';
+          }
+
+          return {
+            ...deudor,
+            deudas: deudasData || [],
+            contactos: contactosData || [],
+            email: emailPreferido?.valor,
+            telefono: telefonoPreferido?.valor,
+            monto_total: montoTotal,
+            fecha_vencimiento_mas_reciente: fechaVencimientoMasReciente,
+            estado_general: estadoGeneral
+          };
+        })
+      );
+
+      setDeudores(deudoresConDatos);
     } catch (error) {
       console.error('Error al cargar deudores:', error);
-      // En caso de error, mostrar array vacío
+      toast.error('Error al cargar los deudores');
       setDeudores([]);
     } finally {
       setIsLoading(false);
@@ -123,10 +198,10 @@ export function DeudoresTable({
   const fin = inicio + elementosPorPagina;
   const deudoresPagina = filtrados.slice(inicio, fin);
 
-  const handleCambioEstado = (deudorId: string, nuevoEstado: Deudor['estado']) => {
+  const handleCambioEstado = (deudorId: string, nuevoEstado: string) => {
     setDeudores(prev => prev.map(deudor => 
       deudor.id === deudorId 
-        ? { ...deudor, estado: nuevoEstado }
+        ? { ...deudor, estado_general: nuevoEstado }
         : deudor
     ));
   };
@@ -141,7 +216,7 @@ export function DeudoresTable({
     setIsFormOpen(true);
   };
 
-  const handleEditarDeudor = (deudor: Deudor) => {
+  const handleEditarDeudor = (deudor: DeudorConDatos) => {
     setDeudorEditando(deudor);
     setIsFormOpen(true);
   };
@@ -156,7 +231,7 @@ export function DeudoresTable({
   };
 
   // Funciones para manejar la eliminación
-  const handleEliminarDeudor = (deudor: Deudor) => {
+  const handleEliminarDeudor = (deudor: DeudorConDatos) => {
     setDeudorEliminando(deudor);
     setIsDeleteOpen(true);
   };
@@ -166,7 +241,24 @@ export function DeudoresTable({
 
     setIsDeleting(true);
     try {
-      await deleteDeudor(deudorEliminando.id);
+      // Eliminar deudas asociadas primero
+      await supabase
+        .from('deudas')
+        .delete()
+        .eq('deudor_id', deudorEliminando.id);
+
+      // Eliminar contactos asociados
+      await supabase
+        .from('contactos')
+        .delete()
+        .eq('deudor_id', deudorEliminando.id);
+
+      // Eliminar el deudor
+      await supabase
+        .from('deudores')
+        .delete()
+        .eq('id', deudorEliminando.id);
+
       toast.success(`Deudor ${deudorEliminando.nombre} eliminado exitosamente`);
       recargarDatos();
       handleCerrarEliminacion();
@@ -262,17 +354,10 @@ export function DeudoresTable({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos los estados</SelectItem>
-                  {Object.entries(ESTADOS_DEUDA).map(([key, value]) => {
-                    const config = ESTADOS_DEUDA_CONFIG[value as keyof typeof ESTADOS_DEUDA_CONFIG];
-                    return (
-                      <SelectItem key={key} value={value}>
-                        <div className="flex items-center gap-2">
-                          <span>{config.icon}</span>
-                          <span>{config.label}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
+                  <SelectItem value="sin_deudas">Sin deudas</SelectItem>
+                  <SelectItem value="pendiente">Pendiente</SelectItem>
+                  <SelectItem value="vencida">Vencida</SelectItem>
+                  <SelectItem value="pagada">Pagada</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -310,8 +395,8 @@ export function DeudoresTable({
               </TableHeader>
               <TableBody>
                 {deudoresPagina.map((deudor) => {
-                  const diasVencidos = deudor.fecha_vencimiento 
-                    ? calcularDiasVencidos(deudor.fecha_vencimiento)
+                  const diasVencidos = deudor.fecha_vencimiento_mas_reciente 
+                    ? calcularDiasVencidos(deudor.fecha_vencimiento_mas_reciente)
                     : 0;
 
                   return (
@@ -339,11 +424,11 @@ export function DeudoresTable({
                         </div>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {formatearMontoCLP(deudor.monto_deuda)}
+                        {deudor.monto_total ? formatearMonto(deudor.monto_total) : '-'}
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div>{deudor.fecha_vencimiento || '-'}</div>
+                          <div>{deudor.fecha_vencimiento_mas_reciente || '-'}</div>
                           {diasVencidos > 0 && (
                             <Badge variant="destructive" className="text-xs">
                               {diasVencidos} días vencido
@@ -352,7 +437,7 @@ export function DeudoresTable({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <EstadoBadge estado={deudor.estado} />
+                        <EstadoBadge estado={deudor.estado_general || 'sin_deudas'} />
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
