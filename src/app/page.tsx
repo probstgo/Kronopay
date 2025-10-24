@@ -448,7 +448,7 @@ export default function Home() {
             </div>
           </div>
           <div className="border-t border-gray-200 mt-16 pt-8 text-center text-gray-500">
-            <p>&copy; 2024 Kronopay. Todos los derechos reservados.</p>
+            <p>&copy; 2025 Kronopay. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>
