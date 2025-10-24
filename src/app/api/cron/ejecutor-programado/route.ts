@@ -3,6 +3,20 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { ProgramaEjecucion } from '../../../../types/programa'
 
+// Tipos para las respuestas de ElevenLabs
+interface ElevenLabsCallResult {
+  success: boolean
+  callId?: string
+  [key: string]: unknown
+}
+
+interface ResultadoEjecucion {
+  exito: boolean
+  external_id?: string
+  detalles?: unknown
+  error?: string
+}
+
 // Cliente con service_role (bypass RLS)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -54,7 +68,7 @@ export async function GET(request: Request) {
         if (lockError) continue // Ya fue tomada por otro proceso
 
         // 3. Ejecutar acción según tipo
-        let resultado: { exito: boolean; error?: string; detalles?: unknown } = { exito: false, error: 'Tipo de acción no válido' }
+        let resultado: ResultadoEjecucion = { exito: false, error: 'Tipo de acción no válido' }
         switch (prog.tipo_accion) {
           case 'email':
             resultado = await enviarEmail(prog as ProgramaEjecucion)
@@ -113,7 +127,7 @@ export async function GET(request: Request) {
 }
 
 // Funciones auxiliares
-async function enviarEmail(prog: ProgramaEjecucion) {
+async function enviarEmail(prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
   // Implementar con Resend (ya configurado)
   const resend = new Resend(process.env.RESEND_API_KEY)
   
@@ -133,8 +147,7 @@ async function enviarEmail(prog: ProgramaEjecucion) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function ejecutarLlamada(prog: any) {
+async function ejecutarLlamada(prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
   // Implementar con ElevenLabs (ya configurado)
   const { startOutboundCall } = await import('../../../../lib/elevenlabs')
   
@@ -143,7 +156,7 @@ async function ejecutarLlamada(prog: any) {
   const resultado = await startOutboundCall({
     agentId: prog.agente_id,
     toNumber: prog.contactos[0].valor
-  })
+  }) as unknown as ElevenLabsCallResult
 
   return {
     exito: resultado.success,
@@ -152,12 +165,12 @@ async function ejecutarLlamada(prog: any) {
   }
 }
 
-async function enviarSMS(prog: ProgramaEjecucion) {
+async function enviarSMS(prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
   // TODO: Implementar con Twilio
   return { exito: false, error: 'No implementado' }
 }
 
-async function enviarWhatsApp(prog: ProgramaEjecucion) {
+async function enviarWhatsApp(prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
   // TODO: Implementar con Twilio WhatsApp
   return { exito: false, error: 'No implementado' }
 }
