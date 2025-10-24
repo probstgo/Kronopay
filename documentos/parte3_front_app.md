@@ -322,53 +322,6 @@ export const ESTADOS_DEUDA_CONFIG = {
 
 ---
 
-#### B) Funciones de formateo (agregar)
-**Archivo:** Crear `src/lib/formateo.ts`
-
-**Qué agregar:** Funciones para formatear montos CLP (según documento de backend)
-
-```typescript
-// Parsear entrada del usuario (con coma chilena) a número
-export function parsearMontoCLP(input: string): number {
-  const limpio = input
-    .replace(/\./g, '')     // Quitar puntos de miles
-    .replace(',', '.')      // Cambiar coma por punto decimal
-    .replace(/[^\d.-]/g, '') // Quitar otros caracteres
-  
-  return parseFloat(limpio) || 0;
-}
-
-// Formatear número a formato CLP para mostrar
-export function formatearMontoCLP(monto: number): string {
-  return new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-    maximumFractionDigits: 0,  // Sin decimales
-  }).format(monto);
-}
-```
-
----
-
-#### C) Ofuscación de teléfonos (agregar)
-**Archivo:** Crear `src/lib/ofuscacion.ts`
-
-**Qué agregar:** Función para ocultar números de teléfono parcialmente (privacidad)
-
-```typescript
-export function ofuscarTelefono(tel: string): string {
-  if (!tel || tel.length < 7) return tel;
-  
-  const prefijo = tel.startsWith('+56') ? '+56' : tel.slice(0, 3);
-  const ultimosCuatro = tel.slice(-4);
-  
-  return `${prefijo}*****${ultimosCuatro}`;
-  // Ejemplo: +56951365725 → +56*****5725
-}
-```
-
----
-
 ## 3. Estructura recomendada de la aplicación
 
 ### 📁 Estructura de carpetas ideal:
@@ -461,8 +414,22 @@ src/
 │   │       └── components/
 │   │           └── ...
 │   │
+│   ├── test-email/               # Testing de emails
+│   │   ├── page.tsx              # ✅ Ya existe
+│   │   └── components/           # ✅ Ya existe
+│   │       ├── FormularioEmail.tsx
+│   │       └── SelectorDeudor.tsx
+│   │
+│   ├── test-llamadas/            # Testing de llamadas
+│   │   └── page.tsx              # ✅ Ya existe
+│   │
+│   ├── test-supabase/            # Testing de base de datos
+│   │   └── page.tsx              # ✅ Ya existe
+│   │
 │   ├── api/                      # API Routes (backend)
 │   │   ├── auth/
+│   │   │   ├── session/
+│   │   │   │   └── route.ts      # ✅ Ya existe
 │   │   │   └── signout/
 │   │   │       └── route.ts      # ✅ Ya existe
 │   │   ├── deudores/
@@ -471,18 +438,19 @@ src/
 │   │   │   └── route.ts          # ✅ Ya existe
 │   │   ├── elevenlabs/
 │   │   │   └── ...               # ✅ Ya existe
+│   │   ├── test-deudores/        # ✅ Ya existe
 │   │   │
-│   │   ├── cron/                 # 🆕 CREAR - Jobs programados
+│   │   ├── cron/                 # ✅ Ya existe - Jobs programados
 │   │   │   └── ejecutor-programado/
-│   │   │       └── route.ts      # Del documento ultimo_paso
+│   │   │       └── route.ts      # ✅ Ya existe
 │   │   │
-│   │   └── webhooks/             # 🆕 CREAR - Webhooks externos
+│   │   └── webhooks/             # ✅ Ya existe - Webhooks externos
 │   │       ├── resend/
-│   │       │   └── route.ts
+│   │       │   └── route.ts      # ✅ Ya existe
 │   │       ├── elevenlabs/
-│   │       │   └── route.ts
+│   │       │   └── route.ts      # ✅ Ya existe
 │   │       └── twilio/
-│   │           └── route.ts
+│   │           └── route.ts     # 🆕 CREAR
 │   │
 │   └── globals.css               # Estilos globales ✅
 │
@@ -502,12 +470,11 @@ src/
 │
 ├── lib/                          # Utilidades y configuración
 │   ├── supabase.ts               # ✅ Ya existe
-│   ├── database.ts               # ⚠️ REEMPLAZAR (tipos nuevos)
-│   ├── formateo.ts               # 🆕 CREAR (formateo CLP)
-│   ├── ofuscacion.ts             # 🆕 CREAR (ofuscar teléfonos)
-│   ├── guardrails.ts             # 🆕 CREAR (validaciones)
-│   ├── reintentos.ts             # 🆕 CREAR (lógica de reintentos)
-│   ├── rate-limiter.ts           # 🆕 CREAR (rate limiting)
+│   ├── database.ts               # ✅ Ya existe (tipos completos)
+│   ├── formateo.ts               # ✅ Ya existe (formateo CLP)
+│   ├── guardrails.ts             # ✅ Ya existe (validaciones)
+│   ├── reintentos.ts             # ✅ Ya existe (lógica de reintentos)
+│   ├── rate-limiter.ts           # ✅ Ya existe (rate limiting)
 │   ├── elevenlabs.ts             # ✅ Ya existe
 │   ├── resend.ts                 # ✅ Ya existe
 │   ├── csvUtils.ts               # ✅ Ya existe
@@ -518,6 +485,9 @@ src/
 │   ├── useDeudores.ts            # 🆕 CREAR
 │   ├── useCampanas.ts            # 🆕 CREAR
 │   └── useHistorial.ts           # 🆕 CREAR
+│
+├── types/                        # Tipos TypeScript
+│   └── programa.ts              # ✅ Ya existe
 │
 └── middleware.ts                 # ✅ Ya existe
 ```
@@ -1444,4 +1414,26 @@ Según el documento `parte3_front_app.md`, los siguientes pasos serían:
 - El metadata está optimizado para SEO y branding
 
 **Conclusión:** La tarea de actualización del metadata ya estaba implementada correctamente en el proyecto.
+
+---
+
+## 📋 RESUMEN DE IMPLEMENTACIONES REALIZADAS
+
+### ✅ Estados de Deuda - COMPLETADO
+**Archivo modificado:** `src/lib/database.ts`
+
+**Cambios realizados:**
+- ✅ Agregadas constantes `ESTADOS_DEUDA` con valores: 'nueva', 'pendiente', 'pagado'
+- ✅ Agregada configuración `ESTADOS_DEUDA_CONFIG` con:
+  - **Nueva**: Azul (bg-blue-100 text-blue-800) + icono 🆕
+  - **Pendiente**: Amarillo (bg-yellow-100 text-yellow-800) + icono ⏳
+  - **Pagado**: Verde (bg-green-100 text-green-800) + icono ✅
+
+**Beneficios:**
+- Centraliza la configuración de estados de deuda
+- Evita hardcodear strings en componentes UI
+- Proporciona configuración visual consistente
+- Mejora la mantenibilidad del código
+
+**Estado:** ✅ COMPLETADO - Los estados de deuda están ahora correctamente definidos y listos para usar en los componentes de la interfaz.
 

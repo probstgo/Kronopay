@@ -121,6 +121,101 @@ export interface Pago {
   created_at: string;
 }
 
+export interface Programacion {
+  id: string;
+  usuario_id: string;
+  deuda_id: string;
+  rut: string;
+  contacto_id?: string;
+  campana_id?: string;
+  tipo_accion: 'email' | 'llamada' | 'sms' | 'whatsapp';
+  fecha_programada: string;
+  plantilla_id?: string;
+  estado: 'pendiente' | 'ejecutado' | 'cancelado';
+  created_at: string;
+}
+
+export interface AgenteConversacion {
+  id: string;
+  usuario_id: string;
+  agente_id?: string;
+  historial_id?: string;
+  external_conversation_id?: string;
+  resumen?: string;
+  metrics?: Record<string, unknown>;  // JSONB
+  created_at: string;
+}
+
+export interface AgenteConversacionTurno {
+  id: string;
+  conversacion_id: string;
+  turno: number;
+  who: 'agente' | 'deudor';
+  text: string;
+  started_at: string;
+  ended_at?: string;
+}
+
+export interface PagoUsuario {
+  id: string;
+  usuario_id: string;
+  suscripcion_id: string;
+  monto: number;
+  fecha_pago: string;
+  metodo: string;
+  estado: 'confirmado' | 'pendiente' | 'fallido';
+  referencia_externa?: string;
+  created_at: string;
+}
+
+export interface Uso {
+  id: string;
+  usuario_id: string;
+  periodo: string;  // YYYY-MM
+  emails_enviados: number;
+  llamadas_ejecutadas: number;
+  duracion_llamadas: number;
+  costo_llamadas: number;
+  sms_enviados: number;
+  whatsapp_enviados: number;
+  costo_total: number;
+  created_at: string;
+}
+
+export interface Configuracion {
+  id: string;
+  usuario_id?: string;  // null para configuraciones globales
+  clave: string;
+  valor: Record<string, unknown>;  // JSONB
+  created_at: string;
+}
+
+export interface Suscripcion {
+  id: string;
+  nombre: string;
+  descripcion?: string;
+  precio_mensual: number;
+  limite_emails: number;
+  limite_llamadas: number;
+  limite_sms: number;
+  limite_whatsapp: number;
+  limite_memoria_mb: number;
+  activo: boolean;
+  created_at: string;
+}
+
+export interface LlamadaAgente {
+  id: string;
+  usuario_id: string;
+  nombre: string;
+  descripcion?: string;
+  voz_id: string;
+  prompt_sistema: string;
+  configuracion: Record<string, unknown>;  // JSONB
+  activo: boolean;
+  created_at: string;
+}
+
 // =============================================
 // FUNCIONES DE UTILIDAD (MANTENIDAS DEL ARCHIVO ANTERIOR)
 // =============================================
