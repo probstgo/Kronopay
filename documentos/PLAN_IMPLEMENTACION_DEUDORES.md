@@ -29,8 +29,7 @@
 1. **Optimizar** componentes existentes
 2. **Conectar** funcionalidades desconectadas
 3. **Agregar** gestión de contactos y deudas
-4. **Implementar** ofuscación de teléfonos
-5. **Mejorar** rendimiento y UX
+4. **Mejorar** rendimiento y UX
 
 ---
 
@@ -159,16 +158,6 @@
 - Integrar en DeudoresTable
 ```
 
-### **4. Falta Ofuscación de Teléfonos**
-```typescript
-❌ Problema:
-- Teléfonos se muestran completos
-- No hay protección de datos sensibles
-
-🔧 Solución:
-- Implementar ofuscación en formateo
-- Agregar toggle para mostrar/ocultar
-```
 
 ---
 
@@ -206,17 +195,6 @@
 3. Procesar datos en el frontend
 ```
 
-#### **Tarea 1.3: Implementar Ofuscación**
-```typescript
-📁 Archivos a modificar:
-- src/lib/ofuscacion.ts (crear)
-- src/app/deudores/components/DeudoresTable.tsx
-
-🔧 Cambios:
-1. Crear funciones de ofuscación
-2. Aplicar ofuscación a teléfonos
-3. Agregar toggle para mostrar/ocultar
-```
 
 ### **FASE 2: Gestión Individual de Contactos y Deudas (1-2 días)**
 
@@ -355,7 +333,7 @@
 ## 📊 Cronograma de Implementación
 
 ### **Semana 1: Optimización Base**
-- Fase 1 (Conectar filtros, optimizar consultas, ofuscación)
+- Fase 1 (Conectar filtros, optimizar consultas)
 - ✅ Fase 2 PARCIAL (Formulario principal completado)
 - Fase 2 RESTANTE (Gestión individual de contactos y deudas)
 - Testing y correcciones
@@ -394,7 +372,6 @@
 - [ ] Conectar FiltrosDeudores con DeudoresTable
 - [ ] Eliminar filtros duplicados
 - [ ] Optimizar consultas N+1
-- [ ] Implementar ofuscación de teléfonos
 - [ ] Testing de funcionalidades básicas
 
 ### **Fase 2: Gestión de Contactos y Deudas**
@@ -519,7 +496,6 @@
 
 ### 📋 **Pendiente**
 - **Filtros Avanzados**: Conectar FiltrosDeudores con DeudoresTable
-- **Ofuscación**: Implementar protección de datos sensibles
 - **Acciones Rápidas**: Integrar componentes no utilizados
 - **Exportación**: Múltiples formatos de exportación
 

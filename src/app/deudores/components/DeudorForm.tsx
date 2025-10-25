@@ -29,15 +29,60 @@ import {
   AlertCircle,
   CheckCircle
 } from 'lucide-react';
-import { 
-  Deudor, 
-  validarRUT, 
-  validarEmail, 
-  validarTelefono,
-  formatearRUT,
-  formatearTelefono,
-  normalizarRUT
-} from '@/lib/database';
+// Funciones de validación locales para evitar problemas de importación
+const validarRUT = (rut: string): boolean => {
+  if (!rut) return false;
+  const rutLimpio = rut.replace(/[^0-9kK]/g, '');
+  if (rutLimpio.length < 8) return false;
+  
+  const cuerpo = rutLimpio.slice(0, -1);
+  const dv = rutLimpio.slice(-1).toLowerCase();
+  
+  let suma = 0;
+  let multiplicador = 2;
+  
+  for (let i = cuerpo.length - 1; i >= 0; i--) {
+    suma += parseInt(cuerpo[i]) * multiplicador;
+    multiplicador = multiplicador === 7 ? 2 : multiplicador + 1;
+  }
+  
+  const resto = suma % 11;
+  const dvCalculado = resto === 0 ? '0' : resto === 1 ? 'k' : (11 - resto).toString();
+  
+  return dv === dvCalculado;
+};
+
+const validarEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const validarTelefono = (telefono: string): boolean => {
+  const telefonoLimpio = telefono.replace(/[^0-9]/g, '');
+  return telefonoLimpio.length >= 8 && telefonoLimpio.length <= 15;
+};
+
+const formatearRUT = (rut: string): string => {
+  if (!rut) return '';
+  const rutLimpio = rut.replace(/[^0-9kK]/g, '');
+  if (rutLimpio.length < 8) return rut;
+  
+  const cuerpo = rutLimpio.slice(0, -1);
+  const dv = rutLimpio.slice(-1).toUpperCase();
+  
+  return `${cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}-${dv}`;
+};
+
+const normalizarRUT = (rut: string): string => {
+  if (!rut) return '';
+  const rutLimpio = rut.replace(/[^0-9kK]/g, '');
+  if (rutLimpio.length < 8) return rut;
+  
+  const cuerpo = rutLimpio.slice(0, -1);
+  const dv = rutLimpio.slice(-1).toUpperCase();
+  
+  return `${cuerpo}-${dv}`;
+};
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -45,7 +90,21 @@ interface DeudorFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  deudor?: any | null; // Si existe, es modo edición - usando any para incluir datos completos
+  deudor?: {
+    id: string;
+    nombre: string;
+    rut: string;
+    email?: string;
+    telefono?: string;
+    monto_total?: number;
+    fecha_vencimiento_mas_reciente?: string;
+    estado_general?: string;
+    deudas?: Array<{
+      monto: number;
+      fecha_vencimiento: string;
+      estado: string;
+    }>;
+  } | null;
 }
 
 interface FormData {
@@ -98,7 +157,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
         telefono: deudor.telefono || '',
         monto: deudaMasReciente?.monto || deudor.monto_total || undefined,
         fecha_vencimiento: deudaMasReciente?.fecha_vencimiento || deudor.fecha_vencimiento_mas_reciente || '',
-        estado_deuda: deudaMasReciente?.estado || deudor.estado_general || 'nueva'
+        estado_deuda: (deudaMasReciente?.estado || deudor.estado_general || 'nueva') as 'nueva' | 'pendiente' | 'pagado'
       });
     } else if (isOpen) {
       // Resetear formulario para modo agregar
