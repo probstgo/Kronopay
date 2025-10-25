@@ -62,14 +62,24 @@ export default function DeudoresPage() {
   return (
     <Protected>
       <div className="container mx-auto px-4 py-8">
-        <DeudoresTable
-          onAgregarDeudor={handleAgregarDeudor}
-          onEditarDeudor={handleEditarDeudor}
-          onEliminarDeudor={handleEliminarDeudor}
-          onEnviarRecordatorio={handleEnviarRecordatorio}
-          onImportarCSV={handleImportarCSV}
-          onExportarDatos={handleExportarDatos}
-        />
+        <div className="space-y-6">
+          {/* Componente de filtros */}
+          <FiltrosDeudores
+            onFiltrosCambiados={handleFiltrosCambiados}
+            onLimpiarFiltros={handleLimpiarFiltros}
+          />
+          
+          {/* Tabla de deudores */}
+          <DeudoresTable
+            filtros={filtros}
+            onAgregarDeudor={handleAgregarDeudor}
+            onEditarDeudor={handleEditarDeudor}
+            onEliminarDeudor={handleEliminarDeudor}
+            onEnviarRecordatorio={handleEnviarRecordatorio}
+            onImportarCSV={handleImportarCSV}
+            onExportarDatos={handleExportarDatos}
+          />
+        </div>
       </div>
     </Protected>
   );

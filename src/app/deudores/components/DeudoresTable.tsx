@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Table,
@@ -13,31 +12,22 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { 
-  Search, 
   Plus, 
   Download, 
   Upload, 
   Edit, 
   Trash2, 
   Mail, 
-  Phone,
-  MoreHorizontal 
+  Phone
 } from 'lucide-react';
 import { Deudor, Deuda, Contacto, formatearRUT, formatearTelefono, calcularDiasVencidos, formatearMonto } from '@/lib/database';
 import { toast } from 'sonner';
 import { EstadoBadge } from './EstadoBadge';
-import { SelectorEstado } from './SelectorEstado';
 import { DeudorForm } from './DeudorForm';
 import { ConfirmarEliminacion } from './ConfirmarEliminacion';
 import { ImportCSVModal } from './ImportCSVModal';
+import { FiltrosAplicados } from './FiltrosDeudores';
 import { supabase } from '@/lib/supabase';
 
 // Tipos para la vista combinada
@@ -57,6 +47,7 @@ interface DeudorConDatos {
 }
 
 interface DeudoresTableProps {
+  filtros: FiltrosAplicados;
   onAgregarDeudor?: () => void;
   onEditarDeudor?: (deudor: Deudor) => void;
   onEliminarDeudor?: (deudor: Deudor) => void;
@@ -66,6 +57,7 @@ interface DeudoresTableProps {
 }
 
 export function DeudoresTable({
+  filtros,
   onAgregarDeudor,
   onEditarDeudor,
   onEliminarDeudor,
@@ -75,10 +67,8 @@ export function DeudoresTable({
 }: DeudoresTableProps) {
   const [deudores, setDeudores] = useState<DeudorConDatos[]>([]);
   const [filtrados, setFiltrados] = useState<DeudorConDatos[]>([]);
-  const [busqueda, setBusqueda] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState<string>('todos');
   const [paginaActual, setPaginaActual] = useState(1);
-  const [elementosPorPagina, setElementosPorPagina] = useState(10);
+  const [elementosPorPagina] = useState(10);
   const [isLoading, setIsLoading] = useState(true);
   
   // Estados para el modal de formulario
@@ -103,22 +93,54 @@ export function DeudoresTable({
     let resultado = deudores;
 
     // Filtro por búsqueda
-    if (busqueda) {
+    if (filtros.busqueda) {
       resultado = resultado.filter(deudor =>
-        deudor.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-        deudor.rut?.toLowerCase().includes(busqueda.toLowerCase()) ||
-        deudor.email?.toLowerCase().includes(busqueda.toLowerCase())
+        deudor.nombre.toLowerCase().includes(filtros.busqueda.toLowerCase()) ||
+        deudor.rut?.toLowerCase().includes(filtros.busqueda.toLowerCase()) ||
+        deudor.email?.toLowerCase().includes(filtros.busqueda.toLowerCase())
       );
     }
 
     // Filtro por estado
-    if (filtroEstado !== 'todos') {
-      resultado = resultado.filter(deudor => deudor.estado_general === filtroEstado);
+    if (filtros.estado !== 'todos') {
+      resultado = resultado.filter(deudor => deudor.estado_general === filtros.estado);
+    }
+
+    // Filtro por rango de montos
+    if (filtros.rangoMonto.min !== null) {
+      resultado = resultado.filter(deudor => 
+        deudor.monto_total !== undefined && deudor.monto_total >= filtros.rangoMonto.min!
+      );
+    }
+    if (filtros.rangoMonto.max !== null) {
+      resultado = resultado.filter(deudor => 
+        deudor.monto_total !== undefined && deudor.monto_total <= filtros.rangoMonto.max!
+      );
+    }
+
+    // Filtro por rango de fechas
+    if (filtros.rangoFechas.desde) {
+      resultado = resultado.filter(deudor => 
+        deudor.created_at >= filtros.rangoFechas.desde
+      );
+    }
+    if (filtros.rangoFechas.hasta) {
+      resultado = resultado.filter(deudor => 
+        deudor.created_at <= filtros.rangoFechas.hasta
+      );
+    }
+
+    // Filtro por contacto
+    if (filtros.tieneContacto !== null) {
+      resultado = resultado.filter(deudor => {
+        const tieneContacto = deudor.contactos && deudor.contactos.length > 0;
+        return filtros.tieneContacto ? tieneContacto : !tieneContacto;
+      });
     }
 
     setFiltrados(resultado);
     setPaginaActual(1);
-  }, [deudores, busqueda, filtroEstado]);
+  }, [deudores, filtros]);
 
   const cargarDeudores = async () => {
     try {
@@ -200,13 +222,6 @@ export function DeudoresTable({
   const fin = inicio + elementosPorPagina;
   const deudoresPagina = filtrados.slice(inicio, fin);
 
-  const handleCambioEstado = (deudorId: string, nuevoEstado: string) => {
-    setDeudores(prev => prev.map(deudor => 
-      deudor.id === deudorId 
-        ? { ...deudor, estado_general: nuevoEstado }
-        : deudor
-    ));
-  };
 
   const recargarDatos = () => {
     cargarDeudores();
@@ -340,53 +355,6 @@ export function DeudoresTable({
         </div>
       </div>
 
-      {/* Filtros y búsqueda */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros y Búsqueda</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Buscar por nombre, RUT o email..."
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="w-full sm:w-48">
-              <Select value={filtroEstado} onValueChange={setFiltroEstado}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Filtrar por estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos los estados</SelectItem>
-                  <SelectItem value="sin_deudas">Sin deudas</SelectItem>
-                  <SelectItem value="pendiente">Pendiente</SelectItem>
-                  <SelectItem value="vencida">Vencida</SelectItem>
-                  <SelectItem value="pagada">Pagada</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="w-full sm:w-32">
-              <Select value={elementosPorPagina.toString()} onValueChange={(value) => setElementosPorPagina(Number(value))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10 por página</SelectItem>
-                  <SelectItem value="30">30 por página</SelectItem>
-                  <SelectItem value="50">50 por página</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Tabla de deudores */}
       <Card>
