@@ -333,29 +333,6 @@ export function DeudoresTable({
 
   return (
     <div className="space-y-6">
-      {/* Header con botones de acción */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold">Gestión de Deudores</h2>
-          <p className="text-gray-500">Administra tu lista de deudores</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={handleAgregarDeudor} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            Agregar Deudor
-          </Button>
-          <Button variant="outline" onClick={handleImportarCSV}>
-            <Upload className="h-4 w-4 mr-2" />
-            Importar CSV
-          </Button>
-          <Button variant="outline" onClick={onExportarDatos}>
-            <Download className="h-4 w-4 mr-2" />
-            Exportar
-          </Button>
-        </div>
-      </div>
-
-
       {/* Tabla de deudores */}
       <Card>
         <CardContent className="p-0">
