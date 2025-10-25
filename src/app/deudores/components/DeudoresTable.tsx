@@ -148,9 +148,11 @@ export function DeudoresTable({
             .select('*')
             .eq('deudor_id', deudor.id);
 
-          // Encontrar email y teléfono preferidos
-          const emailPreferido = contactosData?.find(c => c.tipo_contacto === 'email' && c.preferido);
-          const telefonoPreferido = contactosData?.find(c => c.tipo_contacto === 'telefono' && c.preferido);
+          // Encontrar email y teléfono (preferidos o cualquier disponible)
+          const emailPreferido = contactosData?.find(c => c.tipo_contacto === 'email' && c.preferido) || 
+                                 contactosData?.find(c => c.tipo_contacto === 'email');
+          const telefonoPreferido = contactosData?.find(c => c.tipo_contacto === 'telefono' && c.preferido) || 
+                                   contactosData?.find(c => c.tipo_contacto === 'telefono');
 
           // Calcular monto total y fecha de vencimiento más reciente
           const montoTotal = deudasData?.reduce((sum, deuda) => sum + deuda.monto, 0) || 0;
@@ -228,6 +230,9 @@ export function DeudoresTable({
   const handleFormClose = () => {
     setIsFormOpen(false);
     setDeudorEditando(null);
+    // Asegurar que otros modales estén cerrados
+    setIsDeleteOpen(false);
+    setIsImportOpen(false);
   };
 
   // Funciones para manejar la eliminación
@@ -274,6 +279,9 @@ export function DeudoresTable({
     setIsDeleteOpen(false);
     setDeudorEliminando(null);
     setIsDeleting(false);
+    // Asegurar que otros modales estén cerrados
+    setIsFormOpen(false);
+    setIsImportOpen(false);
   };
 
   // Funciones para manejar la importación CSV
@@ -288,6 +296,9 @@ export function DeudoresTable({
 
   const handleImportClose = () => {
     setIsImportOpen(false);
+    // Asegurar que otros modales estén cerrados
+    setIsFormOpen(false);
+    setIsDeleteOpen(false);
   };
 
   if (isLoading) {

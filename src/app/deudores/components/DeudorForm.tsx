@@ -45,7 +45,7 @@ interface DeudorFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  deudor?: Deudor | null; // Si existe, es modo edición
+  deudor?: any | null; // Si existe, es modo edición - usando any para incluir datos completos
 }
 
 interface FormData {
@@ -54,8 +54,6 @@ interface FormData {
   // Campos de contacto
   email?: string;
   telefono?: string;
-  sms?: string;
-  whatsapp?: string;
   // Campos de deuda
   monto?: number;
   fecha_vencimiento?: string;
@@ -67,8 +65,6 @@ interface FormErrors {
   rut?: string;
   email?: string;
   telefono?: string;
-  sms?: string;
-  whatsapp?: string;
   monto?: string;
   fecha_vencimiento?: string;
 }
@@ -79,8 +75,6 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
     rut: '',
     email: '',
     telefono: '',
-    sms: '',
-    whatsapp: '',
     monto: undefined,
     fecha_vencimiento: '',
     estado_deuda: 'nueva'
@@ -92,16 +86,19 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
   // Precargar datos si es modo edición
   useEffect(() => {
     if (deudor && isOpen) {
+      // Obtener datos de deuda más reciente si existe
+      const deudaMasReciente = deudor.deudas && deudor.deudas.length > 0 
+        ? deudor.deudas[0] // Asumimos que las deudas están ordenadas por fecha
+        : null;
+
       setFormData({
         nombre: deudor.nombre || '',
         rut: deudor.rut || '',
-        email: '',
-        telefono: '',
-        sms: '',
-        whatsapp: '',
-        monto: undefined,
-        fecha_vencimiento: '',
-        estado_deuda: 'nueva'
+        email: deudor.email || '',
+        telefono: deudor.telefono || '',
+        monto: deudaMasReciente?.monto || deudor.monto_total || undefined,
+        fecha_vencimiento: deudaMasReciente?.fecha_vencimiento || deudor.fecha_vencimiento_mas_reciente || '',
+        estado_deuda: deudaMasReciente?.estado || deudor.estado_general || 'nueva'
       });
     } else if (isOpen) {
       // Resetear formulario para modo agregar
@@ -110,8 +107,6 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
         rut: '',
         email: '',
         telefono: '',
-        sms: '',
-        whatsapp: '',
         monto: undefined,
         fecha_vencimiento: '',
         estado_deuda: 'nueva'
@@ -145,8 +140,6 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
         return undefined;
 
       case 'telefono':
-      case 'sms':
-      case 'whatsapp':
         if (value && !validarTelefono(value.toString())) return 'Teléfono inválido';
         return undefined;
 
@@ -183,7 +176,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
 
     // Validar campos opcionales
     const optionalFields: (keyof FormData)[] = [
-      'rut', 'email', 'telefono', 'sms', 'whatsapp', 
+      'rut', 'email', 'telefono', 
       'monto', 'fecha_vencimiento'
     ];
     optionalFields.forEach(field => {
@@ -217,8 +210,8 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
       const rutNormalizado = formData.rut.trim() ? normalizarRUT(formData.rut.trim()) : undefined;
 
       if (deudor) {
-        // Modo edición - solo actualizar datos básicos del deudor
-        const { error } = await supabase
+        // Modo edición - actualizar datos básicos del deudor
+        const { error: deudorError } = await supabase
           .from('deudores')
           .update({
             nombre: formData.nombre.trim(),
@@ -226,7 +219,83 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
           })
           .eq('id', deudor.id);
         
-        if (error) throw error;
+        if (deudorError) throw deudorError;
+
+        // Actualizar contactos si se proporcionaron
+        if (formData.email || formData.telefono) {
+          // Eliminar contactos existentes
+          await supabase
+            .from('contactos')
+            .delete()
+            .eq('deudor_id', deudor.id);
+
+          // Crear nuevos contactos
+          const contactos = [];
+          if (formData.email) contactos.push({
+            usuario_id: user.id,
+            deudor_id: deudor.id,
+            rut: rutNormalizado || deudor.rut || '',
+            tipo_contacto: 'email',
+            valor: formData.email.trim(),
+            preferido: true
+          });
+          if (formData.telefono) contactos.push({
+            usuario_id: user.id,
+            deudor_id: deudor.id,
+            rut: rutNormalizado || deudor.rut || '',
+            tipo_contacto: 'telefono',
+            valor: formData.telefono.trim(),
+            preferido: !formData.email
+          });
+
+          if (contactos.length > 0) {
+            const { error: contactosError } = await supabase
+              .from('contactos')
+              .insert(contactos);
+            
+            if (contactosError) throw contactosError;
+          }
+        }
+
+        // Actualizar deuda si se proporcionó
+        if (formData.monto && formData.fecha_vencimiento) {
+          // Buscar deuda existente o crear nueva
+          const { data: deudaExistente } = await supabase
+            .from('deudas')
+            .select('id')
+            .eq('deudor_id', deudor.id)
+            .limit(1)
+            .single();
+
+          if (deudaExistente) {
+            // Actualizar deuda existente
+            const { error: deudaError } = await supabase
+              .from('deudas')
+              .update({
+                monto: formData.monto,
+                fecha_vencimiento: formData.fecha_vencimiento,
+                estado: formData.estado_deuda || 'nueva'
+              })
+              .eq('id', deudaExistente.id);
+            
+            if (deudaError) throw deudaError;
+          } else {
+            // Crear nueva deuda
+            const { error: deudaError } = await supabase
+              .from('deudas')
+              .insert({
+                usuario_id: user.id,
+                deudor_id: deudor.id,
+                rut: rutNormalizado || deudor.rut || '',
+                monto: formData.monto,
+                fecha_vencimiento: formData.fecha_vencimiento,
+                estado: formData.estado_deuda || 'nueva'
+              });
+            
+            if (deudaError) throw deudaError;
+          }
+        }
+
         toast.success('Deudor actualizado exitosamente');
       } else {
         // Modo agregar - crear deudor, contactos y deuda
@@ -259,22 +328,6 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
           tipo_contacto: 'telefono',
           valor: formData.telefono.trim(),
           preferido: !formData.email
-        });
-        if (formData.sms) contactos.push({
-          usuario_id: user.id,
-          deudor_id: deudorData.id,
-          rut: rutNormalizado || '',
-          tipo_contacto: 'sms',
-          valor: formData.sms.trim(),
-          preferido: false
-        });
-        if (formData.whatsapp) contactos.push({
-          usuario_id: user.id,
-          deudor_id: deudorData.id,
-          rut: rutNormalizado || '',
-          tipo_contacto: 'whatsapp',
-          valor: formData.whatsapp.trim(),
-          preferido: false
         });
 
         if (contactos.length > 0) {
@@ -437,47 +490,6 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
                 )}
               </div>
 
-              {/* SMS */}
-              <div>
-                <Label htmlFor="sms" className="flex items-center gap-1">
-                  <Phone className="h-4 w-4" />
-                  SMS
-                </Label>
-                <Input
-                  id="sms"
-                  value={formData.sms}
-                  onChange={(e) => handleInputChange('sms', e.target.value)}
-                  placeholder="+56 9 1234 5678"
-                  className={errors.sms ? 'border-red-500' : ''}
-                />
-                {errors.sms && (
-                  <div className="flex items-center gap-1 mt-1 text-sm text-red-600">
-                    <AlertCircle className="h-3 w-3" />
-                    {errors.sms}
-                  </div>
-                )}
-              </div>
-
-              {/* WhatsApp */}
-              <div>
-                <Label htmlFor="whatsapp" className="flex items-center gap-1">
-                  <Phone className="h-4 w-4" />
-                  WhatsApp
-                </Label>
-                <Input
-                  id="whatsapp"
-                  value={formData.whatsapp}
-                  onChange={(e) => handleInputChange('whatsapp', e.target.value)}
-                  placeholder="+56 9 1234 5678"
-                  className={errors.whatsapp ? 'border-red-500' : ''}
-                />
-                {errors.whatsapp && (
-                  <div className="flex items-center gap-1 mt-1 text-sm text-red-600">
-                    <AlertCircle className="h-3 w-3" />
-                    {errors.whatsapp}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
 

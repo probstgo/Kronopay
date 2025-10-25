@@ -43,6 +43,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Efecto para manejar cambios en la autenticación
   useEffect(() => {
+    // Solo ejecutar en el cliente para evitar problemas de hidratación
+    if (typeof window === 'undefined') return
+
     // Obtener la sesión inicial
     const getInitialSession = async () => {
       try {
@@ -90,7 +93,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Limpiar suscripción al desmontar
     return () => subscription.unsubscribe()
-  }, [])
+  }, [initialized])
 
   // Función para registro
   const signUp = async (email: string, password: string) => {
@@ -144,8 +147,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const resetPassword = async (email: string) => {
     try {
       setLoading(true)
+      // Usar typeof window para evitar problemas de hidratación
+      const origin = typeof window !== 'undefined' ? window.location.origin : ''
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+        redirectTo: `${origin}/auth/reset-password`,
       })
       return { error }
     } catch (error) {
