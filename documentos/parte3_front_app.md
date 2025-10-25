@@ -330,7 +330,7 @@ export const ESTADOS_DEUDA_CONFIG = {
 src/
 ├── app/                          # Rutas de la app (Next.js App Router)
 │   ├── layout.tsx                # Layout raíz ✅
-│   ├── page.tsx                  # Redirige a /dashboard ⚠️ MODIFICAR
+│   ├── page.tsx                  # ✅ Ya existe (landing page)
 │   │
 │   ├── (auth)/                   # Grupo de rutas de autenticación
 │   │   ├── login/
