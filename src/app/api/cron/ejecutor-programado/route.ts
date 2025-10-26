@@ -151,7 +151,7 @@ async function ejecutarLlamada(prog: ProgramaEjecucion): Promise<ResultadoEjecuc
   // Implementar con ElevenLabs (ya configurado)
   const { startOutboundCall } = await import('../../../../lib/elevenlabs')
   
-  const prompt = resolverPlantilla(prog.plantillas[0].contenido, prog.vars)
+  // const prompt = resolverPlantilla(prog.plantillas[0].contenido, prog.vars)
   
   const resultado = await startOutboundCall({
     agentId: prog.agente_id,
@@ -165,12 +165,12 @@ async function ejecutarLlamada(prog: ProgramaEjecucion): Promise<ResultadoEjecuc
   }
 }
 
-async function enviarSMS(prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
+async function enviarSMS(_prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
   // TODO: Implementar con Twilio
   return { exito: false, error: 'No implementado' }
 }
 
-async function enviarWhatsApp(prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
+async function enviarWhatsApp(_prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
   // TODO: Implementar con Twilio WhatsApp
   return { exito: false, error: 'No implementado' }
 }

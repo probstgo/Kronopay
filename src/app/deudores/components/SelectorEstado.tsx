@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -38,7 +37,6 @@ interface SelectorEstadoProps {
 }
 
 export function SelectorEstado({ 
-  deudorId, 
   estadoActual, 
   onEstadoCambiado,
   disabled = false 

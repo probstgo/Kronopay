@@ -139,7 +139,7 @@ export function validateCSVStructure(text: string): { isValid: boolean; errors: 
 export function mapCSVColumns(headers: string[]): Record<string, string> {
   const mapping: Record<string, string> = {};
   
-  headers.forEach((header, index) => {
+  headers.forEach((header, _index) => {
     const normalizedHeader = header.toLowerCase().trim();
     
     if (normalizedHeader.includes('nombre') || normalizedHeader.includes('name')) {

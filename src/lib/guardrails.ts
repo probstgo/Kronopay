@@ -8,7 +8,7 @@ const supabase = createClient(
 export async function validarGuardrails(
   usuario_id: string,
   deudor_id: string,
-  tipo_accion: string
+  _tipo_accion: string
 ): Promise<{ permitido: boolean; razon?: string }> {
   
   // 1. Obtener guardrails globales

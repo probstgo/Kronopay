@@ -31,7 +31,7 @@ export default function LoginPage() {
       } else {
         router.push('/dashboard')
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Ocurrió un error inesperado')
     } finally {
       setIsLoading(false)

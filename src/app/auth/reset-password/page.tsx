@@ -33,7 +33,7 @@ export default function ResetPasswordPage() {
         } else {
           setError('Enlace inválido o expirado. Por favor solicita un nuevo enlace.')
         }
-      } catch (error) {
+      } catch (_error) {
         setError('Error al verificar la sesión')
       }
     }
@@ -104,7 +104,7 @@ export default function ResetPasswordPage() {
           router.push('/login')
         }, 2000)
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Ocurrió un error inesperado')
     } finally {
       setIsLoading(false)

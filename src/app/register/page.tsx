@@ -22,7 +22,6 @@ export default function RegisterPage() {
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
   
   const { signUp } = useAuth()
-  const router = useRouter()
 
   const validateForm = () => {
     const errors: {[key: string]: string} = {}
@@ -87,7 +86,7 @@ export default function RegisterPage() {
         // Limpiar formulario
         setFormData({ email: '', password: '', confirmPassword: '' })
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Ocurrió un error inesperado')
     } finally {
       setIsLoading(false)

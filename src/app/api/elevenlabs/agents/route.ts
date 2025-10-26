@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const agents = await listAgents();
     return NextResponse.json(agents);
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Error obteniendo agentes' },
       { status: 500 }

@@ -45,12 +45,7 @@ interface DeudorConDatos {
 
 interface DeudoresTableProps {
   filtros: FiltrosAplicados;
-  onAgregarDeudor?: () => void;
-  onEditarDeudor?: (deudor: Deudor) => void;
-  onEliminarDeudor?: (deudor: Deudor) => void;
   onEnviarRecordatorio?: (deudor: Deudor) => void;
-  onImportarCSV?: () => void;
-  onExportarDatos?: () => void;
 }
 
 export const DeudoresTable = forwardRef<{
@@ -60,12 +55,7 @@ export const DeudoresTable = forwardRef<{
   handleImportarCSV: () => void;
 }, DeudoresTableProps>(({
   filtros,
-  onAgregarDeudor,
-  onEditarDeudor,
-  onEliminarDeudor,
   onEnviarRecordatorio,
-  onImportarCSV,
-  onExportarDatos
 }, ref) => {
   const [deudores, setDeudores] = useState<DeudorConDatos[]>([]);
   const [filtrados, setFiltrados] = useState<DeudorConDatos[]>([]);

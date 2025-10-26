@@ -9,7 +9,7 @@ export async function GET(
     const { agentId } = await ctx.params;
     const agent = await getAgent(agentId);
     return NextResponse.json(agent);
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Error obteniendo agente' },
       { status: 500 }

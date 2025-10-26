@@ -23,7 +23,7 @@ import {
   FileDown
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { parseCSVLine, downloadCSV, readCSVFile, validateCSVStructure, mapCSVColumns, parseAndValidateCSV, CSVParseResult } from '@/lib/csvUtils';
+import { parseCSVLine, downloadCSV, readCSVFile, mapCSVColumns, parseAndValidateCSV, CSVParseResult } from '@/lib/csvUtils';
 import { supabase } from '@/lib/supabase';
 import { parsearMontoCLP, validarMontoCLP } from '@/lib/formateo';
 
@@ -88,110 +88,110 @@ export function ImportCSVModal({ isOpen, onClose, onSuccess }: ImportCSVModalPro
     }
   };
 
-  const parseCSV = (text: string): CSVData[] => {
-    const lines = text.split('\n').filter(line => line.trim());
-    if (lines.length < 2) return [];
+  // const parseCSV = (text: string): CSVData[] => {
+  //   const lines = text.split('\n').filter(line => line.trim());
+  //   if (lines.length < 2) return [];
 
-    const headers = parseCSVLine(lines[0]);
-    const columnMapping = mapCSVColumns(headers);
-    const data: CSVData[] = [];
+  //   const headers = parseCSVLine(lines[0]);
+  //   const columnMapping = mapCSVColumns(headers);
+  //   const data: CSVData[] = [];
 
-    for (let i = 1; i < lines.length; i++) {
-      const values = parseCSVLine(lines[i]);
-      const row: Partial<CSVData> = {};
+  //   for (let i = 1; i < lines.length; i++) {
+  //     const values = parseCSVLine(lines[i]);
+  //     const row: Partial<CSVData> = {};
 
-      // Mapear datos usando el mapeo de columnas
-      Object.entries(columnMapping).forEach(([field, headerName]) => {
-        const headerIndex = headers.findIndex(h => h === headerName);
-        if (headerIndex !== -1) {
-          const value = values[headerIndex] || '';
-          
-          switch (field) {
-            case 'nombre':
-              row.nombre = value;
-              break;
-            case 'rut':
-              row.rut = value;
-              break;
-            case 'email':
-              row.email = value;
-              break;
-            case 'telefono':
-              row.telefono = value;
-              break;
-            case 'monto_deuda':
-              // Intentar parsear como monto CLP primero, luego como número normal
-              if (validarMontoCLP(value)) {
-                row.monto_deuda = parsearMontoCLP(value);
-              } else {
-                row.monto_deuda = parseFloat(value) || 0;
-              }
-              break;
-            case 'fecha_vencimiento':
-              row.fecha_vencimiento = value;
-              break;
-          }
-        }
-      });
+  //     // Mapear datos usando el mapeo de columnas
+  //     Object.entries(columnMapping).forEach(([field, headerName]) => {
+  //       const headerIndex = headers.findIndex(h => h === headerName);
+  //       if (headerIndex !== -1) {
+  //         const value = values[headerIndex] || '';
+  //         
+  //         switch (field) {
+  //           case 'nombre':
+  //             row.nombre = value;
+  //             break;
+  //           case 'rut':
+  //             row.rut = value;
+  //             break;
+  //           case 'email':
+  //             row.email = value;
+  //             break;
+  //           case 'telefono':
+  //             row.telefono = value;
+  //             break;
+  //           case 'monto_deuda':
+  //             // Intentar parsear como monto CLP primero, luego como número normal
+  //             if (validarMontoCLP(value)) {
+  //               row.monto_deuda = parsearMontoCLP(value);
+  //             } else {
+  //               row.monto_deuda = parseFloat(value) || 0;
+  //             }
+  //             break;
+  //           case 'fecha_vencimiento':
+  //             row.fecha_vencimiento = value;
+  //             break;
+  //         }
+  //       }
+  //     });
 
-      // Validar que tenga al menos nombre y monto y construir objeto tipado
-      if (row.nombre && (row.monto_deuda ?? 0) > 0) {
-        const typedRow: CSVData = {
-          nombre: row.nombre,
-          rut: row.rut,
-          email: row.email,
-          telefono: row.telefono,
-          monto_deuda: row.monto_deuda!,
-          fecha_vencimiento: row.fecha_vencimiento,
-          estado: row.estado,
-        };
-        data.push(typedRow);
-      }
-    }
+  //     // Validar que tenga al menos nombre y monto y construir objeto tipado
+  //     if (row.nombre && (row.monto_deuda ?? 0) > 0) {
+  //       const typedRow: CSVData = {
+  //         nombre: row.nombre,
+  //         rut: row.rut,
+  //         email: row.email,
+  //         telefono: row.telefono,
+  //         monto_deuda: row.monto_deuda!,
+  //         fecha_vencimiento: row.fecha_vencimiento,
+  //         estado: row.estado,
+  //       };
+  //       data.push(typedRow);
+  //     }
+  //   }
 
-    return data;
-  };
+  //   return data;
+  // };
 
-  const validateCSVData = (data: CSVData[]): ValidationError[] => {
-    const errors: ValidationError[] = [];
-    
-    data.forEach((row, index) => {
-      const rowNumber = index + 2; // +2 porque empezamos desde la fila 2 (después del header)
-      
-      if (!row.nombre || row.nombre.trim() === '') {
-        errors.push({
-          row: rowNumber,
-          field: 'nombre',
-          message: 'El nombre es obligatorio'
-        });
-      }
+  // const validateCSVData = (data: CSVData[]): ValidationError[] => {
+  //   const errors: ValidationError[] = [];
+  //   
+  //   data.forEach((row, index) => {
+  //     const rowNumber = index + 2; // +2 porque empezamos desde la fila 2 (después del header)
+  //     
+  //     if (!row.nombre || row.nombre.trim() === '') {
+  //       errors.push({
+  //         row: rowNumber,
+  //         field: 'nombre',
+  //         message: 'El nombre es obligatorio'
+  //       });
+  //     }
 
-      if (row.monto_deuda <= 0) {
-        errors.push({
-          row: rowNumber,
-          field: 'monto_deuda',
-          message: 'El monto debe ser mayor a 0'
-        });
-      }
+  //     if (row.monto_deuda <= 0) {
+  //       errors.push({
+  //         row: rowNumber,
+  //         field: 'monto_deuda',
+  //         message: 'El monto debe ser mayor a 0'
+  //       });
+  //     }
 
-      if (row.rut && row.rut.trim() !== '') {
-        // Aquí podrías agregar validación de RUT si quieres
-      }
+  //     if (row.rut && row.rut.trim() !== '') {
+  //       // Aquí podrías agregar validación de RUT si quieres
+  //     }
 
-      if (row.email && row.email.trim() !== '') {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(row.email)) {
-          errors.push({
-            row: rowNumber,
-            field: 'email',
-            message: 'Email inválido'
-          });
-        }
-      }
-    });
+  //     if (row.email && row.email.trim() !== '') {
+  //       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  //       if (!emailRegex.test(row.email)) {
+  //         errors.push({
+  //           row: rowNumber,
+  //           field: 'email',
+  //           message: 'Email inválido'
+  //         });
+  //       }
+  //     }
+  //   });
 
-    return errors;
-  };
+  //   return errors;
+  // };
 
   const handleProcessFile = async () => {
     if (!selectedFile) return;

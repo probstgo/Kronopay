@@ -19,7 +19,7 @@ import {
   DollarSign,
   User
 } from 'lucide-react';
-import { parsearMontoCLP, formatearMontoCLP, validarMontoCLP, montoParaInput } from '@/lib/formateo';
+import { parsearMontoCLP, validarMontoCLP, montoParaInput } from '@/lib/formateo';
 // Configuración de estados para la nueva estructura
 const ESTADOS_CONFIG = {
   sin_deudas: {

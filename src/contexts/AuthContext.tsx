@@ -93,7 +93,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Limpiar suscripción al desmontar
     return () => subscription.unsubscribe()
-  }, [initialized])
+  }, [initialized, user?.email])
 
   // Función para registro
   const signUp = async (email: string, password: string) => {

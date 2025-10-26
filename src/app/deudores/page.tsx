@@ -35,8 +35,8 @@ export default function DeudoresPage() {
   // Referencias para conectar con DeudoresTable
   const deudoresTableRef = useRef<{
     handleAgregarDeudor: () => void;
-    handleEditarDeudor: (deudor: any) => void;
-    handleEliminarDeudor: (deudor: any) => void;
+    handleEditarDeudor: (deudor: Deudor) => void;
+    handleEliminarDeudor: (deudor: Deudor) => void;
     handleImportarCSV: () => void;
   } | null>(null);
 

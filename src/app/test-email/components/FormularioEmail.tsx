@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Deudor, formatearMonto } from '@/lib/database'
+import { formatearMonto } from '@/lib/database'
 import { Send, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 
 // Tipo para deudor con datos combinados

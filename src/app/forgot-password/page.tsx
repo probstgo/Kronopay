@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
         setEmailSent(true)
         setEmail('')
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Ocurrió un error inesperado')
     } finally {
       setIsLoading(false)
@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
       } else {
         setSuccess('Se ha reenviado el email con las instrucciones.')
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Ocurrió un error inesperado')
     } finally {
       setIsLoading(false)

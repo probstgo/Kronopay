@@ -27,7 +27,7 @@ import {
   MessageSquare,
   AlertTriangle 
 } from 'lucide-react';
-import { Deudor, Contacto } from '@/lib/database';
+import { Deudor } from '@/lib/database';
 import { toast } from 'sonner';
 
 // Tipo para deudor con datos combinados

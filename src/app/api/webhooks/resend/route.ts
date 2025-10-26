@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import crypto from 'crypto'
+// import crypto from 'crypto'
 import { verificarRateLimit, obtenerIP } from '@/lib/rate-limiter'
 import { validarGuardrails } from '@/lib/guardrails'
 import { obtenerConfigReintento, calcularProximoIntento } from '@/lib/reintentos'
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.text()
-    const signature = request.headers.get('svix-signature')
+    // const signature = request.headers.get('svix-signature')
     
     // Verificar firma de Resend/Svix
     // const isValid = verificarFirma(body, signature)
