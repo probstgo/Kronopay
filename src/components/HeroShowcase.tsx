@@ -97,13 +97,21 @@ export default function HeroShowcase() {
   const reduced = usePrefersReducedMotion();
   const [activeTab, setActiveTab] = useState<'kronopay' | 'tradicional'>('kronopay');
   
-  // Datos para Kronopay
-  const kpPaymentsSeries = useMemo(() => generateSeries(32, 35, 'up', 0.8), []);
-  const kpCostsSeries = useMemo(() => generateSeries(32, 70, 'down', 0.8), []);
+  // Estados para las series de datos
+  const [kpPaymentsSeries, setKpPaymentsSeries] = useState<number[]>([]);
+  const [kpCostsSeries, setKpCostsSeries] = useState<number[]>([]);
+  const [tradPaymentsSeries, setTradPaymentsSeries] = useState<number[]>([]);
+  const [tradCostsSeries, setTradCostsSeries] = useState<number[]>([]);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   
-  // Datos para cobranza tradicional
-  const tradPaymentsSeries = useMemo(() => generateSeries(32, 35, 'up', 0.3), []);
-  const tradCostsSeries = useMemo(() => generateSeries(32, 70, 'down', 0.3), []);
+  // Generar datos solo en el cliente
+  useEffect(() => {
+    setKpPaymentsSeries(generateSeries(32, 35, 'up', 0.8));
+    setKpCostsSeries(generateSeries(32, 70, 'down', 0.8));
+    setTradPaymentsSeries(generateSeries(32, 35, 'up', 0.3));
+    setTradCostsSeries(generateSeries(32, 70, 'down', 0.3));
+    setIsDataLoaded(true);
+  }, []);
   
   // Referencias para animaciones
   const kpPaymentsRef = useRef<SVGPathElement | null>(null);
@@ -250,7 +258,7 @@ export default function HeroShowcase() {
               ))}
               
               {/* Kronopay data */}
-              {activeTab === 'kronopay' && (
+              {activeTab === 'kronopay' && isDataLoaded && (
                 <>
                   <path 
                     d={`${pathFromSeries(kpPaymentsSeries, 608, 232)} L 608 232 L 0 232 Z`} 
@@ -298,7 +306,7 @@ export default function HeroShowcase() {
               )}
               
               {/* Traditional data */}
-              {activeTab === 'tradicional' && (
+              {activeTab === 'tradicional' && isDataLoaded && (
                 <>
                   <path 
                     d={`${pathFromSeries(tradPaymentsSeries, 608, 232)} L 608 232 L 0 232 Z`} 

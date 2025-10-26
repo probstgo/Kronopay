@@ -98,68 +98,129 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 ```sql
 -- Normaliza RUT al formato 19090595-0
 -- Dígito verificador para RUT (módulo 11)
+-- CORREGIDO: Algoritmo de validación ahora funciona correctamente
 CREATE OR REPLACE FUNCTION rut_dv(num text) RETURNS text AS $$
-DECLARE s int := 0; m int := 2; i int; c int; ch char;
+DECLARE 
+  s int := 0; 
+  m int := 2; 
+  i int; 
+  c int;
 BEGIN
-  FOR i IN REVERSE 1..length(num) LOOP
-    ch := substr(num, i, 1);
-    s := s + (ascii(ch) - 48) * m;
+  -- Recorrer el RUT de derecha a izquierda
+  FOR i IN REVERSE length(num)..1 LOOP
+    s := s + (substring(num, i, 1)::int * m);
     m := CASE WHEN m = 7 THEN 2 ELSE m + 1 END;
   END LOOP;
+  
+  -- Calcular el dígito verificador
   c := 11 - (s % 11);
-  IF c = 11 THEN RETURN '0';
-  ELSIF c = 10 THEN RETURN 'k';
-  ELSE RETURN c::text;
+  
+  IF c = 11 THEN 
+    RETURN '0';
+  ELSIF c = 10 THEN 
+    RETURN 'k';
+  ELSE 
+    RETURN c::text;
   END IF;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
 
 CREATE OR REPLACE FUNCTION normalize_rut(rut text) RETURNS text AS $$
-DECLARE raw text; digit_part text; dv text; calculated_dv text;
+DECLARE 
+  raw text; 
+  digit_part text; 
+  dv text; 
+  calculated_dv text;
 BEGIN
+  -- Validaciones básicas
   IF rut IS NULL OR length(rut) > 20 THEN
     RAISE EXCEPTION 'RUT inválido o sospechoso: %', rut;
   END IF;
-  -- Permitir puntos y guiones; rechazar solo caracteres peligrosos
+  
+  -- Rechazar caracteres peligrosos
   IF rut ~ '[;''"]' THEN
     RAISE EXCEPTION 'RUT contiene caracteres peligrosos: %', rut;
   END IF;
+  
+  -- Limpiar el RUT (quitar puntos, mantener guión y K)
   raw := regexp_replace(lower(trim(rut)), '[^0-9kK-]', '', 'g');
+  
+  -- Separar cuerpo y dígito verificador
   IF position('-' in raw) > 0 THEN
     digit_part := split_part(raw, '-', 1);
     dv := lower(split_part(raw, '-', 2));
   ELSE
-    digit_part := regexp_replace(raw, '[^0-9]', '', 'g');
-    dv := NULL;
+    -- Si no tiene guión, tomar todo excepto el último carácter
+    IF length(raw) >= 8 THEN
+      digit_part := substring(raw, 1, length(raw) - 1);
+      dv := lower(substring(raw, length(raw), 1));
+    ELSE
+      digit_part := raw;
+      dv := NULL;
+    END IF;
   END IF;
-  IF digit_part !~ '^[0-9]+$' OR (dv IS NOT NULL AND dv !~ '^[0-9k]$') THEN
+  
+  -- Validar formato
+  IF digit_part !~ '^[0-9]+$' THEN
     RAISE EXCEPTION 'Formato de RUT inválido: %', rut;
   END IF;
-  calculated_dv := rut_dv(digit_part);
-  IF dv IS NOT NULL AND dv != calculated_dv THEN
-    RAISE EXCEPTION 'Dígito verificador inválido para RUT: % (esperado: %)', rut, calculated_dv;
+  
+  IF dv IS NOT NULL AND dv !~ '^[0-9k]$' THEN
+    RAISE EXCEPTION 'Dígito verificador inválido en formato: %', rut;
   END IF;
+  
+  -- Calcular el dígito verificador correcto
+  calculated_dv := rut_dv(digit_part);
+  
+  -- Validar si se proporcionó un DV
+  IF dv IS NOT NULL AND dv != calculated_dv THEN
+    RAISE EXCEPTION 'Dígito verificador inválido para RUT: % (esperado: %, recibido: %)', rut, calculated_dv, dv;
+  END IF;
+  
+  -- Retornar RUT normalizado
   RETURN digit_part || '-' || calculated_dv;
 END;
 $$ LANGUAGE plpgsql;
 
 -- Normaliza teléfono chileno al formato +569XXXXXXXX
+-- CORREGIDO: Regex de validación mejorado para evitar rechazar teléfonos válidos
 CREATE OR REPLACE FUNCTION normalize_phone(phone text) RETURNS text AS $$
-DECLARE clean_phone text;
+DECLARE 
+  clean_phone text;
 BEGIN
-  IF phone IS NULL OR length(phone) > 15 OR phone ~ '[;''"--]' THEN
-    RAISE EXCEPTION 'Teléfono inválido o sospechoso: %', phone;
+  -- Validación de entrada
+  IF phone IS NULL THEN
+    RAISE EXCEPTION 'Teléfono no puede ser NULL';
   END IF;
-  clean_phone := regexp_replace(trim(phone), '[^0-9+]', '');
+  
+  -- Rechazar caracteres peligrosos (inyección SQL)
+  -- CORREGIDO: eliminado el regex problemático [;''"--]
+  IF phone ~ '[;''"]' THEN
+    RAISE EXCEPTION 'Teléfono contiene caracteres peligrosos: %', phone;
+  END IF;
+  
+  -- Limpiar: quitar espacios y caracteres excepto números y +
+  clean_phone := regexp_replace(trim(phone), '[^0-9+]', '', 'g');
+  
+  -- Validar longitud después de limpiar
+  IF length(clean_phone) < 8 OR length(clean_phone) > 15 THEN
+    RAISE EXCEPTION 'Longitud de teléfono inválida: % (limpio: %)', phone, clean_phone;
+  END IF;
+  
+  -- Normalizar a formato chileno +569XXXXXXXX
   IF clean_phone ~ '^9[0-9]{8}$' THEN
+    -- Formato: 912345678 → +56912345678
     clean_phone := '+56' || clean_phone;
   ELSIF clean_phone ~ '^569[0-9]{8}$' THEN
+    -- Formato: 56912345678 → +56912345678
     clean_phone := '+' || clean_phone;
   ELSIF clean_phone ~ '^\+569[0-9]{8}$' THEN
-    -- ya está bien
+    -- Formato: +56912345678 → ya está bien
+    -- no hacer nada
   ELSE
-    RAISE EXCEPTION 'Formato de teléfono inválido: %', phone;
+    RAISE EXCEPTION 'Formato de teléfono inválido: % (esperado: +569XXXXXXXX)', phone;
   END IF;
+  
   RETURN clean_phone;
 END;
 $$ LANGUAGE plpgsql;

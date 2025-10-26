@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { DeudoresTable } from './components/DeudoresTable';
 import { FiltrosDeudores, FiltrosAplicados } from './components/FiltrosDeudores';
 import { HeaderDeudores } from './components/HeaderDeudores';
@@ -17,12 +17,12 @@ export default function DeudoresPage() {
     tieneContacto: null
   });
 
-  const handleFiltrosCambiados = (nuevosFiltros: FiltrosAplicados) => {
+  const handleFiltrosCambiados = useCallback((nuevosFiltros: FiltrosAplicados) => {
     setFiltros(nuevosFiltros);
     console.log('Filtros aplicados:', nuevosFiltros);
-  };
+  }, []);
 
-  const handleLimpiarFiltros = () => {
+  const handleLimpiarFiltros = useCallback(() => {
     setFiltros({
       busqueda: '',
       estado: 'todos',
@@ -30,19 +30,32 @@ export default function DeudoresPage() {
       rangoFechas: { desde: '', hasta: '' },
       tieneContacto: null
     });
-  };
+  }, []);
+
+  // Referencias para conectar con DeudoresTable
+  const deudoresTableRef = useRef<{
+    handleAgregarDeudor: () => void;
+    handleEditarDeudor: (deudor: any) => void;
+    handleEliminarDeudor: (deudor: any) => void;
+    handleImportarCSV: () => void;
+  } | null>(null);
 
   const handleAgregarDeudor = () => {
-    // La funcionalidad se maneja directamente en DeudoresTable
+    if (deudoresTableRef.current?.handleAgregarDeudor) {
+      deudoresTableRef.current.handleAgregarDeudor();
+    }
   };
 
   const handleEditarDeudor = (deudor: Deudor) => {
-    // La funcionalidad se maneja directamente en DeudoresTable
+    if (deudoresTableRef.current?.handleEditarDeudor) {
+      deudoresTableRef.current.handleEditarDeudor(deudor);
+    }
   };
 
   const handleEliminarDeudor = (deudor: Deudor) => {
-    toast.success(`Deudor ${deudor.nombre} eliminado exitosamente`);
-    // Aquí se confirmaría la eliminación y se recargarían los datos
+    if (deudoresTableRef.current?.handleEliminarDeudor) {
+      deudoresTableRef.current.handleEliminarDeudor(deudor);
+    }
   };
 
   const handleEnviarRecordatorio = (deudor: Deudor) => {
@@ -51,8 +64,9 @@ export default function DeudoresPage() {
   };
 
   const handleImportarCSV = () => {
-    toast.info('Funcionalidad de importar CSV - Próximamente');
-    // Aquí se abriría el modal de importar CSV
+    if (deudoresTableRef.current?.handleImportarCSV) {
+      deudoresTableRef.current.handleImportarCSV();
+    }
   };
 
   const handleExportarDatos = () => {
@@ -73,12 +87,14 @@ export default function DeudoresPage() {
           
           {/* 2. Filtros */}
           <FiltrosDeudores
+            filtros={filtros}
             onFiltrosCambiados={handleFiltrosCambiados}
             onLimpiarFiltros={handleLimpiarFiltros}
           />
           
           {/* 3. Tabla de deudores */}
           <DeudoresTable
+            ref={deudoresTableRef}
             filtros={filtros}
             onAgregarDeudor={handleAgregarDeudor}
             onEditarDeudor={handleEditarDeudor}

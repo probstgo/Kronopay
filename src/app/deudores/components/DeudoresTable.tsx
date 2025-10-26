@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef, useImperativeHandle, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,9 +13,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { 
-  Plus, 
-  Download, 
-  Upload, 
   Edit, 
   Trash2, 
   Mail, 
@@ -56,7 +53,12 @@ interface DeudoresTableProps {
   onExportarDatos?: () => void;
 }
 
-export function DeudoresTable({
+export const DeudoresTable = forwardRef<{
+  handleAgregarDeudor: () => void;
+  handleEditarDeudor: (deudor: DeudorConDatos) => void;
+  handleEliminarDeudor: (deudor: DeudorConDatos) => void;
+  handleImportarCSV: () => void;
+}, DeudoresTableProps>(({
   filtros,
   onAgregarDeudor,
   onEditarDeudor,
@@ -64,7 +66,7 @@ export function DeudoresTable({
   onEnviarRecordatorio,
   onImportarCSV,
   onExportarDatos
-}: DeudoresTableProps) {
+}, ref) => {
   const [deudores, setDeudores] = useState<DeudorConDatos[]>([]);
   const [filtrados, setFiltrados] = useState<DeudorConDatos[]>([]);
   const [paginaActual, setPaginaActual] = useState(1);
@@ -73,23 +75,31 @@ export function DeudoresTable({
   
   // Estados para el modal de formulario
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [deudorEditando, setDeudorEditando] = useState<Deudor | null>(null);
+  const [deudorEditando, setDeudorEditando] = useState<DeudorConDatos | null>(null);
   
   // Estados para el modal de eliminación
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [deudorEliminando, setDeudorEliminando] = useState<Deudor | null>(null);
+  const [deudorEliminando, setDeudorEliminando] = useState<DeudorConDatos | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
   // Estados para el modal de importación CSV
   const [isImportOpen, setIsImportOpen] = useState(false);
+
+  // Exponer funciones al componente padre
+  useImperativeHandle(ref, () => ({
+    handleAgregarDeudor,
+    handleEditarDeudor,
+    handleEliminarDeudor,
+    handleImportarCSV
+  }));
 
   // Cargar deudores
   useEffect(() => {
     cargarDeudores();
   }, []);
 
-  // Filtrar deudores
-  useEffect(() => {
+  // Memoizar los filtros aplicados para evitar re-renders innecesarios
+  const deudoresFiltrados = useMemo(() => {
     let resultado = deudores;
 
     // Filtro por búsqueda
@@ -138,9 +148,14 @@ export function DeudoresTable({
       });
     }
 
-    setFiltrados(resultado);
-    setPaginaActual(1);
+    return resultado;
   }, [deudores, filtros]);
+
+  // Actualizar filtrados cuando cambien los deudores filtrados
+  useEffect(() => {
+    setFiltrados(deudoresFiltrados);
+    setPaginaActual(1);
+  }, [deudoresFiltrados]);
 
   const cargarDeudores = async () => {
     try {
@@ -183,15 +198,19 @@ export function DeudoresTable({
           // Determinar estado general basado en las deudas
           let estadoGeneral = 'sin_deudas';
           if (deudasData && deudasData.length > 0) {
+            const tieneDeudasNuevas = deudasData.some(d => d.estado === 'nueva');
             const tieneDeudasPendientes = deudasData.some(d => d.estado === 'pendiente');
             const tieneDeudasVencidas = deudasData.some(d => {
               const diasVencidos = calcularDiasVencidos(d.fecha_vencimiento);
-              return diasVencidos > 0 && d.estado === 'pendiente';
+              return diasVencidos > 0 && (d.estado === 'pendiente' || d.estado === 'nueva');
             });
+            const todasPagadas = deudasData.every(d => d.estado === 'pagado');
             
             if (tieneDeudasVencidas) estadoGeneral = 'vencida';
             else if (tieneDeudasPendientes) estadoGeneral = 'pendiente';
-            else estadoGeneral = 'pagada';
+            else if (tieneDeudasNuevas) estadoGeneral = 'nueva';
+            else if (todasPagadas) estadoGeneral = 'pagada';
+            else estadoGeneral = 'sin_deudas';
           }
 
           return {
@@ -489,4 +508,6 @@ export function DeudoresTable({
       />
     </div>
   );
-}
+});
+
+DeudoresTable.displayName = 'DeudoresTable';

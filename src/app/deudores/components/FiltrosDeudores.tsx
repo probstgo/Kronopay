@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,6 +41,7 @@ const ESTADOS_CONFIG = {
 } as const;
 
 interface FiltrosDeudoresProps {
+  filtros: FiltrosAplicados;
   onFiltrosCambiados: (filtros: FiltrosAplicados) => void;
   onLimpiarFiltros: () => void;
 }
@@ -59,14 +60,7 @@ export interface FiltrosAplicados {
   tieneContacto: boolean | null;
 }
 
-export function FiltrosDeudores({ onFiltrosCambiados, onLimpiarFiltros }: FiltrosDeudoresProps) {
-  const [filtros, setFiltros] = useState<FiltrosAplicados>({
-    busqueda: '',
-    estado: 'todos',
-    rangoMonto: { min: null, max: null },
-    rangoFechas: { desde: '', hasta: '' },
-    tieneContacto: null
-  });
+const FiltrosDeudoresComponent = ({ filtros, onFiltrosCambiados, onLimpiarFiltros }: FiltrosDeudoresProps) => {
 
   const [mostrarFiltrosAvanzados, setMostrarFiltrosAvanzados] = useState(false);
 
@@ -75,19 +69,10 @@ export function FiltrosDeudores({ onFiltrosCambiados, onLimpiarFiltros }: Filtro
     valor: FiltrosAplicados[K]
   ) => {
     const nuevosFiltros = { ...filtros, [campo]: valor } as FiltrosAplicados;
-    setFiltros(nuevosFiltros);
     onFiltrosCambiados(nuevosFiltros);
   };
 
   const handleLimpiarFiltros = () => {
-    const filtrosLimpios: FiltrosAplicados = {
-      busqueda: '',
-      estado: 'todos',
-      rangoMonto: { min: null, max: null },
-      rangoFechas: { desde: '', hasta: '' },
-      tieneContacto: null
-    };
-    setFiltros(filtrosLimpios);
     onLimpiarFiltros();
   };
 
@@ -299,4 +284,6 @@ export function FiltrosDeudores({ onFiltrosCambiados, onLimpiarFiltros }: Filtro
       </CardContent>
     </Card>
   );
-}
+};
+
+export const FiltrosDeudores = memo(FiltrosDeudoresComponent);

@@ -9,6 +9,11 @@ const ESTADOS_CONFIG = {
     icon: '✅',
     color: 'bg-green-100 text-green-800 border-green-200'
   },
+  nueva: {
+    label: 'Nueva',
+    icon: '🆕',
+    color: 'bg-purple-100 text-purple-800 border-purple-200'
+  },
   pendiente: {
     label: 'Pendiente',
     icon: '⏳',

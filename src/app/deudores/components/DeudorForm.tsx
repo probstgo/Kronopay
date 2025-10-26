@@ -86,25 +86,48 @@ const normalizarRUT = (rut: string): string => {
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
+interface Contacto {
+  id: string;
+  usuario_id: string;
+  deudor_id: string;
+  rut: string;
+  tipo_contacto: 'email' | 'telefono' | 'sms' | 'whatsapp';
+  valor: string;
+  preferido: boolean;
+  created_at: string;
+}
+
+interface Deuda {
+  id: string;
+  usuario_id: string;
+  deudor_id: string;
+  rut: string;
+  monto: number;
+  fecha_vencimiento: string;
+  estado: 'nueva' | 'pendiente' | 'pagado';
+  created_at: string;
+}
+
+interface DeudorConDatos {
+  id: string;
+  usuario_id: string;
+  rut: string;
+  nombre: string;
+  created_at: string;
+  deudas: Deuda[];
+  contactos: Contacto[];
+  email?: string;
+  telefono?: string;
+  monto_total?: number;
+  fecha_vencimiento_mas_reciente?: string;
+  estado_general?: string;
+}
+
 interface DeudorFormProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  deudor?: {
-    id: string;
-    nombre: string;
-    rut: string;
-    email?: string;
-    telefono?: string;
-    monto_total?: number;
-    fecha_vencimiento_mas_reciente?: string;
-    estado_general?: string;
-    deudas?: Array<{
-      monto: number;
-      fecha_vencimiento: string;
-      estado: string;
-    }>;
-  } | null;
+  deudor?: DeudorConDatos | null;
 }
 
 interface FormData {
@@ -191,7 +214,8 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
         return undefined;
 
       case 'rut':
-        if (value && !validarRUT(value.toString())) return 'RUT inválido';
+        if (!value || !value.toString().trim()) return 'El RUT es obligatorio';
+        if (!validarRUT(value.toString())) return 'RUT inválido';
         return undefined;
 
       case 'email':
@@ -223,7 +247,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
     let isValid = true;
 
     // Validar campos obligatorios
-    const requiredFields: (keyof FormData)[] = ['nombre'];
+    const requiredFields: (keyof FormData)[] = ['nombre', 'rut'];
     requiredFields.forEach(field => {
       const value = formData[field];
       const error = validateField(field, value);
@@ -235,7 +259,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
 
     // Validar campos opcionales
     const optionalFields: (keyof FormData)[] = [
-      'rut', 'email', 'telefono', 
+      'email', 'telefono', 
       'monto', 'fecha_vencimiento'
     ];
     optionalFields.forEach(field => {
@@ -266,7 +290,14 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuario no autenticado');
 
-      const rutNormalizado = formData.rut.trim() ? normalizarRUT(formData.rut.trim()) : undefined;
+      // Validar que el RUT exista y sea válido
+      if (!formData.rut || !formData.rut.trim()) {
+        toast.error('El RUT es obligatorio');
+        setIsLoading(false);
+        return;
+      }
+
+      const rutNormalizado = normalizarRUT(formData.rut.trim());
 
       if (deudor) {
         // Modo edición - actualizar datos básicos del deudor
@@ -293,7 +324,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
           if (formData.email) contactos.push({
             usuario_id: user.id,
             deudor_id: deudor.id,
-            rut: rutNormalizado || deudor.rut || '',
+            rut: rutNormalizado,
             tipo_contacto: 'email',
             valor: formData.email.trim(),
             preferido: true
@@ -301,7 +332,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
           if (formData.telefono) contactos.push({
             usuario_id: user.id,
             deudor_id: deudor.id,
-            rut: rutNormalizado || deudor.rut || '',
+            rut: rutNormalizado,
             tipo_contacto: 'telefono',
             valor: formData.telefono.trim(),
             preferido: !formData.email
@@ -324,7 +355,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
             .select('id')
             .eq('deudor_id', deudor.id)
             .limit(1)
-            .single();
+            .maybeSingle();
 
           if (deudaExistente) {
             // Actualizar deuda existente
@@ -345,7 +376,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
               .insert({
                 usuario_id: user.id,
                 deudor_id: deudor.id,
-                rut: rutNormalizado || deudor.rut || '',
+                rut: rutNormalizado,
                 monto: formData.monto,
                 fecha_vencimiento: formData.fecha_vencimiento,
                 estado: formData.estado_deuda || 'nueva'
@@ -375,7 +406,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
         if (formData.email) contactos.push({
           usuario_id: user.id,
           deudor_id: deudorData.id,
-          rut: rutNormalizado || '',
+          rut: rutNormalizado,
           tipo_contacto: 'email',
           valor: formData.email.trim(),
           preferido: true
@@ -383,7 +414,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
         if (formData.telefono) contactos.push({
           usuario_id: user.id,
           deudor_id: deudorData.id,
-          rut: rutNormalizado || '',
+          rut: rutNormalizado,
           tipo_contacto: 'telefono',
           valor: formData.telefono.trim(),
           preferido: !formData.email
@@ -404,7 +435,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
             .insert({
               usuario_id: user.id,
               deudor_id: deudorData.id,
-              rut: rutNormalizado || '',
+              rut: rutNormalizado,
               monto: formData.monto,
               fecha_vencimiento: formData.fecha_vencimiento,
               estado: formData.estado_deuda || 'nueva'
