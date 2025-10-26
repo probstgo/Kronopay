@@ -161,7 +161,7 @@ export const DeudoresTable = forwardRef<{
     try {
       setIsLoading(true);
       
-      // Obtener deudores
+      // Consulta 1: Obtener todos los deudores
       const { data: deudoresData, error: deudoresError } = await supabase
         .from('deudores')
         .select('*')
@@ -169,62 +169,85 @@ export const DeudoresTable = forwardRef<{
 
       if (deudoresError) throw deudoresError;
 
-      // Para cada deudor, obtener sus deudas y contactos
-      const deudoresConDatos: DeudorConDatos[] = await Promise.all(
-        (deudoresData || []).map(async (deudor) => {
-          // Obtener deudas del deudor
-          const { data: deudasData } = await supabase
-            .from('deudas')
-            .select('*')
-            .eq('deudor_id', deudor.id)
-            .order('fecha_vencimiento', { ascending: true });
+      // Consulta 2: Obtener todas las deudas con información del deudor
+      const { data: deudasData, error: deudasError } = await supabase
+        .from('deudas')
+        .select(`
+          *,
+          deudores!inner(id, nombre, rut)
+        `)
+        .order('fecha_vencimiento', { ascending: true });
 
-          // Obtener contactos del deudor
-          const { data: contactosData } = await supabase
-            .from('contactos')
-            .select('*')
-            .eq('deudor_id', deudor.id);
+      if (deudasError) throw deudasError;
 
-          // Encontrar email y teléfono (preferidos o cualquier disponible)
-          const emailPreferido = contactosData?.find(c => c.tipo_contacto === 'email' && c.preferido) || 
-                                 contactosData?.find(c => c.tipo_contacto === 'email');
-          const telefonoPreferido = contactosData?.find(c => c.tipo_contacto === 'telefono' && c.preferido) || 
-                                   contactosData?.find(c => c.tipo_contacto === 'telefono');
+      // Consulta 3: Obtener todos los contactos con información del deudor
+      const { data: contactosData, error: contactosError } = await supabase
+        .from('contactos')
+        .select(`
+          *,
+          deudores!inner(id, nombre, rut)
+        `);
 
-          // Calcular monto total y fecha de vencimiento más reciente
-          const montoTotal = deudasData?.reduce((sum, deuda) => sum + deuda.monto, 0) || 0;
-          const fechaVencimientoMasReciente = deudasData?.[0]?.fecha_vencimiento;
+      if (contactosError) throw contactosError;
 
-          // Determinar estado general basado en las deudas
-          let estadoGeneral = 'sin_deudas';
-          if (deudasData && deudasData.length > 0) {
-            const tieneDeudasNuevas = deudasData.some(d => d.estado === 'nueva');
-            const tieneDeudasPendientes = deudasData.some(d => d.estado === 'pendiente');
-            const tieneDeudasVencidas = deudasData.some(d => {
-              const diasVencidos = calcularDiasVencidos(d.fecha_vencimiento);
-              return diasVencidos > 0 && (d.estado === 'pendiente' || d.estado === 'nueva');
-            });
-            const todasPagadas = deudasData.every(d => d.estado === 'pagado');
-            
-            if (tieneDeudasVencidas) estadoGeneral = 'vencida';
-            else if (tieneDeudasPendientes) estadoGeneral = 'pendiente';
-            else if (tieneDeudasNuevas) estadoGeneral = 'nueva';
-            else if (todasPagadas) estadoGeneral = 'pagada';
-            else estadoGeneral = 'sin_deudas';
-          }
+      // Agrupar deudas por deudor_id
+      const deudasPorDeudor = (deudasData || []).reduce((acc, deuda) => {
+        if (!acc[deuda.deudor_id]) acc[deuda.deudor_id] = [];
+        acc[deuda.deudor_id].push(deuda);
+        return acc;
+      }, {} as Record<string, Deuda[]>);
 
-          return {
-            ...deudor,
-            deudas: deudasData || [],
-            contactos: contactosData || [],
-            email: emailPreferido?.valor,
-            telefono: telefonoPreferido?.valor,
-            monto_total: montoTotal,
-            fecha_vencimiento_mas_reciente: fechaVencimientoMasReciente,
-            estado_general: estadoGeneral
-          };
-        })
-      );
+      // Agrupar contactos por deudor_id
+      const contactosPorDeudor = (contactosData || []).reduce((acc, contacto) => {
+        if (!acc[contacto.deudor_id]) acc[contacto.deudor_id] = [];
+        acc[contacto.deudor_id].push(contacto);
+        return acc;
+      }, {} as Record<string, Contacto[]>);
+
+      // Combinar datos para cada deudor
+      const deudoresConDatos: DeudorConDatos[] = (deudoresData || []).map((deudor) => {
+        const deudasDelDeudor = deudasPorDeudor[deudor.id] || [];
+        const contactosDelDeudor = contactosPorDeudor[deudor.id] || [];
+
+        // Encontrar email y teléfono (preferidos o cualquier disponible)
+        const emailPreferido = contactosDelDeudor.find((c: Contacto) => c.tipo_contacto === 'email' && c.preferido) || 
+                               contactosDelDeudor.find((c: Contacto) => c.tipo_contacto === 'email');
+        const telefonoPreferido = contactosDelDeudor.find((c: Contacto) => c.tipo_contacto === 'telefono' && c.preferido) || 
+                                 contactosDelDeudor.find((c: Contacto) => c.tipo_contacto === 'telefono');
+
+        // Calcular monto total y fecha de vencimiento más reciente
+        const montoTotal = deudasDelDeudor.reduce((sum: number, deuda: Deuda) => sum + deuda.monto, 0);
+        const fechaVencimientoMasReciente = deudasDelDeudor[0]?.fecha_vencimiento;
+
+        // Determinar estado general basado en las deudas
+        let estadoGeneral = 'sin_deudas';
+        if (deudasDelDeudor.length > 0) {
+          const tieneDeudasNuevas = deudasDelDeudor.some((d: Deuda) => d.estado === 'nueva');
+          const tieneDeudasPendientes = deudasDelDeudor.some((d: Deuda) => d.estado === 'pendiente');
+          const tieneDeudasVencidas = deudasDelDeudor.some((d: Deuda) => {
+            const diasVencidos = calcularDiasVencidos(d.fecha_vencimiento);
+            return diasVencidos > 0 && (d.estado === 'pendiente' || d.estado === 'nueva');
+          });
+          const todasPagadas = deudasDelDeudor.every((d: Deuda) => d.estado === 'pagado');
+          
+          if (tieneDeudasVencidas) estadoGeneral = 'vencida';
+          else if (tieneDeudasPendientes) estadoGeneral = 'pendiente';
+          else if (tieneDeudasNuevas) estadoGeneral = 'nueva';
+          else if (todasPagadas) estadoGeneral = 'pagada';
+          else estadoGeneral = 'sin_deudas';
+        }
+
+        return {
+          ...deudor,
+          deudas: deudasDelDeudor,
+          contactos: contactosDelDeudor,
+          email: emailPreferido?.valor,
+          telefono: telefonoPreferido?.valor,
+          monto_total: montoTotal,
+          fecha_vencimiento_mas_reciente: fechaVencimientoMasReciente,
+          estado_general: estadoGeneral
+        };
+      });
 
       setDeudores(deudoresConDatos);
     } catch (error) {
