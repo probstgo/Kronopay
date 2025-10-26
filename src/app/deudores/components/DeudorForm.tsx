@@ -284,6 +284,10 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
       return;
     }
 
+    await procesarEnvio();
+  };
+
+  const procesarEnvio = async () => {
     setIsLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();

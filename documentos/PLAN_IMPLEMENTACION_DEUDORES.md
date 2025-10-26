@@ -498,6 +498,34 @@
 
 ---
 
+## 🔄 Cambio de Enfoque: Simplificación de Duplicados
+
+**Fecha**: Diciembre 2024
+
+### **Decisión tomada:**
+Se eliminó la restricción de unicidad de RUT en la tabla `deudores` para simplificar la experiencia del usuario y eliminar fricciones al agregar deudores.
+
+### **Cambios implementados:**
+
+#### **Base de datos:**
+- ❌ Eliminada restricción `unique_rut_por_usuario`
+- ✅ Agregado índice compuesto `idx_deudores_usuario_rut` para mantener rendimiento
+
+#### **Frontend:**
+- **DeudorForm.tsx**: Eliminada búsqueda de deudores existentes y diálogos de confirmación
+- **ImportCSVModal.tsx**: Simplificado procesamiento para permitir duplicados
+
+#### **Beneficios obtenidos:**
+- ✅ **UX mejorada**: Sin fricciones al agregar deudores
+- ✅ **Velocidad**: Proceso más rápido sin verificaciones complejas
+- ✅ **Flexibilidad**: Permite múltiples deudores con mismo RUT según necesidades
+- ✅ **Simplicidad**: Código más limpio y mantenible
+
+### **Impacto en el proyecto:**
+Este cambio alinea la aplicación con el principio de "simplicidad primero", priorizando la facilidad de uso sobre la validación estricta de duplicados.
+
+---
+
 ## 📈 Progreso de Implementación
 
 ### ✅ **Completado **
@@ -518,6 +546,9 @@
 - **Visualización Mejorada**: Columna de contacto muestra email y teléfono
 - **Manejo de Modales**: Prevención de conflictos DOM
 - **Tipado Mejorado**: Eliminado uso de `any` explícito con interfaces específicas
+- **Simplificación de Duplicados**: Eliminada restricción única de RUT para mejorar UX
+- **Formulario Sin Fricciones**: Eliminadas verificaciones de deudores existentes
+- **CSV Simplificado**: Importación directa sin agrupación por RUT
 
 ### 🔄 **En Progreso**
 - **Optimización de Consultas**: Pendiente optimización N+1

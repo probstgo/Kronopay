@@ -1560,6 +1560,36 @@ REDIS_URL=redis://default:TU_PASSWORD@fly-...-redis.upstash.io:6379
 
 ---
 
+## 🔄 Cambio de Enfoque: Simplificación de Duplicados
+
+**Fecha**: Diciembre 2024
+
+### **Decisión tomada:**
+Se eliminó la restricción de unicidad de RUT en la tabla `deudores` para simplificar la experiencia del usuario y eliminar fricciones al agregar deudores.
+
+### **Impacto en automatizaciones:**
+
+#### **Ejecutor Programado:**
+- ✅ **Sin cambios**: El ejecutor sigue funcionando igual, procesa programaciones independientemente
+- ✅ **Compatibilidad**: Funciona con múltiples deudores del mismo RUT sin problemas
+- ✅ **Rendimiento**: Mantiene eficiencia con índices optimizados
+
+#### **Webhooks:**
+- ✅ **Sin cambios**: Los webhooks de Resend y ElevenLabs siguen funcionando igual
+- ✅ **Trazabilidad**: El historial mantiene la trazabilidad completa por deudor individual
+
+#### **Lógica de Negocio:**
+- ✅ **Reintentos**: Siguen funcionando por deudor individual
+- ✅ **Guardrails**: Se aplican por deudor, no por RUT
+- ✅ **Rate Limiting**: Mantiene protección sin cambios
+
+### **Beneficios para automatizaciones:**
+- ✅ **Flexibilidad**: Permite múltiples campañas para el mismo RUT
+- ✅ **Simplicidad**: No requiere lógica compleja de agrupación
+- ✅ **Escalabilidad**: Procesamiento directo sin verificaciones adicionales
+
+---
+
 ## 📚 Recursos Útiles
 
 - **Supabase Docs:** https://supabase.com/docs

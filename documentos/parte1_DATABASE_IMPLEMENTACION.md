@@ -294,10 +294,12 @@ CREATE TABLE deudores (
     usuario_id uuid REFERENCES usuarios(id) NOT NULL,
     rut text NOT NULL,
     nombre text NOT NULL,
-    created_at timestamptz DEFAULT now(),
-    CONSTRAINT unique_rut_por_usuario UNIQUE (usuario_id, rut)
+    created_at timestamptz DEFAULT now()
+    -- NOTA: Se eliminó CONSTRAINT unique_rut_por_usuario para permitir duplicados
+    -- y simplificar la experiencia del usuario al agregar deudores
 );
 CREATE INDEX idx_deudores_rut ON deudores(rut);
+CREATE INDEX IF NOT EXISTS idx_deudores_usuario_rut ON deudores(usuario_id, rut);
 ```
 
 ```sql
@@ -1566,6 +1568,47 @@ Notas:
 - **Triggers automáticos**: `normalize_contactos` normaliza RUT y teléfonos/emails al insertar contactos.
 - **Políticas RLS**: `suscripciones` tiene RLS con lectura global y edición solo admin.
 - **Configuraciones globales y por usuario**: La tabla `configuraciones` soporta ambos tipos: `usuario_id = NULL` para reglas globales (creadas solo desde backend con service_role) y `usuario_id = UUID` para configuraciones específicas por usuario. Los usuarios pueden leer las globales pero solo modificar las suyas.
+
+## 15. Cambio de Enfoque: Permisión de Duplicados de RUT
+
+**Fecha de implementación**: Diciembre 2024
+
+### **Motivación del cambio:**
+Para simplificar la experiencia del usuario y eliminar fricciones al agregar deudores, se decidió permitir duplicados de RUT en la tabla `deudores`.
+
+### **Cambios realizados:**
+
+#### **1. Base de datos:**
+```sql
+-- Eliminar restricción de unicidad
+ALTER TABLE deudores
+DROP CONSTRAINT IF EXISTS unique_rut_por_usuario;
+
+-- Crear índice compuesto para mantener rendimiento
+CREATE INDEX IF NOT EXISTS idx_deudores_usuario_rut
+ON deudores(usuario_id, rut);
+```
+
+#### **2. Impacto en la aplicación:**
+- **Formulario manual**: Eliminada búsqueda de deudores existentes y diálogos de confirmación
+- **Importación CSV**: Procesamiento directo fila por fila sin agrupación por RUT
+- **Experiencia de usuario**: Sin fricciones, sin confirmaciones innecesarias
+
+#### **3. Beneficios:**
+- ✅ **Simplicidad**: Los usuarios pueden agregar deudores sin verificaciones complejas
+- ✅ **Velocidad**: Proceso más rápido al eliminar pasos intermedios
+- ✅ **Flexibilidad**: Permite múltiples deudores con el mismo RUT según necesidades del negocio
+- ✅ **Escalabilidad**: Mantiene rendimiento con índices optimizados
+
+#### **4. Consideraciones futuras:**
+- Si en el futuro se requiere eliminar duplicados, se puede implementar una herramienta de limpieza de datos
+- La restricción de unicidad se puede restaurar ejecutando:
+  ```sql
+  ALTER TABLE deudores
+  ADD CONSTRAINT unique_rut_por_usuario UNIQUE (usuario_id, rut);
+  ```
+  (después de limpiar duplicados existentes)
+
 ---
 
 Fin del documento.

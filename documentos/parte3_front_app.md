@@ -1300,6 +1300,9 @@ export function ContactoForm({ open, onClose, deudor, onSuccess }: Props) {
 - ✅ **Eliminadas** referencias a campos obsoletos (`monto_deuda`, `fecha_vencimiento`)
 - ✅ **Actualizada** validación para usar solo campos básicos
 - ✅ **Implementada** lógica de creación/edición con Supabase directo
+- ✅ **Eliminada** búsqueda de deudores existentes para simplificar UX
+- ✅ **Removidos** diálogos de confirmación para permitir duplicados de RUT
+- ✅ **Formulario sin fricciones**: Proceso directo sin verificaciones intermedias
 
 #### **EstadoBadge.tsx** - ACTUALIZADO
 **Cambios realizados:**
@@ -1313,6 +1316,9 @@ export function ContactoForm({ open, onClose, deudor, onSuccess }: Props) {
 - ✅ **Actualizada** estructura de datos para nueva BD
 - ✅ **Corregidas** referencias a campos obsoletos
 - ✅ **Implementada** lógica para crear deudores + contactos + deudas por separado
+- ✅ **Simplificado** procesamiento para permitir duplicados de RUT
+- ✅ **Eliminada** agrupación por RUT para importación directa
+- ✅ **Proceso sin fricciones**: Cada fila del CSV se procesa independientemente
 
 #### **SelectorDeudor.tsx** - ACTUALIZADO
 **Cambios realizados:**
@@ -1436,4 +1442,32 @@ Según el documento `parte3_front_app.md`, los siguientes pasos serían:
 - Mejora la mantenibilidad del código
 
 **Estado:** ✅ COMPLETADO - Los estados de deuda están ahora correctamente definidos y listos para usar en los componentes de la interfaz.
+
+---
+
+## 🔄 Cambio de Enfoque: Simplificación de Duplicados
+
+**Fecha**: Diciembre 2024
+
+### **Decisión tomada:**
+Se eliminó la restricción de unicidad de RUT en la tabla `deudores` para simplificar la experiencia del usuario y eliminar fricciones al agregar deudores.
+
+### **Impacto en componentes frontend:**
+
+#### **DeudorForm.tsx:**
+- ❌ **Eliminada**: Función `buscarDeudorExistente()`
+- ❌ **Eliminados**: Estados `deudorExistente` y `mostrarConfirmacion`
+- ❌ **Eliminado**: Diálogo de confirmación completo
+- ✅ **Mantenido**: Validación básica de RUT y creación directa
+
+#### **ImportCSVModal.tsx:**
+- ✅ **Simplificado**: Procesamiento directo fila por fila
+- ✅ **Eliminada**: Lógica de agrupación por RUT
+- ✅ **Agregado**: Comentarios "sin verificar duplicados"
+
+### **Beneficios obtenidos:**
+- ✅ **UX mejorada**: Sin fricciones al agregar deudores
+- ✅ **Velocidad**: Proceso más rápido sin verificaciones complejas
+- ✅ **Flexibilidad**: Permite múltiples deudores con mismo RUT
+- ✅ **Simplicidad**: Código más limpio y mantenible
 

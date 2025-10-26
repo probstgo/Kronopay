@@ -257,10 +257,10 @@ export function ImportCSVModal({ isOpen, onClose, onSuccess }: ImportCSVModalPro
       let deudoresInsertados = 0;
       let errores = 0;
 
-      // Procesar cada deudor individualmente
+      // Procesar cada deudor individualmente (sin verificar duplicados)
       for (const deudor of csvData) {
         try {
-          // Insertar el deudor básico
+          // Insertar el deudor básico (permite duplicados)
           const { data: deudorData, error: deudorError } = await supabase
             .from('deudores')
             .insert({
@@ -330,7 +330,7 @@ export function ImportCSVModal({ isOpen, onClose, onSuccess }: ImportCSVModalPro
 
       toast.success(`${reporte.insertados} deudores importados exitosamente`);
       
-      // Mostrar reporte detallado
+      // Mostrar reporte detallado solo si hay errores significativos
       if (reporte.errores > 0) {
         toast.warning(`${reporte.errores} registros tenían errores y no se importaron`);
       }
