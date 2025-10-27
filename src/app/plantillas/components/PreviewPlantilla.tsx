@@ -45,13 +45,21 @@ export function PreviewPlantilla({ tipo, contenido, tipoContenido = 'texto', var
     .replace(/\{\{email\}\}/g, variables.email)
 
   // Función para extraer y limpiar HTML
-  const procesarHTML = (htmlContent: string) => {
+  const procesarHTML = (htmlContent: string): string => {
     // Si el HTML tiene estructura completa (DOCTYPE, html, head, body)
     if (htmlContent.includes('<body>')) {
       // Extraer solo el contenido del body
       const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*?)<\/body>/)
       if (bodyMatch) {
-        return bodyMatch[1]
+        let content = bodyMatch[1]
+        // Ajustar el ancho máximo de las tablas para que se adapten al contenedor
+        content = content.replace(/max-width:\s*600px/g, 'max-width: 100%')
+        content = content.replace(/width:\s*600px/g, 'width: 100%')
+        content = content.replace(/max-width:\s*500px/g, 'max-width: 100%')
+        content = content.replace(/width:\s*500px/g, 'width: 100%')
+        // Asegurar que las tablas usen el ancho completo disponible
+        content = content.replace(/<table([^>]*?)width="100%"([^>]*?)>/g, '<table$1width="100%"$2 style="width: 100% !important; max-width: 100% !important;">')
+        return content
       }
     }
     
@@ -60,13 +68,24 @@ export function PreviewPlantilla({ tipo, contenido, tipoContenido = 'texto', var
       const htmlMatch = htmlContent.match(/<html[^>]*>([\s\S]*?)<\/html>/)
       if (htmlMatch) {
         // Remover head si existe
-        const content = htmlMatch[1].replace(/<head[^>]*>[\s\S]*?<\/head>/, '')
+        let content = htmlMatch[1].replace(/<head[^>]*>[\s\S]*?<\/head>/, '')
+        // Ajustar el ancho máximo de las tablas para que se adapten al contenedor
+        content = content.replace(/max-width:\s*600px/g, 'max-width: 100%')
+        content = content.replace(/width:\s*600px/g, 'width: 100%')
+        content = content.replace(/max-width:\s*500px/g, 'max-width: 100%')
+        content = content.replace(/width:\s*500px/g, 'width: 100%')
+        // Asegurar que las tablas usen el ancho completo disponible
+        content = content.replace(/<table([^>]*?)width="100%"([^>]*?)>/g, '<table$1width="100%"$2 style="width: 100% !important; max-width: 100% !important;">')
         return content
       }
     }
     
     // Si no tiene estructura completa, usar el contenido tal como está
-    return htmlContent
+    let content = htmlContent
+    // Ajustar el ancho máximo de las tablas para que se adapten al contenedor
+    content = content.replace(/max-width:\s*600px/g, 'max-width: 100%')
+    content = content.replace(/width:\s*600px/g, 'width: 100%')
+    return content
   }
 
   const renderizarContenido = () => {
@@ -91,7 +110,13 @@ export function PreviewPlantilla({ tipo, contenido, tipoContenido = 'texto', var
               {tipoContenido === 'html' ? (
                 <div 
                   dangerouslySetInnerHTML={{ __html: procesarHTML(contenidoRenderizado) }}
-                  className="border rounded p-3 bg-white"
+                  className="border rounded p-4 bg-white w-full"
+                  style={{ 
+                    minWidth: '100%',
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    boxSizing: 'border-box'
+                  }}
                 />
               ) : (
                 contenidoRenderizado.split('\n').map((linea, index) => (

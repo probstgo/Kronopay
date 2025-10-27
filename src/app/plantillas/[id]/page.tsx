@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Save, Eye, Mail, Volume2, MessageSquare, Trash2, Type, Code } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ArrowLeft, Save, Eye, Mail, Volume2, MessageSquare, Trash2, Type, Code, Maximize2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
@@ -47,7 +48,7 @@ export default function EditarPlantillaPage({ params }: { params: Promise<{ id: 
   const [plantilla, setPlantilla] = useState<Plantilla | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [mostrarPreview, setMostrarPreview] = useState(false)
+  const [previewPlantilla, setPreviewPlantilla] = useState<Plantilla | null>(null)
   const [formData, setFormData] = useState({
     nombre: '',
     tipo: 'email' as 'email' | 'voz' | 'sms' | 'whatsapp',
@@ -145,6 +146,10 @@ export default function EditarPlantillaPage({ params }: { params: Promise<{ id: 
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
       toast.error('Error al eliminar plantilla: ' + errorMessage)
     }
+  }
+
+  const cerrarPreview = () => {
+    setPreviewPlantilla(null)
   }
 
   const tipoSeleccionado = TIPOS_PLANTILLA.find(t => t.value === formData.tipo)
@@ -301,10 +306,17 @@ export default function EditarPlantillaPage({ params }: { params: Promise<{ id: 
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => setMostrarPreview(!mostrarPreview)}
+                        onClick={() => setPreviewPlantilla({
+                          id: resolvedParams.id,
+                          nombre: formData.nombre,
+                          tipo: formData.tipo,
+                          tipo_contenido: formData.tipo_contenido,
+                          contenido: formData.contenido,
+                          created_at: plantilla?.created_at || new Date().toISOString()
+                        })}
                       >
                         <Eye className="h-4 w-4 mr-2" />
-                        {mostrarPreview ? 'Ocultar' : 'Mostrar'} Preview
+                        Ver Preview
                       </Button>
                     </div>
                     <EditorContenido
@@ -336,33 +348,6 @@ export default function EditarPlantillaPage({ params }: { params: Promise<{ id: 
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Preview */}
-            {mostrarPreview && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Eye className="h-5 w-5" />
-                    Preview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <PreviewPlantilla
-                    tipo={formData.tipo}
-                    contenido={formData.contenido}
-                    tipoContenido={formData.tipo_contenido}
-                    variables={{
-                      nombre: 'Juan Pérez',
-                      monto: '$150.000',
-                      fecha_vencimiento: '15 de enero, 2025',
-                      empresa: 'Mi Empresa',
-                      telefono: '+56912345678',
-                      email: 'contacto@miempresa.com'
-                    }}
-                  />
-                </CardContent>
-              </Card>
-            )}
-
             {/* Variables Disponibles */}
             <Card>
               <CardHeader>
@@ -464,6 +449,35 @@ export default function EditarPlantillaPage({ params }: { params: Promise<{ id: 
             </Card>
           </div>
         </div>
+
+        {/* Modal de Preview */}
+        <Dialog open={!!previewPlantilla} onOpenChange={cerrarPreview}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Vista Previa - {previewPlantilla?.nombre}
+              </DialogTitle>
+            </DialogHeader>
+            {previewPlantilla && (
+              <div className="mt-4">
+                <PreviewPlantilla
+                  tipo={previewPlantilla.tipo}
+                  contenido={previewPlantilla.contenido}
+                  tipoContenido={previewPlantilla.tipo_contenido || 'texto'}
+                  variables={{
+                    nombre: 'Juan Pérez',
+                    monto: '$150.000',
+                    fecha_vencimiento: '15 de enero, 2025',
+                    empresa: 'Mi Empresa',
+                    telefono: '+56912345678',
+                    email: 'contacto@miempresa.com'
+                  }}
+                />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </Protected>
   )
