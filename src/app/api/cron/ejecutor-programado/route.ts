@@ -151,11 +151,20 @@ async function ejecutarLlamada(prog: ProgramaEjecucion): Promise<ResultadoEjecuc
   // Implementar con ElevenLabs (ya configurado)
   const { startOutboundCall } = await import('../../../../lib/elevenlabs')
   
-  // const prompt = resolverPlantilla(prog.plantillas[0].contenido, prog.vars)
+  // Preparar variables dinámicas del deudor
+  const dynamicVariables = {
+    nombre_deudor: prog.vars.nombre || 'Cliente',
+    monto: prog.vars.monto || '$0',
+    fecha_vencimiento: prog.vars.fecha_vencimiento || 'No especificada',
+    empresa: prog.vars.empresa || 'Nuestra empresa',
+    telefono: prog.contactos[0].valor,
+    email: prog.vars.email || ''
+  };
   
   const resultado = await startOutboundCall({
     agentId: prog.agente_id,
-    toNumber: prog.contactos[0].valor
+    toNumber: prog.contactos[0].valor,
+    dynamicVariables
   }) as unknown as ElevenLabsCallResult
 
   return {

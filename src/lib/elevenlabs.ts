@@ -45,8 +45,13 @@ export async function listAgents() {
   }
 }
 
-export async function startOutboundCall(params: { agentId: string; toNumber: string; agentPhoneNumberId?: string }) {
-  const { agentId, toNumber, agentPhoneNumberId } = params;
+export async function startOutboundCall(params: { 
+  agentId: string; 
+  toNumber: string; 
+  agentPhoneNumberId?: string;
+  dynamicVariables?: Record<string, string>;
+}) {
+  const { agentId, toNumber, agentPhoneNumberId, dynamicVariables } = params;
   // 1) Si ya nos pasan el phoneNumberId, lo usamos; sino detectamos del agente
   let provider: 'twilio' | 'sip_trunk' | undefined;
   let phoneNumberId = agentPhoneNumberId;
@@ -75,20 +80,27 @@ export async function startOutboundCall(params: { agentId: string; toNumber: str
     throw new Error('No se pudo determinar el número o el proveedor para la llamada');
   }
 
-  // 3) Disparar llamada según proveedor
+  // 3) Disparar llamada según proveedor con variables dinámicas
+  const callParams = {
+    agentId,
+    agentPhoneNumberId: phoneNumberId,
+    toNumber,
+    ...(dynamicVariables && {
+      conversationConfigOverride: {
+        agent: {
+          dynamicVariables: {
+            dynamicVariablePlaceholders: dynamicVariables
+          }
+        }
+      }
+    })
+  };
+
   if (provider === 'twilio') {
-    return elevenLabsClient.conversationalAi.twilio.outboundCall({
-      agentId,
-      agentPhoneNumberId: phoneNumberId,
-      toNumber,
-    });
+    return elevenLabsClient.conversationalAi.twilio.outboundCall(callParams);
   }
   if (provider === 'sip_trunk') {
-    return elevenLabsClient.conversationalAi.sipTrunk.outboundCall({
-      agentId,
-      agentPhoneNumberId: phoneNumberId,
-      toNumber,
-    });
+    return elevenLabsClient.conversationalAi.sipTrunk.outboundCall(callParams);
   }
 
   throw new Error(`Proveedor no soportado: ${provider}`);
