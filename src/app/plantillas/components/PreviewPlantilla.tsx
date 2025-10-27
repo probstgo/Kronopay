@@ -49,7 +49,7 @@ export function PreviewPlantilla({ tipo, contenido, tipoContenido = 'texto', var
     // Si el HTML tiene estructura completa (DOCTYPE, html, head, body)
     if (htmlContent.includes('<body>')) {
       // Extraer solo el contenido del body
-      const bodyMatch = htmlContent.match(/<body[^>]*>(.*?)<\/body>/s)
+      const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*?)<\/body>/)
       if (bodyMatch) {
         return bodyMatch[1]
       }
@@ -57,10 +57,10 @@ export function PreviewPlantilla({ tipo, contenido, tipoContenido = 'texto', var
     
     // Si tiene estructura HTML pero sin body, extraer el contenido principal
     if (htmlContent.includes('<html>')) {
-      const htmlMatch = htmlContent.match(/<html[^>]*>(.*?)<\/html>/s)
+      const htmlMatch = htmlContent.match(/<html[^>]*>([\s\S]*?)<\/html>/)
       if (htmlMatch) {
         // Remover head si existe
-        let content = htmlMatch[1].replace(/<head[^>]*>.*?<\/head>/s, '')
+        const content = htmlMatch[1].replace(/<head[^>]*>[\s\S]*?<\/head>/, '')
         return content
       }
     }

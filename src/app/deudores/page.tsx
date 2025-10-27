@@ -5,6 +5,22 @@ import { DeudoresTable } from './components/DeudoresTable';
 import { FiltrosDeudores, FiltrosAplicados } from './components/FiltrosDeudores';
 import { HeaderDeudores } from './components/HeaderDeudores';
 import { Deudor } from '@/lib/database';
+
+// Tipo para el deudor con datos combinados
+interface DeudorConDatos {
+  id: string;
+  usuario_id: string;
+  rut: string;
+  nombre: string;
+  created_at: string;
+  deudas: unknown[];
+  contactos: unknown[];
+  email?: string;
+  telefono?: string;
+  monto_total?: number;
+  fecha_vencimiento_mas_reciente?: string;
+  estado_general?: string;
+}
 import { toast } from 'sonner';
 import Protected from "@/components/Protected";
 
@@ -35,26 +51,14 @@ export default function DeudoresPage() {
   // Referencias para conectar con DeudoresTable
   const deudoresTableRef = useRef<{
     handleAgregarDeudor: () => void;
-    handleEditarDeudor: (deudor: Deudor) => void;
-    handleEliminarDeudor: (deudor: Deudor) => void;
+    handleEditarDeudor: (deudor: DeudorConDatos) => void;
+    handleEliminarDeudor: (deudor: DeudorConDatos) => void;
     handleImportarCSV: () => void;
   } | null>(null);
 
   const handleAgregarDeudor = () => {
     if (deudoresTableRef.current?.handleAgregarDeudor) {
       deudoresTableRef.current.handleAgregarDeudor();
-    }
-  };
-
-  const handleEditarDeudor = (deudor: Deudor) => {
-    if (deudoresTableRef.current?.handleEditarDeudor) {
-      deudoresTableRef.current.handleEditarDeudor(deudor);
-    }
-  };
-
-  const handleEliminarDeudor = (deudor: Deudor) => {
-    if (deudoresTableRef.current?.handleEliminarDeudor) {
-      deudoresTableRef.current.handleEliminarDeudor(deudor);
     }
   };
 
@@ -96,12 +100,7 @@ export default function DeudoresPage() {
           <DeudoresTable
             ref={deudoresTableRef}
             filtros={filtros}
-            onAgregarDeudor={handleAgregarDeudor}
-            onEditarDeudor={handleEditarDeudor}
-            onEliminarDeudor={handleEliminarDeudor}
             onEnviarRecordatorio={handleEnviarRecordatorio}
-            onImportarCSV={handleImportarCSV}
-            onExportarDatos={handleExportarDatos}
           />
         </div>
       </div>

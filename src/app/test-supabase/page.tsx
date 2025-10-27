@@ -14,7 +14,7 @@ export default function TestSupabase() {
     const testConnection = async () => {
       try {
         // Probar conexión básica con auth (más seguro)
-        const { data, error } = await supabase.auth.getSession()
+        const { error } = await supabase.auth.getSession()
         
         if (error) {
           setError(`Error de conexión: ${error.message}`)
