@@ -341,6 +341,7 @@ CREATE TABLE plantillas (
     usuario_id uuid REFERENCES usuarios(id) NOT NULL,
     nombre text NOT NULL,
     tipo text NOT NULL CHECK (tipo IN ('email', 'voz', 'sms', 'whatsapp')),
+    tipo_contenido text NOT NULL DEFAULT 'texto' CHECK (tipo_contenido IN ('texto', 'html')),
     contenido text NOT NULL,
     created_at timestamptz DEFAULT now()
 );
@@ -1608,6 +1609,67 @@ ON deudores(usuario_id, rut);
   ADD CONSTRAINT unique_rut_por_usuario UNIQUE (usuario_id, rut);
   ```
   (después de limpiar duplicados existentes)
+
+---
+
+## 16. Actualización de Plantillas - Soporte HTML (Diciembre 2024)
+
+### **Motivación del cambio:**
+Para permitir plantillas de email más personalizadas y profesionales, se agregó soporte para contenido HTML en las plantillas de email.
+
+### **Cambios realizados:**
+
+#### **1. Actualización de la tabla plantillas:**
+```sql
+-- Agregar campo tipo_contenido a la tabla plantillas
+-- Ejecutar en Supabase SQL Editor
+
+-- Agregar columna tipo_contenido
+ALTER TABLE plantillas 
+ADD COLUMN tipo_contenido TEXT DEFAULT 'texto' CHECK (tipo_contenido IN ('texto', 'html'));
+
+-- Actualizar plantillas existentes para que sean de tipo 'texto'
+UPDATE plantillas 
+SET tipo_contenido = 'texto' 
+WHERE tipo_contenido IS NULL;
+
+-- Hacer la columna NOT NULL después de actualizar los datos existentes
+ALTER TABLE plantillas 
+ALTER COLUMN tipo_contenido SET NOT NULL;
+
+-- Comentario para documentar el cambio
+COMMENT ON COLUMN plantillas.tipo_contenido IS 'Tipo de contenido: texto (texto plano) o html (HTML)';
+```
+
+#### **2. Impacto en la aplicación:**
+- **Formularios**: Agregado selector de tipo de contenido para plantillas de email
+- **Editor**: Soporte para HTML con validación de seguridad
+- **Preview**: Renderizado visual de contenido HTML
+- **Variables**: Funcionan correctamente en contenido HTML
+- **Seguridad**: Validación contra tags peligrosos (script, iframe, etc.)
+
+#### **3. Beneficios:**
+- ✅ **Personalización**: Emails con formato HTML profesional
+- ✅ **Flexibilidad**: Opción entre texto plano y HTML
+- ✅ **Seguridad**: Validación automática de HTML
+- ✅ **Compatibilidad**: Plantillas existentes siguen funcionando
+- ✅ **UX**: Preview rápido sin entrar a editar
+
+#### **4. Funcionalidades agregadas:**
+- **Selector de tipo de contenido**: Solo aparece para plantillas de email
+- **Editor HTML**: Con syntax highlighting y validación
+- **Preview HTML**: Renderizado visual en tiempo real
+- **Botón de preview rápido**: En página principal de plantillas
+- **Validación de seguridad**: Bloqueo de tags peligrosos
+- **Variables dinámicas**: Funcionan en contenido HTML
+
+#### **5. Archivos modificados:**
+- `scripts/add-tipo-contenido.sql` - Script de actualización de BD
+- `src/app/plantillas/nueva/page.tsx` - Formulario con selector HTML
+- `src/app/plantillas/[id]/page.tsx` - Edición con soporte HTML
+- `src/app/plantillas/page.tsx` - Preview rápido en modal
+- `src/app/plantillas/components/EditorContenido.tsx` - Editor HTML
+- `src/app/plantillas/components/PreviewPlantilla.tsx` - Renderizado HTML
 
 ---
 

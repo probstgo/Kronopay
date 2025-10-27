@@ -25,12 +25,18 @@
 - ✅ **Duplicación**: Crear copias de plantillas existentes
 - ✅ **Eliminación**: Borrado con confirmación
 - ✅ **Estadísticas**: Contadores por tipo de plantilla
+- ✅ **Soporte HTML**: Plantillas de email con formato HTML
+- ✅ **Preview Rápido**: Vista previa sin entrar a editar
+- ✅ **Validación HTML**: Seguridad contra tags peligrosos
 
 ### 🎯 **Objetivos Cumplidos**
 1. ✅ **Crear** sistema completo de gestión de plantillas
 2. ✅ **Implementar** editor con variables dinámicas
 3. ✅ **Desarrollar** preview en tiempo real
 4. ✅ **Integrar** con la arquitectura existente del proyecto
+5. ✅ **Agregar** soporte HTML para emails personalizados
+6. ✅ **Implementar** preview rápido en página principal
+7. ✅ **Asegurar** validación de seguridad HTML
 
 ---
 
@@ -278,6 +284,23 @@
   - `src/app/plantillas/page.tsx` - INSERT (duplicar) con usuario_id
 - ✅ **Compilación Exitosa**: Sin errores después de la corrección
 - ✅ **Funcionalidad Restaurada**: Guardar plantillas ahora funciona correctamente
+
+### **Implementación de Soporte HTML en Plantillas** ✅ COMPLETADO (Diciembre 2024)
+- ✅ **Campo tipo_contenido**: Agregado a tabla plantillas ('texto' | 'html')
+- ✅ **Selector de Tipo**: Opción para elegir entre texto plano y HTML
+- ✅ **Editor HTML**: Soporte completo con validación de seguridad
+- ✅ **Preview HTML**: Renderizado visual de contenido HTML
+- ✅ **Variables Dinámicas**: Funcionan correctamente en HTML
+- ✅ **Validación de Seguridad**: Bloqueo de tags peligrosos
+- ✅ **Botón Preview Rápido**: Vista previa sin entrar a editar
+- ✅ **Compatibilidad Next.js 15**: Corrección de errores de params
+- ✅ **Archivos Modificados**:
+  - `scripts/add-tipo-contenido.sql` - Script de base de datos
+  - `src/app/plantillas/nueva/page.tsx` - Formulario con selector HTML
+  - `src/app/plantillas/[id]/page.tsx` - Edición con soporte HTML
+  - `src/app/plantillas/page.tsx` - Preview rápido en modal
+  - `src/app/plantillas/components/EditorContenido.tsx` - Editor HTML
+  - `src/app/plantillas/components/PreviewPlantilla.tsx` - Renderizado HTML
 
 ---
 

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Save, Eye, Mail, Volume2, MessageSquare } from 'lucide-react'
+import { ArrowLeft, Save, Eye, Mail, Volume2, MessageSquare, Type, Code } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
@@ -37,6 +37,7 @@ export default function NuevaPlantillaPage() {
   const [formData, setFormData] = useState({
     nombre: '',
     tipo: 'email' as 'email' | 'voz' | 'sms' | 'whatsapp',
+    tipo_contenido: 'texto' as 'texto' | 'html',
     contenido: ''
   })
   const [loading, setLoading] = useState(false)
@@ -62,6 +63,7 @@ export default function NuevaPlantillaPage() {
         .insert({
           nombre: formData.nombre.trim(),
           tipo: formData.tipo,
+          tipo_contenido: formData.tipo_contenido,
           contenido: formData.contenido.trim(),
           usuario_id: user?.id
         })
@@ -148,6 +150,41 @@ export default function NuevaPlantillaPage() {
                     </Select>
                   </div>
 
+                  {/* Tipo de Contenido - Solo para Email */}
+                  {formData.tipo === 'email' && (
+                    <div>
+                      <Label>Tipo de Contenido</Label>
+                      <Select 
+                        value={formData.tipo_contenido} 
+                        onValueChange={(value: 'texto' | 'html') => setFormData(prev => ({ ...prev, tipo_contenido: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona el tipo de contenido" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="texto">
+                            <div className="flex items-center gap-2">
+                              <Type className="h-4 w-4" />
+                              <div>
+                                <div className="font-medium">Texto Plano</div>
+                                <div className="text-xs text-gray-500">Contenido en texto simple</div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="html">
+                            <div className="flex items-center gap-2">
+                              <Code className="h-4 w-4" />
+                              <div>
+                                <div className="font-medium">HTML</div>
+                                <div className="text-xs text-gray-500">Contenido con formato HTML</div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
                   {/* Contenido */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
@@ -166,6 +203,7 @@ export default function NuevaPlantillaPage() {
                       value={formData.contenido}
                       onChange={(contenido) => setFormData(prev => ({ ...prev, contenido }))}
                       variables={VARIABLES_DISPONIBLES}
+                      tipoContenido={formData.tipo_contenido}
                     />
                   </div>
 
@@ -203,6 +241,7 @@ export default function NuevaPlantillaPage() {
                   <PreviewPlantilla
                     tipo={formData.tipo}
                     contenido={formData.contenido}
+                    tipoContenido={formData.tipo_contenido}
                     variables={{
                       nombre: 'Juan Pérez',
                       monto: '$150.000',

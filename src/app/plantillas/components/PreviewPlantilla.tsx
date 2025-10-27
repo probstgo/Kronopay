@@ -7,6 +7,7 @@ import { Mail, Volume2, MessageSquare, Phone } from 'lucide-react'
 interface PreviewPlantillaProps {
   tipo: 'email' | 'voz' | 'sms' | 'whatsapp'
   contenido: string
+  tipoContenido?: 'texto' | 'html'
   variables: {
     nombre: string
     monto: string
@@ -31,7 +32,7 @@ const COLORES_TIPO = {
   whatsapp: 'bg-green-100 text-green-800'
 }
 
-export function PreviewPlantilla({ tipo, contenido, variables }: PreviewPlantillaProps) {
+export function PreviewPlantilla({ tipo, contenido, tipoContenido = 'texto', variables }: PreviewPlantillaProps) {
   const IconComponent = ICONOS_TIPO[tipo]
   
   // Reemplazar variables en el contenido
@@ -42,6 +43,31 @@ export function PreviewPlantilla({ tipo, contenido, variables }: PreviewPlantill
     .replace(/\{\{empresa\}\}/g, variables.empresa)
     .replace(/\{\{telefono\}\}/g, variables.telefono)
     .replace(/\{\{email\}\}/g, variables.email)
+
+  // Función para extraer y limpiar HTML
+  const procesarHTML = (htmlContent: string) => {
+    // Si el HTML tiene estructura completa (DOCTYPE, html, head, body)
+    if (htmlContent.includes('<body>')) {
+      // Extraer solo el contenido del body
+      const bodyMatch = htmlContent.match(/<body[^>]*>(.*?)<\/body>/s)
+      if (bodyMatch) {
+        return bodyMatch[1]
+      }
+    }
+    
+    // Si tiene estructura HTML pero sin body, extraer el contenido principal
+    if (htmlContent.includes('<html>')) {
+      const htmlMatch = htmlContent.match(/<html[^>]*>(.*?)<\/html>/s)
+      if (htmlMatch) {
+        // Remover head si existe
+        let content = htmlMatch[1].replace(/<head[^>]*>.*?<\/head>/s, '')
+        return content
+      }
+    }
+    
+    // Si no tiene estructura completa, usar el contenido tal como está
+    return htmlContent
+  }
 
   const renderizarContenido = () => {
     if (!contenido.trim()) {
@@ -61,12 +87,19 @@ export function PreviewPlantilla({ tipo, contenido, variables }: PreviewPlantill
               <div className="text-sm text-gray-600">Para: {variables.nombre}</div>
               <div className="text-sm text-gray-600">Asunto: Recordatorio de Pago</div>
             </div>
-            <div className="prose prose-sm max-w-none">
-              {contenidoRenderizado.split('\n').map((linea, index) => (
-                <p key={index} className="mb-2">
-                  {linea || '\u00A0'}
-                </p>
-              ))}
+            <div className={tipoContenido === 'html' ? 'prose prose-sm max-w-none' : 'prose prose-sm max-w-none'}>
+              {tipoContenido === 'html' ? (
+                <div 
+                  dangerouslySetInnerHTML={{ __html: procesarHTML(contenidoRenderizado) }}
+                  className="border rounded p-3 bg-white"
+                />
+              ) : (
+                contenidoRenderizado.split('\n').map((linea, index) => (
+                  <p key={index} className="mb-2">
+                    {linea || '\u00A0'}
+                  </p>
+                ))
+              )}
             </div>
           </div>
         )
@@ -166,6 +199,9 @@ export function PreviewPlantilla({ tipo, contenido, variables }: PreviewPlantill
         <div className="text-xs text-gray-500 space-y-1">
           <div>✓ Variables reemplazadas con datos de ejemplo</div>
           <div>✓ Formato optimizado para {tipo}</div>
+          {tipoContenido === 'html' && (
+            <div className="text-blue-600">✓ Contenido HTML renderizado</div>
+          )}
           {tipo === 'sms' && contenidoRenderizado.length > 160 && (
             <div className="text-orange-600">
               ⚠️ Este SMS será dividido en múltiples mensajes

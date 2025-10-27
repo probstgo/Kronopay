@@ -1,13 +1,13 @@
 'use client'
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, use } from 'react'
 import Protected from '@/components/Protected'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Save, Eye, Mail, Volume2, MessageSquare, Trash2 } from 'lucide-react'
+import { ArrowLeft, Save, Eye, Mail, Volume2, MessageSquare, Trash2, Type, Code } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
@@ -19,6 +19,7 @@ interface Plantilla {
   id: string
   nombre: string
   tipo: 'email' | 'voz' | 'sms' | 'whatsapp'
+  tipo_contenido: 'texto' | 'html'
   contenido: string
   created_at: string
 }
@@ -39,9 +40,10 @@ const VARIABLES_DISPONIBLES = [
   { variable: '{{email}}', descripcion: 'Email de contacto' }
 ]
 
-export default function EditarPlantillaPage({ params }: { params: { id: string } }) {
+export default function EditarPlantillaPage({ params }: { params: Promise<{ id: string }> }) {
   const { user } = useAuth()
   const router = useRouter()
+  const resolvedParams = use(params)
   const [plantilla, setPlantilla] = useState<Plantilla | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -49,7 +51,8 @@ export default function EditarPlantillaPage({ params }: { params: { id: string }
   const [formData, setFormData] = useState({
     nombre: '',
     tipo: 'email' as 'email' | 'voz' | 'sms' | 'whatsapp',
-    contenido: ''
+    tipo_contenido: 'texto' as 'texto' | 'html',
+    contenido: '' as string
   })
 
   const cargarPlantilla = useCallback(async () => {
@@ -58,16 +61,17 @@ export default function EditarPlantillaPage({ params }: { params: { id: string }
       const { data, error } = await supabase
         .from('plantillas')
         .select('*')
-        .eq('id', params.id)
+        .eq('id', resolvedParams.id)
         .single()
 
       if (error) throw error
       
       setPlantilla(data)
       setFormData({
-        nombre: data.nombre,
-        tipo: data.tipo,
-        contenido: data.contenido
+        nombre: data.nombre || '',
+        tipo: data.tipo || 'email',
+        tipo_contenido: data.tipo_contenido || 'texto',
+        contenido: typeof data.contenido === 'string' ? data.contenido : ''
       })
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
@@ -76,13 +80,13 @@ export default function EditarPlantillaPage({ params }: { params: { id: string }
     } finally {
       setLoading(false)
     }
-  }, [params.id, router])
+  }, [resolvedParams.id, router])
 
   useEffect(() => {
-    if (user && params.id) {
+    if (user && resolvedParams.id) {
       cargarPlantilla()
     }
-  }, [user, params.id, cargarPlantilla])
+  }, [user, resolvedParams.id, cargarPlantilla])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -104,10 +108,11 @@ export default function EditarPlantillaPage({ params }: { params: { id: string }
         .update({
           nombre: formData.nombre.trim(),
           tipo: formData.tipo,
+          tipo_contenido: formData.tipo_contenido,
           contenido: formData.contenido.trim(),
           usuario_id: user?.id
         })
-        .eq('id', params.id)
+        .eq('id', resolvedParams.id)
 
       if (error) throw error
 
@@ -130,7 +135,7 @@ export default function EditarPlantillaPage({ params }: { params: { id: string }
       const { error } = await supabase
         .from('plantillas')
         .delete()
-        .eq('id', params.id)
+        .eq('id', resolvedParams.id)
 
       if (error) throw error
 
@@ -253,6 +258,41 @@ export default function EditarPlantillaPage({ params }: { params: { id: string }
                     </Select>
                   </div>
 
+                  {/* Tipo de Contenido - Solo para Email */}
+                  {formData.tipo === 'email' && (
+                    <div>
+                      <Label>Tipo de Contenido</Label>
+                      <Select 
+                        value={formData.tipo_contenido} 
+                        onValueChange={(value: 'texto' | 'html') => setFormData(prev => ({ ...prev, tipo_contenido: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona el tipo de contenido" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="texto">
+                            <div className="flex items-center gap-2">
+                              <Type className="h-4 w-4" />
+                              <div>
+                                <div className="font-medium">Texto Plano</div>
+                                <div className="text-xs text-gray-500">Contenido en texto simple</div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="html">
+                            <div className="flex items-center gap-2">
+                              <Code className="h-4 w-4" />
+                              <div>
+                                <div className="font-medium">HTML</div>
+                                <div className="text-xs text-gray-500">Contenido con formato HTML</div>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
                   {/* Contenido */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
@@ -269,8 +309,9 @@ export default function EditarPlantillaPage({ params }: { params: { id: string }
                     </div>
                     <EditorContenido
                       value={formData.contenido}
-                      onChange={(contenido) => setFormData(prev => ({ ...prev, contenido }))}
+                      onChange={(contenido: string) => setFormData(prev => ({ ...prev, contenido: typeof contenido === 'string' ? contenido : '' }))}
                       variables={VARIABLES_DISPONIBLES}
+                      tipoContenido={formData.tipo_contenido}
                     />
                   </div>
 
@@ -308,6 +349,7 @@ export default function EditarPlantillaPage({ params }: { params: { id: string }
                   <PreviewPlantilla
                     tipo={formData.tipo}
                     contenido={formData.contenido}
+                    tipoContenido={formData.tipo_contenido}
                     variables={{
                       nombre: 'Juan Pérez',
                       monto: '$150.000',

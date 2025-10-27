@@ -7,16 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Plus, Search, FileText, Mail, Volume2, MessageSquare, Edit, Trash2, Copy } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Plus, Search, FileText, Mail, Volume2, MessageSquare, Edit, Trash2, Copy, Eye } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
+import { PreviewPlantilla } from './components/PreviewPlantilla'
 
 interface Plantilla {
   id: string
   nombre: string
   tipo: 'email' | 'voz' | 'sms' | 'whatsapp'
+  tipo_contenido: 'texto' | 'html'
   contenido: string
   created_at: string
 }
@@ -34,6 +37,7 @@ export default function PlantillasPage() {
   const [loading, setLoading] = useState(true)
   const [busqueda, setBusqueda] = useState('')
   const [filtroTipo, setFiltroTipo] = useState<string>('todos')
+  const [previewPlantilla, setPreviewPlantilla] = useState<Plantilla | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -76,6 +80,14 @@ export default function PlantillasPage() {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
       toast.error('Error al eliminar plantilla: ' + errorMessage)
     }
+  }
+
+  const abrirPreview = (plantilla: Plantilla) => {
+    setPreviewPlantilla(plantilla)
+  }
+
+  const cerrarPreview = () => {
+    setPreviewPlantilla(null)
   }
 
   const duplicarPlantilla = async (plantilla: Plantilla) => {
@@ -241,6 +253,14 @@ export default function PlantillasPage() {
                         {new Date(plantilla.created_at).toLocaleDateString('es-CL')}
                       </span>
                       <div className="flex gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => abrirPreview(plantilla)}
+                          title="Vista previa"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         <Link href={`/plantillas/${plantilla.id}`}>
                           <Button variant="ghost" size="sm">
                             <Edit className="h-4 w-4" />
@@ -270,6 +290,35 @@ export default function PlantillasPage() {
           </div>
         )}
       </div>
+
+      {/* Modal de Preview */}
+      <Dialog open={!!previewPlantilla} onOpenChange={cerrarPreview}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Vista Previa - {previewPlantilla?.nombre}
+            </DialogTitle>
+          </DialogHeader>
+          {previewPlantilla && (
+            <div className="mt-4">
+              <PreviewPlantilla
+                tipo={previewPlantilla.tipo}
+                contenido={previewPlantilla.contenido}
+                tipoContenido={previewPlantilla.tipo_contenido || 'texto'}
+                variables={{
+                  nombre: 'Juan Pérez',
+                  monto: '$150.000',
+                  fecha_vencimiento: '15 de enero, 2025',
+                  empresa: 'Mi Empresa',
+                  telefono: '+56912345678',
+                  email: 'contacto@miempresa.com'
+                }}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Protected>
   )
 }
