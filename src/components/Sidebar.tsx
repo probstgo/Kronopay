@@ -52,11 +52,6 @@ const navigationItems = [
     icon: Mail,
   },
   {
-    title: "Test Llamadas",
-    href: "/test-llamadas",
-    icon: Phone,
-  },
-  {
     title: "Teléfono",
     href: "/telefono",
     icon: Phone,

@@ -13,34 +13,36 @@
 - **Integración ElevenLabs** completamente funcional
 - **APIs de llamadas** implementadas y operativas
 - **Webhook de ElevenLabs** configurado y funcionando
-- **Página de pruebas** completamente funcional
+- **Página principal** con visualización y pruebas integradas
 - **Base de datos** preparada con tablas de agentes y números
+- **Interfaz simplificada** con modal de pruebas contextual
 
 ### 🚀 **Funcionalidades Ya Implementadas**
 - ✅ **Integración ElevenLabs**: Cliente configurado y funcionando
 - ✅ **APIs de Agentes**: Listar agentes, obtener detalles, iniciar llamadas
 - ✅ **Webhook Funcional**: Recibe eventos y actualiza historial automáticamente
-- ✅ **Página de Pruebas**: Interfaz completa para testing de llamadas
+- ✅ **Página Principal**: Interfaz completa con visualización y pruebas integradas
 - ✅ **Base de Datos**: Tablas `llamada_agente`, `phone_numbers`, `agente_conversaciones`
 - ✅ **Automatización**: Job programado ejecuta llamadas automáticamente
 - ✅ **Seguridad**: Rate limiting y guardrails implementados
-- ✅ **Página Principal**: Dashboard completo con estadísticas en tiempo real
-- ✅ **Gestión de Agentes**: CRUD completo con interfaz profesional
+- ✅ **Visualización de Agentes**: Solo lectura con descripciones y resúmenes
+- ✅ **Modal de Pruebas**: Interfaz integrada para testing directo de agentes
 - ✅ **APIs de Backend**: Estadísticas y gestión de agentes implementadas
-- ✅ **Navegación**: Estructura completa de páginas con botones "Volver"
 - ✅ **Diseño**: Alineado con patrón de Gestión de Deudores
 - ✅ **Agente Global**: "Cobrador Profesional" visible para todos los usuarios
 - ✅ **Variables Dinámicas**: Personalización automática por deudor
 - ✅ **RLS Seguro**: Row Level Security funcionando correctamente
+- ✅ **Pruebas Integradas**: Modal contextual para pruebas sin cambiar de página
 
 ### 🎯 **Objetivos del Plan**
-1. ✅ **Implementar** página principal de gestión de teléfono
-2. ✅ **Crear** componentes para gestión de agentes
+1. ✅ **Implementar** página principal de visualización de agentes
+2. ✅ **Crear** interfaz simplificada para visualización y pruebas
 3. ✅ **Pool de números** - Sistema automático implementado en BD
 4. ✅ **Métricas** - Integradas en dashboard principal
 5. ✅ **Agente Global** - "Cobrador Profesional" disponible para todos
 6. ✅ **Variables Dinámicas** - Personalización automática por deudor
 7. ✅ **RLS Seguro** - Row Level Security funcionando correctamente
+8. ✅ **Pruebas Directas** - Acceso rápido a pruebas por agente
 
 ---
 
@@ -235,55 +237,53 @@
 - src/app/telefono/page.tsx
 
 ✅ Funcionalidades implementadas:
-1. Lista de agentes directamente en página principal
-2. Botón "Probar Agentes" para acceso a /test-llamadas
+1. Lista de agentes con interfaz de tarjetas informativas
+2. Descripciones automáticas de cada agente según su tipo
 3. Solo lectura - usuarios no pueden crear/editar agentes
-4. Búsqueda en tiempo real por nombre, ID o agente ElevenLabs
-5. Tabla organizada con todas las columnas necesarias
-6. Acciones por agente: Solo visualización (sin edición)
-7. Estados de carga y manejo de errores
-8. Integración completa con APIs de backend
-9. RLS seguro con autenticación correcta
+4. Búsqueda en tiempo real por nombre o ID de agente
+5. Estados visuales: Solo badge "Predeterminado" cuando corresponde
+6. Botón "Probar" por cada agente que abre modal contextual
+7. Modal de pruebas integrado con fondo translúcido y blur
+8. Selección automática de número saliente del agente
+9. Formulario simplificado: solo número de destino
+10. Estados de carga y manejo de errores
+11. Integración completa con APIs de backend
+12. RLS seguro con autenticación correcta
+13. Diseño responsive y moderno
+14. Interfaz simplificada sin información técnica innecesaria
 ```
 
-#### **Tarea 1.2: Crear Componente AgentesLista ✅ COMPLETADA**
+#### **Tarea 1.2: Integrar Modal de Pruebas ✅ COMPLETADA**
 ```typescript
-📁 Archivo implementado:
-- src/app/telefono/components/AgentesLista.tsx (ELIMINADO - integrado en página principal)
+📁 Archivo: src/app/telefono/page.tsx
 
 ✅ Funcionalidades implementadas:
-1. Listar agentes de la BD (llamada_agente)
-2. Mostrar configuración de cada agente
-3. Indicar cuál es predeterminado
-4. Acciones: Solo visualización (sin edición)
-5. Integrar con APIs de ElevenLabs
-6. Estados de carga y error
-7. Tabla organizada siguiendo patrón de Gestión de Deudores
-8. Búsqueda en tiempo real
-9. Filtros integrados
-10. Navegación con botón "Volver"
-11. **NOTA**: Ahora integrado directamente en página principal /telefono
-12. **CAMBIO**: Solo lectura - usuarios no pueden crear/editar agentes
+1. Modal contextual integrado en página principal
+2. Fondo translúcido con efecto blur (no negro opaco)
+3. Selección automática de número saliente del agente
+4. Formulario simplificado: solo número de destino
+5. Título descriptivo con nombre del agente
+6. Estados de carga y manejo de errores
+7. Integración con APIs de ElevenLabs
+8. Cierre con botón X o botón Cancelar
+9. Sin información técnica innecesaria para el usuario
+10. Experiencia fluida sin cambiar de página
 ```
 
-#### **Tarea 1.3: Crear Componente AgenteForm ✅ COMPLETADA**
+#### **Tarea 1.3: Eliminar Funcionalidades de Gestión ✅ COMPLETADA**
 ```typescript
-📁 Archivo implementado:
-- src/app/telefono/components/AgenteForm.tsx (ELIMINADO - solo lectura)
+📁 Cambios realizados:
+- Eliminadas funciones de edición, eliminación y activación/desactivación
+- Removidos botones de gestión de agentes
+- Simplificada interfaz para solo visualización
 
-✅ Funcionalidades implementadas:
-1. Formulario para crear/editar agentes (ELIMINADO)
-2. Campos: nombre, agent_id, configuración de voz (ELIMINADO)
-3. Selector de agente de ElevenLabs (ELIMINADO)
-4. Configuración de prioridad (ELIMINADO)
-5. Marcar como predeterminado (ELIMINADO)
-6. Validaciones en tiempo real (ELIMINADO)
-7. Modo edición con carga de datos (ELIMINADO)
-8. Navegación con botón "Volver" (ELIMINADO)
-9. Configuración avanzada de voz (ELIMINADO)
-10. Manejo de errores robusto (ELIMINADO)
-11. **CAMBIO**: Solo lectura - usuarios no pueden crear/editar agentes
-12. **NOTA**: Gestión de agentes solo a través de Supabase (admin)
+✅ Funcionalidades eliminadas:
+1. Botones de editar, eliminar agentes
+2. Funciones handleTogglePredeterminado, handleToggleActivo, handleDelete
+3. Enlaces a páginas de edición
+4. Interfaz de gestión compleja
+5. **NOTA**: Gestión de agentes solo a través de Supabase (admin)
+6. **ENFOQUE**: Solo visualización y pruebas para usuarios finales
 ```
 
 #### **APIs Implementadas ✅ COMPLETADAS**
@@ -308,19 +308,20 @@
 
 #### **Páginas Implementadas ✅ COMPLETADAS**
 ```typescript
-📁 Páginas implementadas:
-- /telefono - Lista de agentes directamente (antes era dashboard)
+📁 Página implementada:
+- /telefono - Página única con visualización y pruebas integradas
 
 ✅ Funcionalidades:
-1. Navegación completa entre páginas
+1. Interfaz completa en una sola página
 2. Alineación consistente con resto de la app
-3. Contenedores responsive
-4. Botones de navegación "Volver"
-5. Integración perfecta con componentes
-6. **CAMBIO**: /telefono ahora muestra lista de agentes directamente
-7. **NUEVO**: Botón "Probar Agentes" para acceso rápido a pruebas
-8. **ELIMINADO**: Páginas de creación/edición de agentes
+3. Diseño responsive
+4. Modal integrado para pruebas
+5. Sin necesidad de navegación entre páginas
+6. **CAMBIO**: Eliminada página /test-llamadas (redundante)
+7. **NUEVO**: Modal contextual para pruebas directas
+8. **MEJORADO**: Experiencia de usuario unificada
 9. **NOTA**: Solo lectura - usuarios no pueden crear/editar agentes
+10. **ENFOQUE**: Todo en una sola página - visualización y pruebas
 ```
 
 ### **FASE 2: Variables Dinámicas y Agente Global ✅ COMPLETADA**
@@ -422,10 +423,13 @@
 
 ### **Funcionalidad**
 - **Solo lectura**: Usuarios no pueden crear/editar agentes
+- **Visualización simplificada**: Interfaz de tarjetas con descripciones automáticas
+- **Información esencial**: Solo nombre, descripción y estado predeterminado
+- **Pruebas directas**: Botones de prueba por cada agente
 - **Agente global**: "Cobrador Profesional" disponible para todos
 - **Variables dinámicas**: Personalización automática por deudor
 - **RLS seguro**: Row Level Security funcionando correctamente
-- **Integración**: Conexión perfecta con campañas
+- **Navegación mejorada**: Acceso directo entre páginas
 
 ### **Rendimiento**
 - **Tiempo de carga**: < 2 segundos para listados
@@ -434,10 +438,12 @@
 - **Escalabilidad**: Funciona con múltiples agentes
 
 ### **UX**
-- **Intuitivo**: Fácil gestión de agentes y números
+- **Intuitivo**: Fácil visualización de agentes y acceso a pruebas
 - **Responsive**: Funciona en móvil y desktop
 - **Consistente**: Sigue patrones del proyecto
 - **Accesible**: Cumple estándares básicos
+- **Simplificado**: Enfoque en visualización y pruebas únicamente
+- **Limpio**: Sin información técnica innecesaria
 
 ---
 
@@ -451,15 +457,17 @@
 
 ### **Esta Semana**
 1. ✅ **Completar** Fase 1 (Página Principal y Agentes)
-2. ✅ **Implementar** página principal de teléfono
-3. ✅ **Crear** componentes de gestión de agentes
+2. ✅ **Implementar** página principal de teléfono simplificada
+3. ✅ **Crear** interfaz de visualización de agentes
 4. ✅ **Testing** de funcionalidades básicas
-5. ✅ **Simplificar** página principal para mostrar agentes directamente
-6. ✅ **Agregar** botón de pruebas de agentes
+5. ✅ **Simplificar** página principal para mostrar agentes en tarjetas
+6. ✅ **Agregar** botones de pruebas directas por agente
 7. ✅ **Implementar** variables dinámicas
 8. ✅ **Crear** agente global "Cobrador Profesional"
 9. ✅ **Configurar** RLS seguro
 10. ✅ **Eliminar** funcionalidad de creación/edición
+11. ✅ **Mejorar** navegación entre páginas
+12. ✅ **Agregar** descripciones automáticas de agentes
 
 ### **Próxima Semana**
 1. ✅ **Completado** - Módulo de teléfono al 100%
@@ -467,6 +475,9 @@
 3. ✅ **Completado** - Agente global disponible
 4. ✅ **Completado** - RLS seguro implementado
 5. ✅ **Completado** - Solo lectura para usuarios
+6. ✅ **Completado** - Interfaz simplificada implementada
+7. ✅ **Completado** - Pruebas directas por agente
+8. ✅ **Completado** - Navegación mejorada
 
 ---
 
@@ -535,8 +546,8 @@ El módulo de teléfono está **100% completado** con todas las funcionalidades 
 - ✅ **Sistema de llamadas** probado y operativo
 - ✅ **Base de datos** optimizada y lista
 - ✅ **Automatización** funcionando correctamente
-- ✅ **Página principal** con dashboard completo
-- ✅ **Gestión de agentes** solo lectura implementado
+- ✅ **Página principal** con interfaz simplificada de visualización
+- ✅ **Visualización de agentes** solo lectura implementado
 - ✅ **APIs de backend** funcionando perfectamente
 - ✅ **Navegación** estructurada y consistente
 - ✅ **Diseño** alineado con resto de la aplicación
@@ -545,6 +556,8 @@ El módulo de teléfono está **100% completado** con todas las funcionalidades 
 - ✅ **Agente Global** "Cobrador Profesional" disponible para todos
 - ✅ **Variables Dinámicas** personalización automática por deudor
 - ✅ **RLS Seguro** Row Level Security funcionando correctamente
+- ✅ **Pruebas Directas** acceso rápido por agente
+- ✅ **Interfaz Simplificada** enfoque en visualización y pruebas
 
 ### **Funcionalidades Implementadas:**
 El módulo de teléfono ahora incluye:
@@ -554,15 +567,26 @@ El módulo de teléfono ahora incluye:
 4. **RLS Seguro**: Row Level Security funcionando correctamente
 5. **Integración Completa**: Conexión perfecta con sistema de campañas
 6. **Script SQL**: Inserción automática de agente global
+7. **Interfaz Simplificada**: Visualización en tarjetas con descripciones automáticas
+8. **Pruebas Directas**: Botones de prueba por cada agente
+9. **Navegación Mejorada**: Acceso directo entre páginas
+10. **Descripciones Automáticas**: Información contextual por tipo de agente
+11. **Información Esencial**: Solo datos relevantes para el usuario final
 
-### **Cambio Reciente Implementado:**
-- ✅ **Simplificación de /telefono**: Ahora muestra directamente la lista de agentes
-- ✅ **Acceso rápido a pruebas**: Botón "Probar Agentes" para ir a /test-llamadas
-- ✅ **Mejor UX**: Una página menos en la navegación, acceso directo a funcionalidades
+### **Cambios Recientes Implementados:**
+- ✅ **Simplificación de /telefono**: Ahora muestra agentes en formato de tarjetas informativas
+- ✅ **Modal integrado**: Pruebas directas sin cambiar de página
+- ✅ **Fondo translúcido**: Modal con efecto blur (no negro opaco)
+- ✅ **Formulario simplificado**: Solo número de destino, selección automática de número saliente
+- ✅ **Mejor UX**: Interfaz unificada enfocada en visualización y pruebas
+- ✅ **Descripciones automáticas**: Información contextual por tipo de agente
+- ✅ **Eliminada /test-llamadas**: Funcionalidad redundante integrada en página principal
 - ✅ **Agente Global**: "Cobrador Profesional" disponible para todos los usuarios
 - ✅ **Variables Dinámicas**: Personalización automática por deudor
 - ✅ **RLS Seguro**: Row Level Security funcionando correctamente
 - ✅ **Solo Lectura**: Usuarios no pueden crear/editar agentes
+- ✅ **Enfoque simplificado**: Todo en una sola página
+- ✅ **Información esencial**: Solo datos relevantes sin información técnica innecesaria
 
 ---
 
