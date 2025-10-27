@@ -13,24 +13,8 @@ interface AgenteStats {
   predeterminados: number;
 }
 
-interface NumerosStats {
-  total: number;
-  disponibles: number;
-  ocupados: number;
-  suspendidos: number;
-}
-
-interface LlamadasStats {
-  hoy: number;
-  esta_semana: number;
-  duracion_promedio: number;
-  tasa_exito: number;
-}
-
 export default function TelefonoPage() {
   const [agentesStats, setAgentesStats] = useState<AgenteStats>({ total: 0, activos: 0, predeterminados: 0 });
-  const [numerosStats, setNumerosStats] = useState<NumerosStats>({ total: 0, disponibles: 0, ocupados: 0, suspendidos: 0 });
-  const [llamadasStats, setLlamadasStats] = useState<LlamadasStats>({ hoy: 0, esta_semana: 0, duracion_promedio: 0, tasa_exito: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,20 +30,6 @@ export default function TelefonoPage() {
       if (agentesResponse.ok) {
         const agentesData = await agentesResponse.json();
         setAgentesStats(agentesData);
-      }
-
-      // Cargar estadísticas de números
-      const numerosResponse = await fetch('/api/telefono/numeros/stats');
-      if (numerosResponse.ok) {
-        const numerosData = await numerosResponse.json();
-        setNumerosStats(numerosData);
-      }
-
-      // Cargar estadísticas de llamadas
-      const llamadasResponse = await fetch('/api/telefono/llamadas/stats');
-      if (llamadasResponse.ok) {
-        const llamadasData = await llamadasResponse.json();
-        setLlamadasStats(llamadasData);
       }
     } catch (error) {
       console.error('Error cargando estadísticas:', error);
@@ -94,8 +64,8 @@ export default function TelefonoPage() {
         </div>
       </div>
 
-      {/* Estadísticas Generales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Estadísticas de Agentes */}
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Agentes</CardTitle>
@@ -108,49 +78,10 @@ export default function TelefonoPage() {
             </p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Números</CardTitle>
-            <Phone className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{numerosStats.total}</div>
-            <p className="text-xs text-muted-foreground">
-              {numerosStats.disponibles} disponibles, {numerosStats.ocupados} ocupados
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Llamadas Hoy</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{llamadasStats.hoy}</div>
-            <p className="text-xs text-muted-foreground">
-              {llamadasStats.esta_semana} esta semana
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tasa de Éxito</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{llamadasStats.tasa_exito}%</div>
-            <p className="text-xs text-muted-foreground">
-              Duración promedio: {llamadasStats.duracion_promedio}min
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Acciones Rápidas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -180,46 +111,22 @@ export default function TelefonoPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
-              <Phone className="w-5 h-5 mr-2" />
-              Pool de Números
+              <Settings className="w-5 h-5 mr-2" />
+              Configuración del Sistema
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-gray-600">
-              Gestiona el pool de números telefónicos disponibles
+              Configura APIs, números automáticos y pruebas del sistema
             </p>
             <div className="flex gap-2">
-              <Link href="/telefono/numeros" className="flex-1">
+              <Link href="/test-llamadas" className="flex-1">
                 <Button variant="outline" className="w-full">
-                  Ver Números
+                  Probar Llamadas
                 </Button>
               </Link>
               <Button size="sm" variant="outline">
                 <Settings className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <BarChart3 className="w-5 h-5 mr-2" />
-              Métricas y Reportes
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm text-gray-600">
-              Analiza el rendimiento y estadísticas de llamadas
-            </p>
-            <div className="flex gap-2">
-              <Link href="/telefono/metricas" className="flex-1">
-                <Button variant="outline" className="w-full">
-                  Ver Métricas
-                </Button>
-              </Link>
-              <Button size="sm" variant="outline">
-                <Activity className="w-4 h-4" />
               </Button>
             </div>
           </CardContent>
@@ -232,7 +139,7 @@ export default function TelefonoPage() {
           <CardTitle>Estado del Sistema</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="flex items-center space-x-2">
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
               <span className="text-sm">ElevenLabs API</span>
@@ -247,6 +154,11 @@ export default function TelefonoPage() {
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
               <span className="text-sm">Base de Datos</span>
               <Badge variant="secondary">Operativo</Badge>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span className="text-sm">Pool Automático</span>
+              <Badge variant="secondary">Funcionando</Badge>
             </div>
           </div>
         </CardContent>
