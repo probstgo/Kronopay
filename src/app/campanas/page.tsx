@@ -1,10 +1,9 @@
-import Protected from "@/components/Protected"
-import JourneyBuilder from "./components/JourneyBuilder"
+import { JourneyBuilder } from './components/JourneyBuilder'
 
 export default function CampanasPage() {
   return (
-    <Protected>
+    <div className="h-screen bg-gray-50">
       <JourneyBuilder />
-    </Protected>
-  );
+    </div>
+  )
 }
