@@ -648,6 +648,7 @@ export const theme = {
 4. **✅ Planificado** implementación en 4 fases
 5. **✅ COMPLETADA Fase 1** - Setup y Estructura Base funcionando
 6. **✅ COMPLETADA Fase 2** - Nodos Completos y Configuración funcionando
+7. **✅ COMPLETADA Fase 2.1** - Mejoras UX/UI y Acciones de Nodos funcionando
 
 ### **🔄 PRÓXIMO - Fase 3: Persistencia y Gestión**
 1. **Integrar** con Supabase
@@ -692,7 +693,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 ---
 
-**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración. **Próximo:** Fase 3 - Persistencia y Gestión.
+**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos. **Próximo:** Fase 3 - Persistencia y Gestión.
 
 ---
 
@@ -707,6 +708,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 ### **✅ Fases Completadas:**
 - **✅ Fase 1**: Setup y Estructura Base (Semana 1) - COMPLETADA
 - **✅ Fase 2**: Nodos Completos y Configuración (Semana 2) - COMPLETADA
+- **✅ Fase 2.1**: Mejoras UX/UI y Acciones de Nodos (Semana 2) - COMPLETADA
 
 ### **⏳ Próximas Fases:**
 - **Fase 3**: Persistencia y Gestión (Semana 3)
@@ -785,6 +787,54 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 - ✅ Eliminación de elementos absolutos problemáticos
 - ✅ Manejo correcto de contexto de React Flow
 - ✅ Props en lugar de hooks para mejor separación
+
+---
+
+### **✅ FASE 2.1 COMPLETADA - 28 Diciembre 2024 (Mejoras UX/UI)**
+
+#### **Mejoras de Experiencia de Usuario:**
+- ✅ **Botones de Acción en Nodos**: Cada nodo ahora tiene botones "Configurar" y "Eliminar"
+- ✅ **Barra de Acciones Inferior**: Diseño elegante con iconos y hover effects
+- ✅ **Contexto React**: Sistema de contexto para pasar funciones a nodos
+- ✅ **Comportamiento Intuitivo**: Solo se abre panel de configuración con botón específico
+- ✅ **Restauración Automática**: Al eliminar último nodo, reaparece nodo inicial "+"
+
+#### **Mejoras Técnicas Implementadas:**
+- ✅ **NodeActionsContext**: Contexto React para manejo de acciones de nodos
+- ✅ **NodeWrapper**: Componente wrapper para inyectar funciones en nodos
+- ✅ **useNodeActions Hook**: Hook personalizado para usar el contexto
+- ✅ **handleConfigureNode**: Función para abrir panel de configuración
+- ✅ **handleDeleteNode**: Función para eliminar nodos con confirmación
+- ✅ **Restauración Inteligente**: Lógica para restaurar nodo inicial cuando no quedan nodos reales
+
+#### **Arquitectura de Acciones:**
+```typescript
+// Contexto para pasar funciones a los nodos
+const NodeActionsContext = createContext<{
+  onConfigure: (nodeId: string) => void
+  onDelete: (nodeId: string) => void
+} | null>(null)
+
+// Componente wrapper para pasar funciones a los nodos
+function NodeWrapper({ nodeType, ...props }: any) {
+  const { onConfigure, onDelete } = useNodeActions()
+  // ... renderiza el nodo específico con las funciones
+}
+```
+
+#### **Comportamiento de Nodos Actualizado:**
+- ✅ **Clic en nodo**: No hace nada (comportamiento corregido)
+- ✅ **Clic en "Configurar"**: Abre panel de configuración específico
+- ✅ **Clic en "Eliminar"**: Elimina nodo con confirmación
+- ✅ **Clic en handle "+"**: Abre menú de creación de nodos
+- ✅ **Eliminación del último nodo**: Restaura automáticamente nodo inicial "+"
+
+#### **Mejoras Visuales:**
+- ✅ **Hover Effects**: Transiciones suaves en botones de acción
+- ✅ **Iconos Descriptivos**: ⚙️ para configurar, 🗑️ para eliminar
+- ✅ **Colores Temáticos**: Azul para configurar, rojo para eliminar
+- ✅ **Separación Visual**: Borde superior para separar acciones del contenido
+- ✅ **Responsive Design**: Botones adaptables a diferentes tamaños
 
 ---
 
