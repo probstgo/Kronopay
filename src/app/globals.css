@@ -199,3 +199,11 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Utilidades para truncar texto */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

@@ -100,7 +100,7 @@ export default function BaseNode({
 
       {/* Card del nodo */}
       <Card 
-        className={`w-48 h-24 ${color} text-white relative cursor-pointer ${
+        className={`min-w-52 w-52 min-h-28 ${color} text-white relative cursor-pointer ${
           isSelected ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:shadow-md'
         }`}
         onClick={(e) => {
@@ -114,69 +114,65 @@ export default function BaseNode({
           }
         }}
       >
-        <div className="p-3 h-full flex flex-col justify-between relative">
-          {/* Header del nodo */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">{icono}</span>
-              <span className="font-medium text-sm">{nombre}</span>
+        <div className="p-2 flex flex-col relative">
+          {/* Botones de acción cuando está seleccionado - Posicionados absolutamente */}
+          {isSelected && (
+            <div className="absolute top-1 right-1 flex gap-1 z-10">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-5 w-5 p-0 text-white hover:bg-white/20"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onConfigure(id)
+                }}
+                title="Configurar"
+              >
+                <Settings className="h-2.5 w-2.5" />
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-5 w-5 p-0 text-white hover:bg-white/20"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDuplicate(id)
+                }}
+                title="Duplicar"
+              >
+                <Copy className="h-2.5 w-2.5" />
+              </Button>
+              
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-5 w-5 p-0 text-white hover:bg-white/20"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDelete(id)
+                }}
+                title="Eliminar"
+              >
+                <Trash2 className="h-2.5 w-2.5" />
+              </Button>
             </div>
-            
-            {/* Botones de acción cuando está seleccionado */}
-            {isSelected && (
-              <div className="flex gap-1">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0 text-white hover:bg-white/20"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onConfigure(id)
-                  }}
-                  title="Configurar"
-                >
-                  <Settings className="h-3 w-3" />
-                </Button>
-                
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0 text-white hover:bg-white/20"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onDuplicate(id)
-                  }}
-                  title="Duplicar"
-                >
-                  <Copy className="h-3 w-3" />
-                </Button>
-                
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-6 w-6 p-0 text-white hover:bg-white/20"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    onDelete(id)
-                  }}
-                  title="Eliminar"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
+          )}
+          
+          {/* Contenido principal del nodo - Estructura optimizada para el espacio */}
+          <div className="flex items-center gap-1.5 mb-1">
+            <span className="text-sm">{icono}</span>
+            <span className="font-medium text-xs whitespace-normal break-words">{nombre}</span>
           </div>
           
           {/* Descripción del nodo */}
-          <div className="text-xs opacity-80">
+          <div className="text-xs opacity-80 mb-1 leading-tight whitespace-normal break-words">
             {descripcion}
           </div>
           
           {/* Estado del nodo */}
-          <div className="flex items-center justify-center mt-1">
-            <div className="text-xs opacity-60">
-              {(configuracion.estado as string) || 'Listo'}
-            </div>
+          <div className="text-xs opacity-60 whitespace-normal break-words">
+            {(configuracion.estado as string) || 'Listo'}
           </div>
         </div>
       </Card>
