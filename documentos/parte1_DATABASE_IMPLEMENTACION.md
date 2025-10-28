@@ -1673,6 +1673,339 @@ COMMENT ON COLUMN plantillas.tipo_contenido IS 'Tipo de contenido: texto (texto 
 
 ---
 
+## 17. Implementación de Workflows de Cobranza (Diciembre 2024)
+
+### **Motivación del cambio:**
+Para permitir la creación de workflows visuales de cobranza con canvas interactivo, se agregaron nuevas tablas para manejar workflows, ejecuciones, logs y programaciones.
+
+### **Cambios realizados:**
+
+#### **1. Nuevas tablas agregadas:**
+
+**Tabla principal para workflows de cobranza:**
+```sql
+-- Tabla principal para workflows de cobranza
+CREATE TABLE workflows_cobranza (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id UUID REFERENCES usuarios(id) ON DELETE CASCADE,
+  nombre VARCHAR(255) NOT NULL,
+  descripcion TEXT,
+  canvas_data JSONB NOT NULL, -- Datos del canvas (nodos, conexiones, posición)
+  configuracion JSONB NOT NULL, -- Configuración global del workflow
+  estado VARCHAR(50) DEFAULT 'borrador', -- borrador, activo, pausado, archivado
+  version INTEGER DEFAULT 1,
+  creado_at TIMESTAMP DEFAULT NOW(),
+  actualizado_at TIMESTAMP DEFAULT NOW(),
+  ejecutado_at TIMESTAMP,
+  -- Validaciones
+  CHECK (estado IN ('borrador', 'activo', 'pausado', 'archivado')),
+  CHECK (version > 0),
+  CHECK (canvas_data != '{}'::jsonb)
+);
+```
+
+**Tabla para ejecuciones individuales de workflow:**
+```sql
+-- Tabla para ejecuciones individuales de workflow
+CREATE TABLE ejecuciones_workflow (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workflow_id UUID REFERENCES workflows_cobranza(id) ON DELETE CASCADE,
+  deudor_id UUID REFERENCES deudores(id) ON DELETE CASCADE,
+  estado VARCHAR(50) DEFAULT 'pendiente', -- pendiente, ejecutando, completado, fallido, pausado
+  paso_actual INTEGER DEFAULT 0,
+  contexto_datos JSONB DEFAULT '{}', -- Variables y datos del contexto
+  resultado_final JSONB, -- Resultado final de la ejecución
+  iniciado_at TIMESTAMP DEFAULT NOW(),
+  completado_at TIMESTAMP,
+  proxima_ejecucion TIMESTAMP,
+  -- Validaciones
+  CHECK (estado IN ('pendiente', 'ejecutando', 'completado', 'fallido', 'pausado')),
+  CHECK (paso_actual >= 0),
+  CHECK (completado_at IS NULL OR completado_at >= iniciado_at)
+);
+```
+
+**Tabla para logs detallados de ejecución:**
+```sql
+-- Tabla para logs detallados de ejecución
+CREATE TABLE logs_ejecucion (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ejecucion_id UUID REFERENCES ejecuciones_workflow(id) ON DELETE CASCADE,
+  nodo_id VARCHAR(100) NOT NULL,
+  paso_numero INTEGER NOT NULL,
+  tipo_accion VARCHAR(50) NOT NULL, -- email, llamada, sms, espera, condicion
+  estado VARCHAR(50) NOT NULL, -- iniciado, completado, fallido, saltado
+  datos_entrada JSONB,
+  datos_salida JSONB,
+  error_message TEXT,
+  duracion_ms INTEGER,
+  ejecutado_at TIMESTAMP DEFAULT NOW(),
+  -- Validaciones
+  CHECK (tipo_accion IN ('email', 'llamada', 'sms', 'espera', 'condicion', 'whatsapp')),
+  CHECK (estado IN ('iniciado', 'completado', 'fallido', 'saltado')),
+  CHECK (paso_numero >= 0),
+  CHECK (duracion_ms IS NULL OR duracion_ms >= 0)
+);
+```
+
+**Tabla para programaciones de workflows:**
+```sql
+-- Tabla para programaciones de workflows
+CREATE TABLE programaciones_workflow (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workflow_id UUID REFERENCES workflows_cobranza(id) ON DELETE CASCADE,
+  tipo_programacion VARCHAR(50) NOT NULL, -- inmediata, programada, recurrente
+  configuracion JSONB NOT NULL, -- Fecha, hora, frecuencia, etc.
+  estado VARCHAR(50) DEFAULT 'activa', -- activa, pausada, completada
+  proxima_ejecucion TIMESTAMP,
+  creado_at TIMESTAMP DEFAULT NOW(),
+  -- Validaciones
+  CHECK (tipo_programacion IN ('inmediata', 'programada', 'recurrente')),
+  CHECK (estado IN ('activa', 'pausada', 'completada')),
+  CHECK (configuracion != '{}'::jsonb)
+);
+```
+
+**Tabla de auditoría para cambios en workflows:**
+```sql
+-- Tabla de auditoría para cambios en workflows
+CREATE TABLE workflows_cobranza_auditoria (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  workflow_id UUID NOT NULL REFERENCES workflows_cobranza(id) ON DELETE CASCADE,
+  usuario_id UUID NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  operacion VARCHAR(50) NOT NULL CHECK (operacion IN ('INSERT', 'UPDATE', 'DELETE')),
+  datos_anteriores JSONB,
+  datos_nuevos JSONB,
+  timestamp TIMESTAMP DEFAULT NOW()
+);
+```
+
+#### **2. RLS (Row Level Security) activado:**
+
+```sql
+-- Activar RLS en todas las tablas
+ALTER TABLE workflows_cobranza ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ejecuciones_workflow ENABLE ROW LEVEL SECURITY;
+ALTER TABLE logs_ejecucion ENABLE ROW LEVEL SECURITY;
+ALTER TABLE programaciones_workflow ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workflows_cobranza_auditoria ENABLE ROW LEVEL SECURITY;
+```
+
+#### **3. Políticas de RLS creadas:**
+
+```sql
+-- POLÍTICA 1: workflows_cobranza (usuario solo ve sus workflows)
+CREATE POLICY "workflows_cobranza_filtro_usuario"
+ON workflows_cobranza
+FOR ALL
+USING (auth.uid() = usuario_id)
+WITH CHECK (auth.uid() = usuario_id);
+
+-- POLÍTICA 2: ejecuciones_workflow (usuario solo ve ejecuciones de sus workflows)
+CREATE POLICY "ejecuciones_workflow_filtro_usuario"
+ON ejecuciones_workflow
+FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM workflows_cobranza w
+    WHERE w.id = ejecuciones_workflow.workflow_id
+    AND w.usuario_id = auth.uid()
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM workflows_cobranza w
+    WHERE w.id = ejecuciones_workflow.workflow_id
+    AND w.usuario_id = auth.uid()
+  )
+);
+
+-- POLÍTICA 3: logs_ejecucion (usuario solo ve logs de sus ejecuciones)
+CREATE POLICY "logs_ejecucion_filtro_usuario"
+ON logs_ejecucion
+FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM ejecuciones_workflow e
+    JOIN workflows_cobranza w ON w.id = e.workflow_id
+    WHERE e.id = logs_ejecucion.ejecucion_id
+    AND w.usuario_id = auth.uid()
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM ejecuciones_workflow e
+    JOIN workflows_cobranza w ON w.id = e.workflow_id
+    WHERE e.id = logs_ejecucion.ejecucion_id
+    AND w.usuario_id = auth.uid()
+  )
+);
+
+-- POLÍTICA 4: programaciones_workflow (usuario solo ve programaciones de sus workflows)
+CREATE POLICY "programaciones_workflow_filtro_usuario"
+ON programaciones_workflow
+FOR ALL
+USING (
+  EXISTS (
+    SELECT 1 FROM workflows_cobranza w
+    WHERE w.id = programaciones_workflow.workflow_id
+    AND w.usuario_id = auth.uid()
+  )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM workflows_cobranza w
+    WHERE w.id = programaciones_workflow.workflow_id
+    AND w.usuario_id = auth.uid()
+  )
+);
+
+-- POLÍTICA 5: workflows_cobranza_auditoria (usuario ve auditoría de sus workflows)
+CREATE POLICY "workflows_cobranza_auditoria_filtro_usuario"
+ON workflows_cobranza_auditoria
+FOR ALL
+USING (usuario_id = auth.uid())
+WITH CHECK (usuario_id = auth.uid());
+```
+
+#### **4. Índices creados:**
+
+```sql
+-- Índices básicos
+CREATE INDEX idx_workflows_cobranza_usuario_id 
+  ON workflows_cobranza(usuario_id);
+
+CREATE INDEX idx_workflows_cobranza_estado 
+  ON workflows_cobranza(usuario_id, estado);
+
+CREATE INDEX idx_ejecuciones_workflow_workflow_id 
+  ON ejecuciones_workflow(workflow_id);
+
+CREATE INDEX idx_ejecuciones_workflow_deudor_id 
+  ON ejecuciones_workflow(deudor_id);
+
+CREATE INDEX idx_ejecuciones_workflow_estado 
+  ON ejecuciones_workflow(workflow_id, estado);
+
+CREATE INDEX idx_logs_ejecucion_ejecucion_id 
+  ON logs_ejecucion(ejecucion_id);
+
+CREATE INDEX idx_logs_ejecucion_tipo_accion 
+  ON logs_ejecucion(ejecucion_id, tipo_accion);
+
+CREATE INDEX idx_programaciones_workflow_workflow_id 
+  ON programaciones_workflow(workflow_id);
+
+-- Índices avanzados (solo indexan registros activos/relevantes)
+CREATE INDEX idx_programaciones_workflow_proxima_activas 
+  ON programaciones_workflow(proxima_ejecucion, estado)
+  WHERE estado = 'activa';
+
+CREATE INDEX idx_ejecuciones_workflow_pendientes 
+  ON ejecuciones_workflow(workflow_id, proxima_ejecucion)
+  WHERE estado IN ('pendiente', 'ejecutando');
+
+CREATE INDEX idx_workflows_cobranza_activos 
+  ON workflows_cobranza(usuario_id, estado)
+  WHERE estado IN ('activo', 'pausado');
+
+-- Índices para auditoría
+CREATE INDEX idx_workflows_cobranza_auditoria_usuario_timestamp 
+  ON workflows_cobranza_auditoria(usuario_id, timestamp DESC);
+
+CREATE INDEX idx_workflows_cobranza_auditoria_workflow_timestamp 
+  ON workflows_cobranza_auditoria(workflow_id, timestamp DESC);
+```
+
+#### **5. Funciones y triggers de auditoría:**
+
+```sql
+-- Función para registrar cambios en workflows_cobranza
+CREATE OR REPLACE FUNCTION log_cambios_workflows_cobranza() 
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO workflows_cobranza_auditoria (
+    workflow_id,
+    usuario_id,
+    operacion,
+    datos_anteriores,
+    datos_nuevos
+  ) VALUES (
+    COALESCE(NEW.id, OLD.id),
+    COALESCE(NEW.usuario_id, OLD.usuario_id),
+    TG_OP,
+    CASE WHEN TG_OP = 'DELETE' THEN row_to_json(OLD) ELSE NULL END,
+    CASE WHEN TG_OP = 'DELETE' THEN NULL ELSE row_to_json(NEW) END
+  );
+  
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Triggers de auditoría
+DROP TRIGGER IF EXISTS trg_log_workflows_cobranza_insert ON workflows_cobranza;
+CREATE TRIGGER trg_log_workflows_cobranza_insert
+AFTER INSERT ON workflows_cobranza
+FOR EACH ROW EXECUTE FUNCTION log_cambios_workflows_cobranza();
+
+DROP TRIGGER IF EXISTS trg_log_workflows_cobranza_update ON workflows_cobranza;
+CREATE TRIGGER trg_log_workflows_cobranza_update
+AFTER UPDATE ON workflows_cobranza
+FOR EACH ROW EXECUTE FUNCTION log_cambios_workflows_cobranza();
+
+DROP TRIGGER IF EXISTS trg_log_workflows_cobranza_delete ON workflows_cobranza;
+CREATE TRIGGER trg_log_workflows_cobranza_delete
+AFTER DELETE ON workflows_cobranza
+FOR EACH ROW EXECUTE FUNCTION log_cambios_workflows_cobranza();
+```
+
+#### **6. Prueba rápida:**
+
+```sql
+-- Verificar que las tablas fueron creadas
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_name IN (
+  'workflows_cobranza', 
+  'ejecuciones_workflow', 
+  'logs_ejecucion', 
+  'programaciones_workflow',
+  'workflows_cobranza_auditoria'
+);
+
+-- Verificar que RLS está habilitado
+SELECT tablename, rowsecurity 
+FROM pg_tables 
+WHERE tablename IN (
+  'workflows_cobranza', 
+  'ejecuciones_workflow', 
+  'logs_ejecucion', 
+  'programaciones_workflow',
+  'workflows_cobranza_auditoria'
+);
+```
+
+#### **7. Beneficios:**
+
+- ✅ **Workflows visuales**: Canvas interactivo para crear flujos de cobranza
+- ✅ **Ejecución automática**: Sistema de ejecución con logs detallados
+- ✅ **Programación flexible**: Ejecución inmediata, programada o recurrente
+- ✅ **Auditoría completa**: Trazabilidad de todos los cambios
+- ✅ **Validaciones robustas**: CHECK constraints para integridad de datos
+- ✅ **Índices optimizados**: Rendimiento mejorado con índices avanzados
+- ✅ **Seguridad RLS**: Cada usuario solo ve sus workflows
+
+#### **8. Funcionalidades agregadas:**
+
+- **Canvas visual**: Editor drag-and-drop para crear workflows
+- **Nodos de acción**: Email, llamada, SMS, WhatsApp, espera, condición
+- **Ejecución inteligente**: Manejo de estados y contexto de datos
+- **Logs detallados**: Trazabilidad completa de cada paso
+- **Programación avanzada**: Múltiples tipos de programación
+- **Auditoría automática**: Registro de todos los cambios
+
+---
+
 Fin del documento.
 
 
