@@ -44,26 +44,77 @@ export default function BaseNode({
   onNodeMouseDown,
   canvasScale
 }: BaseNodeProps) {
+  const [connectionHover, setConnectionHover] = React.useState<'input' | 'output' | null>(null)
+
+  const handleConnectionClick = (e: React.MouseEvent, type: 'input' | 'output') => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    if (type === 'output') {
+      // Iniciar conexión desde este nodo
+      onConnectionStart?.(id, `${id}_output`)
+    } else if (type === 'input') {
+      // Terminar conexión en este nodo
+      onConnectionEnd?.(id, `${id}_input`)
+    }
+  }
+
   return (
     <div
-      className={`absolute cursor-pointer transition-all duration-200 ${
-        isSelected ? 'ring-2 ring-blue-500 shadow-lg z-10' : 'hover:shadow-md z-0'
+      className={`absolute transition-all duration-200 ${
+        isSelected ? 'z-10' : 'z-0'
       }`}
       style={{
         left: posicion.x,
         top: posicion.y,
         transform: `scale(${canvasScale})`
       }}
-      onClick={(e) => {
-        e.stopPropagation()
-        onSelect(id)
-      }}
-      onMouseDown={(e) => {
-        onNodeMouseDown?.(e, id)
-      }}
     >
-      <Card className={`w-48 h-24 ${color} text-white`}>
-        <div className="p-3 h-full flex flex-col justify-between">
+      {/* Punto de conexión de ENTRADA - IZQUIERDA (Estilo N8N) */}
+      <div
+        className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full cursor-crosshair transition-all duration-200 border-[3px] z-50
+          ${connectionHover === 'input' 
+            ? 'bg-orange-400 border-orange-500 scale-[1.4] shadow-[0_0_12px_rgba(251,146,60,0.6)]' 
+            : 'bg-gray-300 border-gray-400 hover:bg-orange-300 hover:border-orange-400 hover:scale-110 hover:shadow-[0_0_8px_rgba(251,146,60,0.4)]'
+          }
+        `}
+        onClick={(e) => handleConnectionClick(e, 'input')}
+        onMouseEnter={() => setConnectionHover('input')}
+        onMouseLeave={() => setConnectionHover(null)}
+        title="Entrada"
+      />
+
+      {/* Punto de conexión de SALIDA - DERECHA (Estilo N8N) */}
+      <div
+        className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-3.5 h-3.5 rounded-full cursor-crosshair transition-all duration-200 border-[3px] z-50
+          ${connectionHover === 'output' 
+            ? 'bg-purple-400 border-purple-500 scale-[1.4] shadow-[0_0_12px_rgba(168,85,247,0.6)]' 
+            : 'bg-gray-300 border-gray-400 hover:bg-purple-300 hover:border-purple-400 hover:scale-110 hover:shadow-[0_0_8px_rgba(168,85,247,0.4)]'
+          }
+        `}
+        onClick={(e) => handleConnectionClick(e, 'output')}
+        onMouseEnter={() => setConnectionHover('output')}
+        onMouseLeave={() => setConnectionHover(null)}
+        title="Salida"
+      />
+
+      {/* Card del nodo */}
+      <Card 
+        className={`w-48 h-24 ${color} text-white relative cursor-pointer ${
+          isSelected ? 'ring-2 ring-blue-500 shadow-lg' : 'hover:shadow-md'
+        }`}
+        onClick={(e) => {
+          e.stopPropagation()
+          onSelect(id)
+        }}
+        onMouseDown={(e) => {
+          // Solo permitir mover si no estamos en un punto de conexión
+          if (!connectionHover) {
+            onNodeMouseDown?.(e, id)
+          }
+        }}
+      >
+        <div className="p-3 h-full flex flex-col justify-between relative">
           {/* Header del nodo */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -121,35 +172,10 @@ export default function BaseNode({
             {descripcion}
           </div>
           
-          {/* Indicadores de estado */}
-          <div className="flex items-center justify-between mt-1">
-            <div className="flex items-center gap-1">
-              {/* Puntos de conexión de entrada */}
-              <div 
-                className="w-3 h-3 bg-white/40 rounded-full cursor-pointer hover:bg-white/60 transition-all"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onConnectionEnd?.(id, `${id}_input`)
-                }}
-                title="Punto de entrada"
-              ></div>
-            </div>
-            
-            {/* Estado del nodo */}
+          {/* Estado del nodo */}
+          <div className="flex items-center justify-center mt-1">
             <div className="text-xs opacity-60">
               {(configuracion.estado as string) || 'Listo'}
-            </div>
-            
-            <div className="flex items-center gap-1">
-              {/* Puntos de conexión de salida */}
-              <div 
-                className="w-3 h-3 bg-white/40 rounded-full cursor-pointer hover:bg-white/60 transition-all"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onConnectionStart?.(id, `${id}_output`)
-                }}
-                title="Punto de salida"
-              ></div>
             </div>
           </div>
         </div>

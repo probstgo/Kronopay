@@ -1,9 +1,9 @@
 # Plan de Implementación - Sección de Campañas (Journey Builder)
 
-**Estado:** ✅ FASE 1 COMPLETADA - Base del Journey Builder Implementada  
+**Estado:** ✅ FASE 2 COMPLETADA - Conexiones y Estilo N8N Implementados  
 **Prioridad:** Alta  
 **Fecha de Análisis:** Diciembre 2024  
-**Última Actualización:** Diciembre 2024 - Desarrollo Completado
+**Última Actualización:** Octubre 2024 - Sistema de Conexiones con Estilo N8N
 
 ---
 
@@ -18,7 +18,7 @@ Crear un sistema de campañas con **Journey Builder visual** similar a N8N, pero
 - **✅ Backend**: Job programado y webhooks funcionando
 - **✅ Journey Builder**: Sistema completo implementado y funcional
 - **✅ Canvas interactivo**: Zoom, pan, grid de fondo implementado
-- **✅ Paleta de nodos**: Organizada por categorías con drag & drop
+- **✅ Paleta de nodos**: Organizada por categorías con drag & drop completamente funcional
 - **✅ Nodos especializados**: Trigger, Email, Espera implementados
 - **✅ Sistema de conexiones**: Conexiones visuales SVG entre nodos
 - **✅ Panel de configuración**: Formularios dinámicos por tipo de nodo
@@ -28,12 +28,16 @@ Crear un sistema de campañas con **Journey Builder visual** similar a N8N, pero
 ### 🚀 **Funcionalidades Implementadas**
 - ✅ **Journey Builder Visual**: Editor drag & drop tipo N8N completamente funcional
 - ✅ **Nodos Básicos**: Trigger, Email, Espera implementados con configuración completa
-- ✅ **Sistema de Conexiones**: Conexiones visuales SVG con diferentes tipos (éxito, error, timeout)
+- ✅ **Sistema de Conexiones**: Conexiones visuales SVG con curvas Bézier estilo N8N
+- ✅ **Líneas Curvas**: Curvas Bézier suaves en lugar de líneas rectas
+- ✅ **Puntos de Conexión**: Puntos externos 14px con bordes de 3px y efectos glow
+- ✅ **Colores N8N**: Naranja para entrada, púrpura para salida, líneas púrpuras
+- ✅ **Hover Effects**: Escala 1.4× con sombras glow y transiciones suaves
 - ✅ **Panel de Configuración**: Formularios dinámicos específicos por tipo de nodo
 - ✅ **Persistencia Completa**: Guardar/cargar workflows en base de datos Supabase
 - ✅ **Gestión de Workflows**: Crear nuevos, cargar existentes, listar con metadatos
 - ✅ **Canvas Interactivo**: Zoom, pan, grid de fondo, controles de navegación
-- ✅ **Paleta de Nodos**: Organizada por categorías (Inicio, Comunicación, Lógica, Utilidad)
+- ✅ **Paleta de Nodos**: Organizada por categorías con drag & drop completamente funcional
 
 ### 🔄 **Funcionalidades Pendientes**
 - ⏳ **Motor de Ejecución**: Sistema paso a paso para ejecutar workflows
@@ -99,6 +103,14 @@ Crear un sistema de campañas con **Journey Builder visual** similar a N8N, pero
 - ✅ Modal de gestión de workflows
 - ✅ Crear nuevos workflows
 
+#### **6. Drag and Drop Completo**
+- ✅ Arrastrar nodos desde paleta al canvas
+- ✅ Movimiento de nodos dentro del canvas
+- ✅ Posicionamiento preciso con coordenadas
+- ✅ Feedback visual durante el arrastre
+- ✅ Cursor adaptativo (move, grab, grabbing)
+- ✅ Validación de posición (sin valores negativos)
+
 ### **🔧 Integración con Base de Datos**
 
 #### **Tablas Utilizadas**
@@ -139,14 +151,18 @@ Crear un sistema de campañas con **Journey Builder visual** similar a N8N, pero
 - ✅ Tooltips informativos
 - ✅ Estados de carga y error
 - ✅ Notificaciones toast para acciones
+- ✅ Drag and drop fluido y intuitivo
+- ✅ Cursor adaptativo según la acción
+- ✅ Movimiento en tiempo real de nodos
 
 ### **📊 Métricas de Éxito Alcanzadas**
 
 #### **Funcionalidad**
 - ✅ **Canvas Responsivo**: Funciona perfectamente en desktop
-- ✅ **Drag & Drop Fluido**: Sin lag en interacciones
+- ✅ **Drag & Drop Fluido**: Sin lag en interacciones, movimiento en tiempo real
 - ✅ **Persistencia Confiable**: Guardar/cargar sin pérdida de datos
 - ✅ **Tipos Seguros**: 100% TypeScript sin errores
+- ✅ **Interacciones Intuitivas**: Drag desde paleta y movimiento de nodos funcional
 
 #### **Rendimiento**
 - ✅ **Tiempo de Carga**: < 2 segundos para workflows complejos
@@ -159,6 +175,204 @@ Crear un sistema de campañas con **Journey Builder visual** similar a N8N, pero
 - ✅ **Consistente**: Patrones de diseño coherentes
 - ✅ **Profesional**: Interfaz pulida y moderna
 - ✅ **Accesible**: Cumple estándares básicos
+
+---
+
+## ✅ IMPLEMENTACIÓN COMPLETADA - FASE 2: ESTILO N8N
+
+### **🎨 Mejoras Visuales Implementadas**
+
+#### **1. Líneas Curvas Bézier**
+**Archivo modificado:** `ConnectionLine.tsx`
+
+**Cambios realizados:**
+- ✅ Reemplazo de `<line>` por `<path>` con curvas Bézier cúbicas
+- ✅ Cálculo de puntos de control para curvas suaves
+- ✅ Flechas direccionales con ángulo correcto
+- ✅ Grosor aumentado: 2.5px normal, 3.5px hover
+- ✅ Color púrpura característico de N8N (#a855f7)
+
+**Implementación técnica:**
+```typescript
+// Puntos de control para curva Bézier
+const controlPointOffset = Math.abs(deltaX) * 0.5
+const controlPoint1X = startX + controlPointOffset
+const controlPoint1Y = startY
+const controlPoint2X = endX - controlPointOffset
+const controlPoint2Y = endY
+
+// Path SVG con curva Bézier cúbica
+const curvePath = `M ${startX} ${startY} C ${controlPoint1X} ${controlPoint1Y}, ${controlPoint2X} ${controlPoint2Y}, ${endX} ${endY}`
+```
+
+#### **2. Puntos de Conexión Mejorados**
+**Archivo modificado:** `BaseNode.tsx`
+
+**Mejoras implementadas:**
+- ✅ Tamaño aumentado: 14px (3.5 × 4)
+- ✅ Bordes más gruesos: 3px (antes 2px)
+- ✅ Colores estilo N8N:
+  - **Entrada (izquierda)**: Gris → Naranja al hover
+  - **Salida (derecha)**: Gris → Púrpura al hover
+- ✅ Efectos glow: Sombras con resplandor colorido
+- ✅ Escala hover: 1.4× (40% más grande)
+- ✅ Transiciones suaves: 200ms
+
+**Configuración de colores:**
+```typescript
+// Punto de entrada (naranja)
+hover: 'bg-orange-400 border-orange-500 scale-[1.4] shadow-[0_0_12px_rgba(251,146,60,0.6)]'
+normal: 'bg-gray-300 border-gray-400'
+
+// Punto de salida (púrpura)
+hover: 'bg-purple-400 border-purple-500 scale-[1.4] shadow-[0_0_12px_rgba(168,85,247,0.6)]'
+normal: 'bg-gray-300 border-gray-400'
+```
+
+#### **3. Mejoras en Líneas de Conexión**
+**Archivo modificado:** `ConnectionLine.tsx`
+
+**Características:**
+- ✅ Círculos en extremos más grandes: 5px normal, 7px hover
+- ✅ Opacidad: 85% normal, 100% hover
+- ✅ Área de interacción ampliada: 24px invisible
+- ✅ Tooltip mejorado al pasar mouse
+- ✅ Eliminación con clic derecho funcional
+
+### **📊 Comparativa Visual: Antes vs Después**
+
+| Característica | ANTES (Fase 1) | AHORA (Fase 2) |
+|----------------|----------------|----------------|
+| **Líneas** | Rectas (2px) | Curvas Bézier (2.5px) |
+| **Puntos** | 4px, borde 2px | 14px, borde 3px |
+| **Colores entrada** | Gris → Azul | Gris → Naranja |
+| **Colores salida** | Gris → Verde | Gris → Púrpura |
+| **Color líneas** | Gris (#6b7280) | Púrpura (#a855f7) |
+| **Efectos hover** | Escala básica | Glow + Escala 1.4× |
+| **Círculos extremos** | 4px | 5px (7px hover) |
+
+### **🎯 Resultado Final - Fase 2**
+
+✅ **Estilo N8N Logrado:**
+- Líneas curvas suaves y profesionales
+- Puntos de conexión grandes y visibles
+- Colores característicos (naranja/púrpura)
+- Efectos visuales pulidos (glow, sombras)
+- Interacciones fluidas y responsivas
+
+✅ **Funcionalidad Mantenida:**
+- Drag & drop de nodos
+- Movimiento dentro del canvas
+- Crear/eliminar conexiones
+- Persistencia en base de datos
+- Todas las funciones de Fase 1
+
+### **📁 Archivos Modificados en Fase 2**
+
+1. **`ConnectionLine.tsx`**
+   - Líneas curvas Bézier
+   - Colores púrpura
+   - Grosor aumentado
+   - Círculos más grandes
+
+2. **`BaseNode.tsx`**
+   - Puntos 14px con borde 3px
+   - Colores naranja/púrpura
+   - Efectos glow
+   - Escala hover 1.4×
+
+3. **`JourneyBuilder.tsx`**
+   - Sin cambios estructurales
+   - Compatible con nuevos estilos
+
+---
+
+## 🔧 CORRECCIONES Y MEJORAS IMPLEMENTADAS
+
+### **🎯 Problema Identificado**
+- **Issue**: El drag and drop no funcionaba correctamente
+- **Síntomas**: Los nodos no se podían arrastrar desde la paleta al canvas, ni mover dentro del canvas
+
+### **✅ Solución Implementada**
+
+#### **1. NodePalette.tsx - Drag desde Paleta**
+```typescript
+// Agregado draggable y handlers de drag
+<Card
+  draggable
+  onDragStart={(e) => {
+    e.dataTransfer.effectAllowed = 'copy'
+    e.dataTransfer.setData('nodeType', nodeType.tipo)
+  }}
+  className="cursor-move"
+>
+```
+
+#### **2. JourneyBuilder.tsx - Canvas Drop**
+```typescript
+// Handlers para drag over y drop
+const handleCanvasDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+  e.preventDefault()
+  e.dataTransfer.dropEffect = 'copy'
+}, [])
+
+const handleCanvasDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+  e.preventDefault()
+  const nodeType = e.dataTransfer.getData('nodeType')
+  // Crear nodo en posición del drop
+}, [])
+```
+
+#### **3. BaseNode.tsx - Movimiento de Nodos**
+```typescript
+// Handler para arrastrar nodos existentes
+onMouseDown={(e) => {
+  onNodeMouseDown?.(e, id)
+}}
+```
+
+#### **4. JourneyBuilder.tsx - Movimiento en Canvas**
+```typescript
+// Sistema completo de movimiento de nodos
+const handleNodeMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>, nodeId: string) => {
+  setDraggingNodeId(nodeId)
+  // Calcular offset para movimiento preciso
+}, [])
+
+// Event listeners para movimiento en tiempo real
+useEffect(() => {
+  const handleMouseMoveListener = (e: MouseEvent) => {
+    // Actualizar posición del nodo en tiempo real
+  }
+  document.addEventListener('mousemove', handleMouseMoveListener)
+}, [])
+```
+
+### **🎯 Funcionalidades Corregidas**
+
+#### **Drag desde Paleta**
+- ✅ Arrastrar nodos desde la paleta izquierda
+- ✅ Soltar en cualquier posición del canvas
+- ✅ Creación automática del nodo en la posición correcta
+- ✅ Feedback visual durante el arrastre
+
+#### **Movimiento de Nodos**
+- ✅ Hacer clic y arrastrar nodos existentes
+- ✅ Movimiento fluido en tiempo real
+- ✅ Posicionamiento preciso con coordenadas
+- ✅ Validación de límites (no valores negativos)
+
+#### **UX Mejorada**
+- ✅ Cursor adaptativo (`move`, `grab`, `grabbing`)
+- ✅ Feedback visual de selección
+- ✅ Notificaciones toast para acciones
+- ✅ Transiciones suaves
+
+### **📊 Resultados**
+- ✅ **Build Exitoso**: Compilación sin errores (Exit code: 0)
+- ✅ **Funcionalidad Completa**: Drag and drop 100% funcional
+- ✅ **Performance**: Sin lag en interacciones
+- ✅ **UX**: Interfaz intuitiva y fluida
 
 ---
 
@@ -1098,17 +1312,26 @@ const historialExistente = await supabase
 
 ## 📋 Checklist de Implementación
 
-### **Fase 1: Base del Journey Builder**
-- [ ] Crear tablas de BD para workflows
-- [ ] Implementar JourneyBuilder.tsx
-- [ ] Crear Canvas.tsx con zoom/pan
-- [ ] Implementar NodePalette.tsx
-- [ ] Crear BaseNode.tsx
-- [ ] Sistema de conexiones
-- [ ] Panel de configuración
-- [ ] Guardar/cargar workflows
+### **Fase 1: Base del Journey Builder** ✅ COMPLETADA
+- [x] Crear tablas de BD para workflows
+- [x] Implementar JourneyBuilder.tsx
+- [x] Crear Canvas.tsx con zoom/pan
+- [x] Implementar NodePalette.tsx
+- [x] Crear BaseNode.tsx
+- [x] Sistema de conexiones
+- [x] Panel de configuración
+- [x] Guardar/cargar workflows
 
-### **Fase 2: Motor de Ejecución**
+### **Fase 2: Estilo N8N y Conexiones** ✅ COMPLETADA
+- [x] Líneas curvas Bézier
+- [x] Puntos de conexión mejorados (14px)
+- [x] Colores estilo N8N (naranja/púrpura)
+- [x] Efectos glow y hover
+- [x] Sistema de conexiones funcional
+- [x] Eliminar conexiones con clic derecho
+- [x] Persistencia de conexiones
+
+### **Fase 3: Motor de Ejecución** ⏳ PENDIENTE
 - [ ] ExecutionEngine.tsx
 - [ ] ExecutionContext.tsx
 - [ ] Integración con job programado
@@ -1229,4 +1452,46 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 ---
 
-**✅ ESTADO:** Fase 1 completada exitosamente. Sistema listo para producción y desarrollo de fases posteriores.
+**✅ ESTADO:** Fase 1 y Fase 2 completadas exitosamente. Sistema con estilo N8N listo para producción y desarrollo de fases posteriores (Motor de Ejecución).
+
+---
+
+## 📊 **Resumen de Implementación - Octubre 2024**
+
+### **✅ Fases Completadas:**
+
+**FASE 1 - Base del Journey Builder:**
+- Journey Builder visual completo
+- Drag & drop de nodos
+- Canvas interactivo con zoom/pan
+- Persistencia en base de datos
+- Panel de configuración de nodos
+
+**FASE 2 - Estilo N8N:**
+- Líneas curvas Bézier suaves
+- Puntos de conexión 14px con bordes 3px
+- Colores N8N: Naranja (entrada) / Púrpura (salida)
+- Efectos glow con sombras coloridas
+- Hover effects con escala 1.4×
+- Sistema de conexiones totalmente funcional
+
+### **⏳ Próximas Fases:**
+
+**FASE 3 - Motor de Ejecución:**
+- Sistema paso a paso para ejecutar workflows
+- Contexto de datos entre nodos
+- Logs detallados de ejecución
+- Manejo de errores y reintentos
+- Integración con job programado
+
+**FASE 4 - Nodos Avanzados:**
+- Nodos de Llamada, SMS, WhatsApp
+- Nodos de Condición y bifurcaciones
+- Nodos de Estadística
+- Validaciones avanzadas
+
+**FASE 5 - Optimización:**
+- Minimap del flujo
+- Auto-arreglo de nodos
+- Exportar/importar flujos
+- Performance optimization

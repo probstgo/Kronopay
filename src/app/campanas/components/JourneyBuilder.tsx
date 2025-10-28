@@ -65,6 +65,7 @@ export default function JourneyBuilder() {
   const [isLoading, setIsLoading] = useState(false)
   const [connectionPoints, setConnectionPoints] = useState<ConnectionPoint[]>([])
   const [connectionStart, setConnectionStart] = useState<{ nodeId: string; pointId: string } | null>(null)
+  const connectionStartRef = useRef<{ nodeId: string; pointId: string } | null>(null)
   const [workflowsExistentes, setWorkflowsExistentes] = useState<Array<{
     id: string
     nombre: string
@@ -325,24 +326,34 @@ export default function JourneyBuilder() {
 
   // Funciones para manejar conexiones
   const handleConnectionStart = useCallback((nodeId: string, pointId: string) => {
-    setConnectionStart({ nodeId, pointId })
+    const connectionData = { nodeId, pointId }
+    setConnectionStart(connectionData)
+    connectionStartRef.current = connectionData
+    toast.info('Haz clic en el punto de entrada del siguiente nodo')
   }, [])
 
   const handleConnectionEnd = useCallback((nodeId: string, pointId: string) => {
-    if (!connectionStart) return
+    const currentConnectionStart = connectionStartRef.current
+    
+    if (!currentConnectionStart) {
+      toast.error('Primero haz clic en un punto de salida')
+      return
+    }
     
     // No permitir conexión consigo mismo
-    if (connectionStart.nodeId === nodeId) {
+    if (currentConnectionStart.nodeId === nodeId) {
       setConnectionStart(null)
+      connectionStartRef.current = null
+      toast.error('No puedes conectar un nodo consigo mismo')
       return
     }
 
     // Crear nueva conexión
     const nuevaConexion: WorkflowConnection = {
       id: `conn_${Date.now()}`,
-      from: connectionStart.nodeId,
+      from: currentConnectionStart.nodeId,
       to: nodeId,
-      fromPoint: connectionStart.pointId,
+      fromPoint: currentConnectionStart.pointId,
       toPoint: pointId,
       type: 'default',
       label: ''
@@ -354,8 +365,9 @@ export default function JourneyBuilder() {
     }))
 
     setConnectionStart(null)
+    connectionStartRef.current = null
     toast.success('Conexión creada')
-  }, [connectionStart])
+  }, [])
 
   // Función para manejar drag sobre el canvas
   const handleCanvasDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -429,6 +441,7 @@ export default function JourneyBuilder() {
 
     const handleMouseUpListener = () => {
       setDraggingNodeId(null)
+      // NO limpiar connectionStart aquí porque interfiere con el click
     }
 
     document.addEventListener('mousemove', handleMouseMoveListener)
@@ -450,25 +463,28 @@ export default function JourneyBuilder() {
     const puntos: ConnectionPoint[] = []
     
     workflowData.nodos.forEach(nodo => {
-      // Punto de entrada
+      const nodeHeight = 96 // h-24 = 96px
+      const nodeWidth = 192 // w-48 = 192px
+      
+      // Punto de entrada (lado izquierdo, centro vertical)
       puntos.push({
         id: `${nodo.id}_input`,
         nodeId: nodo.id,
         type: 'input',
         position: {
-          x: nodo.posicion.x + 24, // Centro izquierdo del nodo
-          y: nodo.posicion.y + 12
+          x: nodo.posicion.x,
+          y: nodo.posicion.y + nodeHeight / 2
         }
       })
       
-      // Punto de salida
+      // Punto de salida (lado derecho, centro vertical)
       puntos.push({
         id: `${nodo.id}_output`,
         nodeId: nodo.id,
         type: 'output',
         position: {
-          x: nodo.posicion.x + 192, // Centro derecho del nodo (192px = 48 * 4)
-          y: nodo.posicion.y + 12
+          x: nodo.posicion.x + nodeWidth,
+          y: nodo.posicion.y + nodeHeight / 2
         }
       })
     })
@@ -703,6 +719,13 @@ export default function JourneyBuilder() {
               connections={workflowData.conexiones}
               connectionPoints={connectionPoints}
               canvasScale={canvasScale}
+              onDeleteConnection={(connectionId) => {
+                setWorkflowData(prev => ({
+                  ...prev,
+                  conexiones: prev.conexiones.filter(conn => conn.id !== connectionId)
+                }))
+                toast.success('Conexión eliminada')
+              }}
             />
             
             {/* Renderizar nodos */}
