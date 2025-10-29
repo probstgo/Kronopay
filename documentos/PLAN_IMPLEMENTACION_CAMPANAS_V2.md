@@ -249,41 +249,60 @@ export function NodeConfigPanel({ nodeId, onClose }: Props) {
 
 #### **4. Barra Superior**
 
-**TopToolbar.tsx**
+**TopToolbar.tsx** (Versión Mejorada)
 ```typescript
-export function TopToolbar() {
+export function TopToolbar({ onAddNode, availableNodeTypes = [] }: TopToolbarProps) {
+  const [nodesMenuOpen, setNodesMenuOpen] = useState(false)
+  const [analyticsOpen, setAnalyticsOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
+  const [executeOpen, setExecuteOpen] = useState(false)
+  
   return (
-    <div className="bg-white border-b border-gray-200 px-4 py-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <button className="flex items-center space-x-2 text-gray-600 hover:text-gray-900">
-            <span>←</span>
-            <span>Campaña de Cobranza</span>
-          </button>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <button className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded">
-            🔍
-          </button>
-          <button className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded">
-            📊
-          </button>
-          <button className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded">
-            ⚙️
-          </button>
-          <button className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded">
-            💡
-          </button>
-          <button className="px-3 py-1 text-sm bg-blue-500 text-white hover:bg-blue-600 rounded">
-            ▶️ Ejecutar
-          </button>
+    <>
+      <div className="bg-white border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button variant="ghost" disabled className="...">
+              <ArrowLeft className="h-4 w-4" />
+              <span>{campaignName}</span>
+            </Button>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            {/* Botón Agregar Nodos */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={() => setNodesMenuOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Agregar nodos al canvas</TooltipContent>
+            </Tooltip>
+            
+            {/* Botones con modales funcionales */}
+            {/* Analytics, Settings, Help, Execute */}
+          </div>
         </div>
       </div>
-    </div>
+      
+      {/* Modales y paneles */}
+      {/* ... */}
+    </>
   )
 }
 ```
+
+**Características implementadas:**
+- ✅ Iconos de `lucide-react` en lugar de emojis
+- ✅ Tooltips en todos los botones
+- ✅ Modal de selección de nodos (botón de búsqueda transformado)
+- ✅ Panel lateral de Analytics con métricas simuladas
+- ✅ Modal de Configuración con formulario editable
+- ✅ Modal de Ayuda con guía de uso
+- ✅ Dialog de confirmación para ejecutar campaña
+- ✅ Botón de retroceso desactivado
+- ✅ Accesibilidad mejorada (aria-labels)
 
 ---
 
@@ -649,6 +668,7 @@ export const theme = {
 5. **✅ COMPLETADA Fase 1** - Setup y Estructura Base funcionando
 6. **✅ COMPLETADA Fase 2** - Nodos Completos y Configuración funcionando
 7. **✅ COMPLETADA Fase 2.1** - Mejoras UX/UI y Acciones de Nodos funcionando
+8. **✅ COMPLETADA Fase 2.2** - Mejoras TopToolbar con Modales Funcionales funcionando
 
 ### **🔄 PRÓXIMO - Fase 3: Persistencia y Gestión**
 1. **Integrar** con Supabase
@@ -693,7 +713,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 ---
 
-**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos. **Próximo:** Fase 3 - Persistencia y Gestión.
+**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales. **Próximo:** Fase 3 - Persistencia y Gestión.
 
 ---
 
@@ -709,6 +729,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 - **✅ Fase 1**: Setup y Estructura Base (Semana 1) - COMPLETADA
 - **✅ Fase 2**: Nodos Completos y Configuración (Semana 2) - COMPLETADA
 - **✅ Fase 2.1**: Mejoras UX/UI y Acciones de Nodos (Semana 2) - COMPLETADA
+- **✅ Fase 2.2**: Mejoras TopToolbar con Modales Funcionales (Diciembre 2024) - COMPLETADA
 
 ### **⏳ Próximas Fases:**
 - **Fase 3**: Persistencia y Gestión (Semana 3)
@@ -835,6 +856,87 @@ function NodeWrapper({ nodeType, ...props }: any) {
 - ✅ **Colores Temáticos**: Azul para configurar, rojo para eliminar
 - ✅ **Separación Visual**: Borde superior para separar acciones del contenido
 - ✅ **Responsive Design**: Botones adaptables a diferentes tamaños
+
+---
+
+### **✅ FASE 2.2 COMPLETADA - 29 Diciembre 2024 (Mejoras TopToolbar)**
+
+#### **Mejoras de Barra Superior (TopToolbar):**
+- ✅ **Iconos Profesionales**: Reemplazo de emojis por iconos de `lucide-react` (Plus, BarChart3, Settings, Lightbulb, Play, ArrowLeft)
+- ✅ **Tooltips Informativos**: Todos los botones tienen tooltips descriptivos al hacer hover
+- ✅ **Modales Funcionales**: Cada botón abre su modal/panel correspondiente con funcionalidad frontend completa
+- ✅ **Selector de Nodos**: Botón de búsqueda transformado en "Agregar Nodos" que muestra todas las opciones de nodos disponibles
+- ✅ **Panel de Analytics**: Panel lateral deslizable con métricas simuladas (ejecuciones, tasa de éxito, contactos, pagos)
+- ✅ **Configuración de Campaña**: Modal para editar nombre y descripción de la campaña
+- ✅ **Ayuda Contextual**: Modal con guía rápida de uso del editor
+- ✅ **Confirmación de Ejecución**: Dialog de confirmación antes de ejecutar la campaña
+- ✅ **Botón de Retroceso Desactivado**: Botón de navegación deshabilitado según requerimiento
+
+#### **Funcionalidades Implementadas:**
+
+**1. Botón Agregar Nodos (antes Búsqueda):**
+- Modal con lista completa de tipos de nodos disponibles
+- Diseño con iconos, nombres y descripciones
+- Al hacer clic en un nodo, se agrega automáticamente al canvas
+- Posicionamiento inteligente (centro si no hay nodos, o a la derecha del último nodo)
+
+**2. Panel de Analytics:**
+- Panel lateral deslizable desde la derecha
+- Métricas simuladas: Ejecuciones, Tasa de éxito, Contactos, Pagos recibidos
+- Estado informativo cuando la campaña aún no ha sido ejecutada
+
+**3. Modal de Configuración:**
+- Formulario para editar nombre de campaña
+- Campo de texto para descripción
+- Guardado de cambios (preparado para integración con backend)
+
+**4. Modal de Ayuda:**
+- Guía rápida sobre cómo crear campañas
+- Información sobre tipos de nodos disponibles
+- Instrucciones para ejecutar campañas
+
+**5. Dialog de Ejecución:**
+- Confirmación antes de ejecutar
+- Muestra el nombre de la campaña en el mensaje
+- Botones de cancelar y confirmar
+
+#### **Mejoras Técnicas Implementadas:**
+- ✅ **Props Interface**: `TopToolbarProps` con `onAddNode` y `availableNodeTypes`
+- ✅ **Estado Local**: Manejo de estado para cada modal/panel
+- ✅ **Componentes UI**: Uso de Dialog, Sheet, AlertDialog, Tooltip del sistema de diseño
+- ✅ **Accesibilidad**: aria-labels en todos los botones
+- ✅ **Integración con JourneyBuilder**: Función `handleAddNodeFromToolbar` que agrega nodos sin conexión automática
+- ✅ **Limpieza de Código**: Eliminación de imports no utilizados (useRouter)
+
+#### **Arquitectura de TopToolbar:**
+```typescript
+interface TopToolbarProps {
+  onAddNode?: (nodeType: string) => void
+  availableNodeTypes?: NodeType[]
+}
+
+// Función de agregar nodos desde toolbar
+const handleAddNodeFromToolbar = useCallback((nodeType: string) => {
+  // Calcula posición inteligente
+  // Crea nodo sin conexión automática
+  // Agrega al canvas
+}, [nodes, setNodes])
+```
+
+#### **Componentes UI Utilizados:**
+- ✅ `Dialog` - Para modales de configuración, ayuda y selector de nodos
+- ✅ `Sheet` - Para panel lateral de analytics
+- ✅ `AlertDialog` - Para confirmación de ejecución
+- ✅ `Tooltip` - Para tooltips informativos
+- ✅ `Button` - Componente consistente del sistema de diseño
+- ✅ `Input`, `Label`, `Textarea` - Para formularios
+
+#### **Mejoras de UX:**
+- ✅ **Feedback Visual**: Estados hover y focus claros en todos los botones
+- ✅ **Iconografía Consistente**: Iconos de lucide-react en lugar de emojis
+- ✅ **Transiciones Suaves**: Animaciones en modales y paneles
+- ✅ **Información Contextual**: Tooltips que explican cada acción
+- ✅ **Flujo Intuitivo**: Cada botón tiene un propósito claro y funcional
 
 ---
 

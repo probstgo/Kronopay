@@ -413,6 +413,40 @@ export function JourneyBuilder() {
     setSourceNodeId(null)
   }, [nodes, setNodes, setEdges, sourceNodeId])
 
+  // Manejar agregar nodo desde el toolbar (sin conexión)
+  const handleAddNodeFromToolbar = useCallback((nodeType: string) => {
+    console.log('🎯 Agregando nodo desde toolbar:', nodeType)
+    
+    // Calcular posición central del canvas o al lado de los nodos existentes
+    const realNodes = nodes.filter(n => n.id !== 'initial-plus')
+    let position: { x: number, y: number }
+    
+    if (realNodes.length === 0) {
+      // Si no hay nodos, poner en el centro
+      position = { x: 0, y: 0 }
+    } else {
+      // Encontrar el nodo más a la derecha
+      const rightmostNode = realNodes.reduce((prev, current) => 
+        current.position.x > prev.position.x ? current : prev
+      )
+      position = {
+        x: rightmostNode.position.x + 250,
+        y: rightmostNode.position.y
+      }
+    }
+
+    const newNode = createNode(nodeType, position)
+    console.log('🆕 Nuevo nodo creado desde toolbar:', newNode)
+    
+    // Si no hay nodos reales (solo el inicial "+"), eliminar el nodo "+" inicial
+    if (realNodes.length === 0) {
+      setNodes([newNode])
+      setShouldFitView(false)
+    } else {
+      setNodes(prev => [...prev, newNode])
+    }
+  }, [nodes, setNodes])
+
   // Manejar conexiones manuales
   const onConnect = useCallback(
     (params: Connection) => {
@@ -462,7 +496,10 @@ export function JourneyBuilder() {
     <NodeActionsContext.Provider value={{ onConfigure: handleConfigureNode, onDelete: handleDeleteNode }}>
       <div className="h-screen flex flex-col">
         {/* Barra Superior */}
-        <TopToolbar />
+        <TopToolbar 
+          onAddNode={handleAddNodeFromToolbar}
+          availableNodeTypes={availableNodeTypes}
+        />
         
         {/* Canvas Principal */}
         <div className="flex-1 flex">
