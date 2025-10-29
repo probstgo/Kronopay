@@ -5,6 +5,14 @@ import { obtenerIP, verificarRateLimit } from '@/lib/rate-limiter'
 type Canal = 'email' | 'llamada' | 'sms' | 'whatsapp'
 type Estado = 'iniciado' | 'entregado' | 'completado' | 'fallido' | string
 
+type HistorialDetalles = {
+  email?: string
+  telefono?: string
+  rut?: string
+  origen?: string
+  [key: string]: unknown
+}
+
 type HistorialItem = {
   id: string
   fecha: string
@@ -21,7 +29,7 @@ type QueryRow = {
   tipo_accion: Canal
   estado: Estado
   campana_id: string | null
-  detalles: Record<string, unknown> | null
+  detalles: HistorialDetalles | null
 }
 
 function parseIntSafe(value: string | null, fallback: number): number {
@@ -135,7 +143,7 @@ export async function GET(request: NextRequest) {
         estado: row.estado,
         destino,
         campana_id: row.campana_id ?? null,
-        origen: (row.detalles?.origen as string) ?? null,
+        origen: row.detalles?.origen ?? null,
       }
     })
 
