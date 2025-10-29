@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
         estado: row.estado,
         destino,
         campana_id: row.campana_id ?? null,
-        origen: row.detalles?.origen ?? null,
+        origen: (row.detalles?.origen as string) ?? null,
       }
     })
 
