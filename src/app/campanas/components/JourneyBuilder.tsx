@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, createContext, useContext } from 'react'
-import { ReactFlow, Background, Controls, MiniMap, Node, Edge, addEdge, useNodesState, useEdgesState, Connection, EdgeChange, NodeChange, Handle, Position, useReactFlow } from 'reactflow'
+import { ReactFlow, Background, Controls, MiniMap, Node, Edge, addEdge, useNodesState, useEdgesState, Connection } from 'reactflow'
 import 'reactflow/dist/style.css'
 
 import { TopToolbar } from './TopToolbar'
@@ -14,7 +14,7 @@ import { CondicionNode } from './nodes/CondicionNode'
 import { EstadisticaNode } from './nodes/EstadisticaNode'
 
 // Componente para el nodo "+" inicial
-function InitialPlusNode({ data }: { data: any }) {
+function InitialPlusNode({ data }: { data: Record<string, unknown> }) {
   return (
     <div className="w-16 h-16 bg-purple-500 hover:bg-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 cursor-pointer">
       +
@@ -38,7 +38,7 @@ const useNodeActions = () => {
 }
 
 // Componente wrapper para pasar funciones a los nodos
-function NodeWrapper({ nodeType, ...props }: any) {
+function NodeWrapper({ nodeType, ...props }: { nodeType: string; [key: string]: unknown }) {
   const { onConfigure, onDelete } = useNodeActions()
   
   const nodeComponents = {
@@ -55,16 +55,23 @@ function NodeWrapper({ nodeType, ...props }: any) {
   
   if (!NodeComponent) return null
   
-  return <NodeComponent {...props} onConfigure={onConfigure} onDelete={onDelete} />
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return <NodeComponent {...(props as any)} onConfigure={onConfigure} onDelete={onDelete} />
 }
 
 // Tipos de nodos personalizados
 const nodeTypes = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   email: (props: any) => <NodeWrapper {...props} nodeType="email" />,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   llamada: (props: any) => <NodeWrapper {...props} nodeType="llamada" />,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   espera: (props: any) => <NodeWrapper {...props} nodeType="espera" />,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sms: (props: any) => <NodeWrapper {...props} nodeType="sms" />,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   condicion: (props: any) => <NodeWrapper {...props} nodeType="condicion" />,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   estadistica: (props: any) => <NodeWrapper {...props} nodeType="estadistica" />,
   initialPlus: InitialPlusNode
 }
@@ -179,6 +186,7 @@ export function JourneyBuilder() {
     const id = generateNodeId()
     const nodeType = availableNodeTypes.find(nt => nt.id === type)
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let defaultData: any = {
       tipo: type,
       configuracion: {}
@@ -293,13 +301,14 @@ export function JourneyBuilder() {
   }, [nodes])
 
   // Manejar clic en handle "+"
-  const onConnectStart = useCallback((event: any, { nodeId, handleId }: any) => {
-    console.log('🔍 DEBUG onConnectStart:', { nodeId, handleId, event })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onConnectStart = useCallback((event: any, params: any) => {
+    console.log('🔍 DEBUG onConnectStart:', { nodeId: params.nodeId, handleId: params.handleId, event })
     
-    if (handleId === 'plus') {
+    if (params.handleId === 'plus') {
       console.log('✅ Handle plus detectado, abriendo menú...')
       event.stopPropagation()
-      const node = nodes.find(n => n.id === nodeId)
+      const node = nodes.find(n => n.id === params.nodeId)
       if (node) {
         console.log('📍 Nodo encontrado:', node)
         
@@ -307,7 +316,7 @@ export function JourneyBuilder() {
         const canvasRect = event.currentTarget.getBoundingClientRect()
         
         // Obtener las dimensiones reales del nodo desde React Flow
-        const nodeElement = document.querySelector(`[data-id="${nodeId}"]`)
+        const nodeElement = document.querySelector(`[data-id="${params.nodeId}"]`)
         let nodeRect = {
           x: node.position.x,
           y: node.position.y,
@@ -344,14 +353,14 @@ export function JourneyBuilder() {
         
         console.log('🎯 Posición del menú calculada:', menuPosition)
         setMenuPosition(menuPosition)
-        setSourceNodeId(nodeId)
+        setSourceNodeId(params.nodeId)
         setShowNodeMenu(true)
         console.log('🎯 Menú configurado para abrir')
       } else {
-        console.log('❌ Nodo no encontrado:', nodeId)
+        console.log('❌ Nodo no encontrado:', params.nodeId)
       }
     } else {
-      console.log('ℹ️ Handle diferente:', handleId)
+      console.log('ℹ️ Handle diferente:', params.handleId)
     }
   }, [nodes])
 
@@ -422,6 +431,7 @@ export function JourneyBuilder() {
   }, [])
 
   // Función para guardar configuración de nodo
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSaveNodeConfig = useCallback((nodeId: string, config: any) => {
     setNodes((nodes) =>
       nodes.map((n) =>
@@ -442,7 +452,7 @@ export function JourneyBuilder() {
   const selectedNodeData = selectedNode ? nodes.find(n => n.id === selectedNode) : null
 
   // Manejar clic en el canvas para cerrar menú
-  const onPaneClick = useCallback((event: React.MouseEvent) => {
+  const onPaneClick = useCallback(() => {
     console.log('🖱️ Clic en canvas, cerrando menú')
     setShowNodeMenu(false)
     setSourceNodeId(null)

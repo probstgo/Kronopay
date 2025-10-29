@@ -5,6 +5,7 @@ import { Node } from 'reactflow'
 
 interface LlamadaConfigFormProps {
   node: Node
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSave: (config: any) => void
 }
 

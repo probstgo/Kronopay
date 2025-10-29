@@ -5,11 +5,18 @@ import { Node } from 'reactflow'
 
 interface CondicionConfigFormProps {
   node: Node
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSave: (config: any) => void
 }
 
+interface Condicion {
+  campo: string
+  operador: string
+  valor: string
+}
+
 export function CondicionConfigForm({ node, onSave }: CondicionConfigFormProps) {
-  const [config, setConfig] = useState(node.data.configuracion || {
+  const [config, setConfig] = useState<{ condiciones: Condicion[] }>(node.data.configuracion || {
     condiciones: [
       {
         campo: 'respuesta_email',
@@ -41,12 +48,12 @@ export function CondicionConfigForm({ node, onSave }: CondicionConfigFormProps) 
     if (config.condiciones.length > 1) {
       setConfig({
         ...config,
-        condiciones: config.condiciones.filter((_, i) => i !== index)
+        condiciones: config.condiciones.filter((_: unknown, i: number) => i !== index)
       })
     }
   }
 
-  const updateCondicion = (index: number, field: string, value: any) => {
+  const updateCondicion = (index: number, field: string, value: unknown) => {
     const nuevasCondiciones = [...config.condiciones]
     nuevasCondiciones[index] = { ...nuevasCondiciones[index], [field]: value }
     setConfig({ ...config, condiciones: nuevasCondiciones })
@@ -130,7 +137,7 @@ export function CondicionConfigForm({ node, onSave }: CondicionConfigFormProps) 
       <div className="bg-orange-50 border border-orange-200 rounded-md p-3">
         <h4 className="text-sm font-medium text-orange-800 mb-1">Información</h4>
         <p className="text-xs text-orange-700">
-          Este nodo creará dos salidas: "Sí" (si se cumple la condición) y "No" (si no se cumple).
+          Este nodo creará dos salidas: &quot;Sí&quot; (si se cumple la condición) y &quot;No&quot; (si no se cumple).
           Puedes agregar múltiples condiciones que se evaluarán con lógica AND.
         </p>
       </div>

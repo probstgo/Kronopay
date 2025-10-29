@@ -8,8 +8,10 @@ import { CondicionConfigForm } from './forms/CondicionConfigForm'
 import { EstadisticaConfigForm } from './forms/EstadisticaConfigForm'
 
 interface NodeConfigPanelProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   node: any
   onClose: () => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSaveConfig: (nodeId: string, config: any) => void
 }
 
@@ -17,6 +19,7 @@ export function NodeConfigPanel({ node, onClose, onSaveConfig }: NodeConfigPanel
   if (!node) return null
 
   // Función para guardar configuración
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSaveConfig = (newConfig: any) => {
     onSaveConfig(node.id, newConfig)
   }

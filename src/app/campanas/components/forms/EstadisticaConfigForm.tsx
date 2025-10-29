@@ -5,6 +5,7 @@ import { Node } from 'reactflow'
 
 interface EstadisticaConfigFormProps {
   node: Node
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSave: (config: any) => void
 }
 
@@ -21,7 +22,7 @@ export function EstadisticaConfigForm({ node, onSave }: EstadisticaConfigFormPro
 
   const toggleMetrica = (metrica: string) => {
     const nuevasMetricas = config.metricas.includes(metrica)
-      ? config.metricas.filter(m => m !== metrica)
+      ? config.metricas.filter((m: string) => m !== metrica)
       : [...config.metricas, metrica]
     
     setConfig({ ...config, metricas: nuevasMetricas })
