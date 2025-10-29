@@ -3,14 +3,27 @@ import { createServerClient } from '@supabase/ssr'
 
 export async function GET(request: Request) {
   try {
+    type RequestWithCookies = Request & {
+      cookies?: { get(name: string): { value?: string } | undefined }
+    }
+    type PlanRow = {
+      id: string
+      nombre: string
+      precio_mensual: number
+      limite_emails: number
+      limite_llamadas: number
+      limite_sms: number
+      limite_whatsapp: number
+      limite_memoria_mb: number
+    }
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           get(name: string) {
-            // @ts-ignore
-            return (request as any).cookies?.get(name)?.value
+            // @ts-expect-error: Next.js App Router Request no expone 'cookies' tipado aquí
+            return (request as RequestWithCookies).cookies?.get(name)?.value
           },
           set() {},
           remove() {},
@@ -30,7 +43,7 @@ export async function GET(request: Request) {
 
     if (uErr) return NextResponse.json({ error: uErr.message }, { status: 500 })
 
-    let plan = null as any
+    let plan: PlanRow | null = null
     if (usuario?.plan_suscripcion_id) {
       const { data: planRow, error: pErr } = await supabase
         .from('suscripciones')
@@ -47,8 +60,9 @@ export async function GET(request: Request) {
       fecha_inicio_suscripcion: usuario?.fecha_inicio_suscripcion ?? null,
       fecha_renovacion: usuario?.fecha_renovacion ?? null,
     })
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
 

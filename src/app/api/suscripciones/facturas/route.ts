@@ -3,14 +3,17 @@ import { createServerClient } from '@supabase/ssr'
 
 export async function GET(request: Request) {
   try {
+    type RequestWithCookies = Request & {
+      cookies?: { get(name: string): { value?: string } | undefined }
+    }
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
         cookies: {
           get(name: string) {
-            // @ts-ignore
-            return (request as any).cookies?.get(name)?.value
+            // @ts-expect-error: Next.js App Router Request no expone 'cookies' tipado aquí
+            return (request as RequestWithCookies).cookies?.get(name)?.value
           },
           set() {},
           remove() {},
@@ -31,8 +34,9 @@ export async function GET(request: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
     return NextResponse.json(data || [])
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 })
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown error'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
 
