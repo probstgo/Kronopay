@@ -14,6 +14,7 @@ import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
 import { PreviewPlantilla } from './components/PreviewPlantilla'
+import { PlantillaCardPreview } from './components/PlantillaCardPreview'
 
 interface Plantilla {
   id: string
@@ -240,12 +241,13 @@ export default function PlantillasPage() {
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0">
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                      {plantilla.contenido.length > 100 
-                        ? `${plantilla.contenido.substring(0, 100)}...`
-                        : plantilla.contenido
-                      }
-                    </p>
+                    <div className="mb-4 border rounded-lg p-3 bg-gray-50 min-h-[100px] max-h-[120px] overflow-hidden">
+                      <PlantillaCardPreview
+                        tipo={plantilla.tipo}
+                        contenido={plantilla.contenido}
+                        tipoContenido={plantilla.tipo_contenido || 'texto'}
+                      />
+                    </div>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-gray-500">
                         {new Date(plantilla.created_at).toLocaleDateString('es-CL')}
