@@ -17,7 +17,6 @@ export async function GET(request: Request) {
       {
         cookies: {
           get(name: string) {
-            // @ts-expect-error: Next.js App Router Request no expone 'cookies' tipado aquí
             return (request as RequestWithCookies).cookies?.get(name)?.value
           },
           set() {},
