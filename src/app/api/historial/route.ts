@@ -21,7 +21,7 @@ type QueryRow = {
   tipo_accion: Canal
   estado: Estado
   campana_id: string | null
-  detalles: Record<string, any> | null
+  detalles: Record<string, unknown> | null
 }
 
 function parseIntSafe(value: string | null, fallback: number): number {
