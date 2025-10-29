@@ -164,10 +164,10 @@ Atentamente.`
           {/* Información del remitente */}
           <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="text-sm text-blue-800">
-              <strong>📧 Email será enviado desde:</strong> onboarding@resend.dev
+              <strong>📧 Email será enviado desde:</strong> contacto@kronopay.cl
               <br />
               <span className="text-xs text-blue-600">
-                (Dominio de prueba de Resend - los emails pueden llegar a spam)
+                (Dominio personalizado configurado)
               </span>
             </div>
           </div>

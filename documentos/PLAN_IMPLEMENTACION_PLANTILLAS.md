@@ -28,6 +28,7 @@
 - ✅ **Soporte HTML**: Plantillas de email con formato HTML
 - ✅ **Preview Rápido**: Vista previa sin entrar a editar
 - ✅ **Validación HTML**: Seguridad contra tags peligrosos
+- ✅ **Test de Emails**: Probar plantillas antes de guardarlas o desde plantillas guardadas
 
 ### 🎯 **Objetivos Cumplidos**
 1. ✅ **Crear** sistema completo de gestión de plantillas
@@ -48,7 +49,7 @@
 ```typescript
 ✅ Funcionalidades implementadas:
 - Lista completa de plantillas con paginación
-- Filtros por tipo (Email, Voz, SMS, WhatsApp)
+- Filtros por tipo (Email, SMS, WhatsApp)
 - Búsqueda por nombre y contenido
 - Estadísticas por tipo de plantilla
 - Acciones: Editar, Duplicar, Eliminar
@@ -107,6 +108,32 @@
 - Información adicional contextual
 ```
 
+#### 6. **TestEmailModal.tsx** ⭐ EXCELENTE
+```typescript
+✅ Funcionalidades implementadas:
+- Modal de test de emails desde plantillas
+- Campo de email manual (sin conexión a BD)
+- Editor de variables con valores dummy editables
+- Vista previa en tiempo real del contenido procesado
+- Detección automática de variables usadas
+- Soporte para variables del sistema y personalizadas
+- Integración con API de envío de emails
+- Validaciones completas (email, asunto, contenido)
+- Manejo de estados (loading, éxito, error)
+- Información del remitente (contacto@kronopay.cl)
+```
+
+#### 7. **plantillaUtils.ts** ⭐ EXCELENTE
+```typescript
+✅ Funcionalidades implementadas:
+- detectarVariables(): Detecta variables en contenido
+- obtenerVariablesConInfo(): Obtiene información completa de variables
+- reemplazarVariables(): Reemplaza variables con valores proporcionados
+- VARIABLES_SISTEMA: Constantes con 6 variables del sistema y valores dummy
+- Soporte para variables desconocidas con valores genéricos
+- Manejo de variables en texto plano y HTML
+```
+
 ---
 
 ## 🚀 Funcionalidades Detalladas
@@ -126,16 +153,16 @@
 ```typescript
 ✅ Tipos implementados:
 - Email: Para envío de emails de cobranza
-- Voz: Para llamadas automatizadas
 - SMS: Para envío de mensajes SMS
 - WhatsApp: Para envío de mensajes WhatsApp
+
+📝 Nota: La configuración de voz se maneja exclusivamente en la sección de Teléfono.
 ```
 
 ### **Preview Específico por Canal**
 ```typescript
 ✅ Preview implementado:
 - Email: Formato de email con headers y contenido
-- Voz: Script de llamada con información de contacto
 - SMS: Formato de mensaje con contador de caracteres
 - WhatsApp: Formato de mensaje con información adicional
 ```
@@ -145,8 +172,8 @@
 ## 📊 Estadísticas de Implementación
 
 ### **Archivos Creados**
-- **6 archivos** principales implementados
-- **~1,200 líneas** de código TypeScript
+- **8 archivos** principales implementados
+- **~1,800 líneas** de código TypeScript
 - **0 errores** de compilación
 - **Solo warnings** menores de ESLint
 
@@ -265,7 +292,6 @@
 
 ### **Preview Específico por Canal** ✅ COMPLETADO
 - ✅ **Email**: Formato de email con headers y contenido estructurado
-- ✅ **Voz**: Script de llamada con información de contacto
 - ✅ **SMS**: Formato de mensaje con contador de caracteres y advertencias
 - ✅ **WhatsApp**: Formato de mensaje con información adicional
 
@@ -301,6 +327,61 @@
   - `src/app/plantillas/page.tsx` - Preview rápido en modal
   - `src/app/plantillas/components/EditorContenido.tsx` - Editor HTML
   - `src/app/plantillas/components/PreviewPlantilla.tsx` - Renderizado HTML
+
+### **Eliminación de Tipo "Voz" de Plantillas** ✅ COMPLETADO (Diciembre 2024)
+- ✅ **Motivo**: La configuración de voz se maneja exclusivamente en la sección de Teléfono
+- ✅ **Cambios Realizados**:
+  - Eliminado tipo 'voz' de interfaces TypeScript
+  - Eliminado tipo 'voz' de arrays TIPOS_PLANTILLA
+  - Eliminado filtro "Voz" de página principal
+  - Eliminado case 'voz' del componente PreviewPlantilla
+  - Eliminado bloque de recomendaciones para voz
+  - Eliminados imports Volume2 y Phone no utilizados
+  - Actualizado tipo en base de datos (database.ts)
+- ✅ **Ajuste de Layout**: Cambiado grid de estadísticas de 4 a 3 columnas (md:grid-cols-3)
+- ✅ **Archivos Modificados**:
+  - `src/app/plantillas/page.tsx` - Eliminado tipo voz, filtro y ajuste de grid
+  - `src/app/plantillas/nueva/page.tsx` - Eliminado tipo voz del formulario
+  - `src/app/plantillas/[id]/page.tsx` - Eliminado tipo voz de edición
+  - `src/app/plantillas/components/PreviewPlantilla.tsx` - Eliminado case y referencias a voz
+  - `src/lib/database.ts` - Actualizado tipo de interfaz Plantilla
+- ✅ **Compatibilidad**: Las plantillas existentes con tipo 'voz' permanecen en la base de datos pero no aparecen en la interfaz
+
+### **Implementación de Test de Emails desde Plantillas** ✅ COMPLETADO (Diciembre 2024)
+- ✅ **Funcionalidad Principal**: Permite probar emails desde plantillas nuevas o guardadas sin necesidad de guardarlas primero
+- ✅ **Email Manual**: Campo de input para ingresar email manualmente (sin conexión a BD)
+- ✅ **Variables Editables**: Variables con valores dummy predeterminados basados en las 6 variables del sistema, todas editables
+- ✅ **Detección Automática**: Detecta automáticamente las variables usadas en el contenido y asunto
+- ✅ **Vista Previa en Tiempo Real**: Muestra el contenido procesado actualizado al cambiar valores de variables
+- ✅ **Soporte HTML**: Plantillas HTML funcionan correctamente sin wrapper adicional
+- ✅ **Compatibilidad Total**: Funciona con una, varias, todas o ninguna variable sin errores
+- ✅ **Variables Desconocidas**: Agrega automáticamente variables personalizadas con valores dummy genéricos editables
+- ✅ **Integración API**: Usa la misma API y estructura que `/test-email` para mantener consistencia
+- ✅ **Dominio Personalizado**: Configurado para enviar desde `contacto@kronopay.cl`
+- ✅ **Archivos Creados**:
+  - `src/lib/plantillaUtils.ts` - Utilidades para detectar y reemplazar variables
+  - `src/app/plantillas/components/TestEmailModal.tsx` - Componente modal de test
+- ✅ **Archivos Modificados**:
+  - `src/app/api/send-email/route.ts` - Soporte para `tipo_contenido` y HTML directo
+  - `src/app/plantillas/components/index.ts` - Exportación de TestEmailModal
+  - `src/app/plantillas/nueva/page.tsx` - Botón "Probar Email" agregado
+  - `src/app/plantillas/[id]/page.tsx` - Botón "Probar Email" agregado
+  - `src/app/test-email/components/FormularioEmail.tsx` - Actualizado dominio a contacto@kronopay.cl
+- ✅ **Características Técnicas**:
+  - Componente modal responsive con validaciones completas
+  - Reemplazo de variables en contenido y asunto
+  - Manejo de estados (loading, éxito, error)
+  - Vista previa integrada con PreviewPlantilla
+  - Validación de formato de email
+  - Información del remitente visible
+- ✅ **Flujo de Uso**:
+  1. Usuario crea/edita plantilla de email
+  2. Click en "Probar Email" (visible solo cuando tipo === 'email')
+  3. Se abre modal con campo de email manual
+  4. Usuario ingresa su email y edita valores de variables si lo desea
+  5. Vista previa muestra contenido procesado en tiempo real
+  6. Click en "Enviar Email de Prueba"
+  7. Email se envía con variables reemplazadas
 
 ---
 
@@ -379,6 +460,7 @@
 - **Sistema Completo**: Página principal, crear, editar plantillas
 - **Editor Avanzado**: Variables dinámicas con inserción intuitiva
 - **Preview Dinámico**: Renderizado específico por tipo de canal
+- **Test de Emails**: Probar plantillas antes de guardarlas o desde guardadas
 - **Integración Completa**: Autenticación, base de datos, navegación
 - **Optimización**: TypeScript estricto, manejo de errores robusto
 - **Compilación**: Exitosa sin errores críticos
@@ -413,6 +495,8 @@
 - **Manejo de errores** robusto con try-catch
 - **Validaciones** en tiempo real
 - **Navegación** con Next.js router
+- **Resend** para envío de emails (API `/api/send-email`)
+- **plantillaUtils** para detección y reemplazo de variables
 
 ---
 
@@ -432,12 +516,13 @@ La sección de plantillas ha sido **implementada exitosamente** con todas las fu
 - ✅ **Sistema completo** de gestión de plantillas
 - ✅ **Editor avanzado** con variables dinámicas
 - ✅ **Preview en tiempo real** por tipo de canal
+- ✅ **Test de emails** desde plantillas nuevas o guardadas
 - ✅ **Integración perfecta** con la arquitectura existente
 - ✅ **Código limpio** y bien documentado
 - ✅ **Compilación exitosa** sin errores críticos
 
 ### **Próximo Enfoque:**
-El siguiente paso lógico sería **integrar las plantillas con las campañas** para completar el flujo de automatización de cobranza, permitiendo que los usuarios seleccionen plantillas al crear campañas de email, llamadas, SMS o WhatsApp.
+El siguiente paso lógico sería **integrar las plantillas con las campañas** para completar el flujo de automatización de cobranza, permitiendo que los usuarios seleccionen plantillas al crear campañas de email, SMS o WhatsApp. Las configuraciones de voz se gestionan exclusivamente en la sección de Teléfono.
 
 ---
 

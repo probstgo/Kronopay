@@ -8,13 +8,14 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { ArrowLeft, Save, Eye, Mail, MessageSquare, Trash2, Type, Code, Maximize2 } from 'lucide-react'
+import { ArrowLeft, Save, Eye, Mail, MessageSquare, Trash2, Type, Code, Maximize2, Send } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { EditorContenido } from '../components/EditorContenido'
 import { PreviewPlantilla } from '../components/PreviewPlantilla'
+import { TestEmailModal } from '../components/TestEmailModal'
 
 interface Plantilla {
   id: string
@@ -48,6 +49,7 @@ export default function EditarPlantillaPage({ params }: { params: Promise<{ id: 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [previewPlantilla, setPreviewPlantilla] = useState<Plantilla | null>(null)
+  const [mostrarTestEmail, setMostrarTestEmail] = useState(false)
   const [formData, setFormData] = useState({
     nombre: '',
     tipo: 'email' as 'email' | 'sms' | 'whatsapp',
@@ -332,6 +334,17 @@ export default function EditarPlantillaPage({ params }: { params: Promise<{ id: 
                       <Save className="h-4 w-4 mr-2" />
                       {saving ? 'Guardando...' : 'Guardar Cambios'}
                     </Button>
+                    {formData.tipo === 'email' && (
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        onClick={() => setMostrarTestEmail(true)}
+                        disabled={!formData.contenido.trim()}
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        Probar Email
+                      </Button>
+                    )}
                     <Button 
                       type="button" 
                       variant="outline"
@@ -465,6 +478,14 @@ export default function EditarPlantillaPage({ params }: { params: Promise<{ id: 
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Modal de Test Email */}
+        <TestEmailModal
+          contenido={formData.contenido}
+          tipoContenido={formData.tipo_contenido}
+          open={mostrarTestEmail}
+          onOpenChange={setMostrarTestEmail}
+        />
       </div>
     </Protected>
   )

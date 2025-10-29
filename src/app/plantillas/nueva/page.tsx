@@ -7,13 +7,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Save, Eye, Mail, MessageSquare, Type, Code } from 'lucide-react'
+import { ArrowLeft, Save, Eye, Mail, MessageSquare, Type, Code, Send } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { EditorContenido } from '../components/EditorContenido'
 import { PreviewPlantilla } from '../components/PreviewPlantilla'
+import { TestEmailModal } from '../components/TestEmailModal'
 
 const TIPOS_PLANTILLA = [
   { value: 'email', label: 'Email', icon: Mail, descripcion: 'Para envío de emails de cobranza' },
@@ -41,6 +42,7 @@ export default function NuevaPlantillaPage() {
   })
   const [loading, setLoading] = useState(false)
   const [mostrarPreview, setMostrarPreview] = useState(false)
+  const [mostrarTestEmail, setMostrarTestEmail] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -212,6 +214,17 @@ export default function NuevaPlantillaPage() {
                       <Save className="h-4 w-4 mr-2" />
                       {loading ? 'Guardando...' : 'Guardar Plantilla'}
                     </Button>
+                    {formData.tipo === 'email' && (
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        onClick={() => setMostrarTestEmail(true)}
+                        disabled={!formData.contenido.trim()}
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        Probar Email
+                      </Button>
+                    )}
                     <Button 
                       type="button" 
                       variant="outline"
@@ -320,6 +333,14 @@ export default function NuevaPlantillaPage() {
             )}
           </div>
         </div>
+
+        {/* Modal de Test Email */}
+        <TestEmailModal
+          contenido={formData.contenido}
+          tipoContenido={formData.tipo_contenido}
+          open={mostrarTestEmail}
+          onOpenChange={setMostrarTestEmail}
+        />
       </div>
     </Protected>
   )
