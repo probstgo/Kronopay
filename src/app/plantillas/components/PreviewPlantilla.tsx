@@ -2,10 +2,10 @@
 
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Mail, Volume2, MessageSquare, Phone } from 'lucide-react'
+import { Mail, MessageSquare } from 'lucide-react'
 
 interface PreviewPlantillaProps {
-  tipo: 'email' | 'voz' | 'sms' | 'whatsapp'
+  tipo: 'email' | 'sms' | 'whatsapp'
   contenido: string
   tipoContenido?: 'texto' | 'html'
   variables: {
@@ -20,14 +20,12 @@ interface PreviewPlantillaProps {
 
 const ICONOS_TIPO = {
   email: Mail,
-  voz: Volume2,
   sms: MessageSquare,
   whatsapp: MessageSquare
 }
 
 const COLORES_TIPO = {
   email: 'bg-blue-100 text-blue-800',
-  voz: 'bg-purple-100 text-purple-800',
   sms: 'bg-green-100 text-green-800',
   whatsapp: 'bg-green-100 text-green-800'
 }
@@ -125,26 +123,6 @@ export function PreviewPlantilla({ tipo, contenido, tipoContenido = 'texto', var
                   </p>
                 ))
               )}
-            </div>
-          </div>
-        )
-
-      case 'voz':
-        return (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Phone className="h-4 w-4" />
-              <span>Llamada a: {variables.telefono}</span>
-            </div>
-            <div className="bg-gray-50 p-3 rounded-lg">
-              <div className="text-sm font-medium mb-2">Script de la llamada:</div>
-              <div className="text-sm leading-relaxed">
-                {contenidoRenderizado.split('\n').map((linea, index) => (
-                  <div key={index} className="mb-1">
-                    {linea || '\u00A0'}
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         )

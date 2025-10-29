@@ -89,7 +89,7 @@ export interface Plantilla {
   id: string;
   usuario_id: string;
   nombre: string;
-  tipo: 'email' | 'voz' | 'sms' | 'whatsapp';
+  tipo: 'email' | 'sms' | 'whatsapp';
   contenido: string;
   created_at: string;
 }

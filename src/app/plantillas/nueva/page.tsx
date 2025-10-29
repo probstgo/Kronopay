@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Save, Eye, Mail, Volume2, MessageSquare, Type, Code } from 'lucide-react'
+import { ArrowLeft, Save, Eye, Mail, MessageSquare, Type, Code } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
@@ -17,7 +17,6 @@ import { PreviewPlantilla } from '../components/PreviewPlantilla'
 
 const TIPOS_PLANTILLA = [
   { value: 'email', label: 'Email', icon: Mail, descripcion: 'Para envío de emails de cobranza' },
-  { value: 'voz', label: 'Voz', icon: Volume2, descripcion: 'Para llamadas automatizadas' },
   { value: 'sms', label: 'SMS', icon: MessageSquare, descripcion: 'Para envío de mensajes SMS' },
   { value: 'whatsapp', label: 'WhatsApp', icon: MessageSquare, descripcion: 'Para envío de mensajes WhatsApp' }
 ]
@@ -36,7 +35,7 @@ export default function NuevaPlantillaPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
     nombre: '',
-    tipo: 'email' as 'email' | 'voz' | 'sms' | 'whatsapp',
+    tipo: 'email' as 'email' | 'sms' | 'whatsapp',
     tipo_contenido: 'texto' as 'texto' | 'html',
     contenido: ''
   })
@@ -126,7 +125,7 @@ export default function NuevaPlantillaPage() {
                     <Label>Tipo de Plantilla</Label>
                     <Select 
                       value={formData.tipo} 
-                      onValueChange={(value: 'email' | 'voz' | 'sms' | 'whatsapp') => setFormData(prev => ({ ...prev, tipo: value }))}
+                      onValueChange={(value: 'email' | 'sms' | 'whatsapp') => setFormData(prev => ({ ...prev, tipo: value }))}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona un tipo" />
@@ -301,18 +300,6 @@ export default function NuevaPlantillaPage() {
                         <li>Menciona el monto específico</li>
                         <li>Proporciona opciones de pago</li>
                         <li>Mantén un tono profesional</li>
-                      </ul>
-                    </div>
-                  )}
-                  
-                  {formData.tipo === 'voz' && (
-                    <div className="text-xs text-gray-500">
-                      <p className="font-medium mb-1">Recomendaciones:</p>
-                      <ul className="list-disc list-inside space-y-1">
-                        <li>Saludo claro y profesional</li>
-                        <li>Verificación de identidad</li>
-                        <li>Información concisa</li>
-                        <li>Opciones de contacto</li>
                       </ul>
                     </div>
                   )}

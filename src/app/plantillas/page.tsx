@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Plus, Search, FileText, Mail, Volume2, MessageSquare, Edit, Trash2, Copy, Eye } from 'lucide-react'
+import { Plus, Search, FileText, Mail, MessageSquare, Edit, Trash2, Copy, Eye } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
@@ -18,7 +18,7 @@ import { PreviewPlantilla } from './components/PreviewPlantilla'
 interface Plantilla {
   id: string
   nombre: string
-  tipo: 'email' | 'voz' | 'sms' | 'whatsapp'
+  tipo: 'email' | 'sms' | 'whatsapp'
   tipo_contenido: 'texto' | 'html'
   contenido: string
   created_at: string
@@ -26,7 +26,6 @@ interface Plantilla {
 
 const TIPOS_PLANTILLA = {
   email: { label: 'Email', icon: Mail, color: 'bg-blue-100 text-blue-800' },
-  voz: { label: 'Voz', icon: Volume2, color: 'bg-purple-100 text-purple-800' },
   sms: { label: 'SMS', icon: MessageSquare, color: 'bg-green-100 text-green-800' },
   whatsapp: { label: 'WhatsApp', icon: MessageSquare, color: 'bg-green-100 text-green-800' }
 }
@@ -170,7 +169,6 @@ export default function PlantillasPage() {
             <SelectContent>
               <SelectItem value="todos">Todos los tipos</SelectItem>
               <SelectItem value="email">Email</SelectItem>
-              <SelectItem value="voz">Voz</SelectItem>
               <SelectItem value="sms">SMS</SelectItem>
               <SelectItem value="whatsapp">WhatsApp</SelectItem>
             </SelectContent>
@@ -178,7 +176,7 @@ export default function PlantillasPage() {
         </div>
 
         {/* Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {Object.entries(TIPOS_PLANTILLA).map(([tipo, config]) => {
             const cantidad = plantillas.filter(p => p.tipo === tipo).length
             const IconComponent = config.icon
