@@ -30,7 +30,6 @@ const publicRoutes = [
   '/',
   '/auth/callback',
   '/auth/reset-password',
-  '/test-email',
   '/test-supabase'
 ]
 

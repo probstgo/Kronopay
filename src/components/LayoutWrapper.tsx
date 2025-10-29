@@ -20,7 +20,6 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
     '/forgot-password',
     '/auth/callback',
     '/auth/reset-password',
-    '/test-email',
     '/test-supabase'
   ]
 

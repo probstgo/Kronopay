@@ -16,7 +16,6 @@ import {
   Home,
   User,
   LogOut,
-  Mail,
   Phone
 } from "lucide-react"
 
@@ -45,11 +44,6 @@ const navigationItems = [
     title: "Plantillas",
     href: "/plantillas",
     icon: FileText,
-  },
-  {
-    title: "Test Email",
-    href: "/test-email",
-    icon: Mail,
   },
   {
     title: "Teléfono",
