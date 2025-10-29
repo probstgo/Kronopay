@@ -117,14 +117,15 @@ export async function GET(request: NextRequest) {
       // Extraer destino de detalles según el tipo de acción
       let destino = 'N/A'
       if (row.detalles) {
-        if (row.tipo_accion === 'email' && row.detalles.email) {
-          destino = row.detalles.email
-        } else if (row.tipo_accion === 'llamada' && row.detalles.telefono) {
-          destino = row.detalles.telefono
-        } else if (row.tipo_accion === 'sms' && row.detalles.telefono) {
-          destino = row.detalles.telefono
-        } else if (row.tipo_accion === 'whatsapp' && row.detalles.telefono) {
-          destino = row.detalles.telefono
+        const detalles = row.detalles as any
+        if (row.tipo_accion === 'email' && detalles.email) {
+          destino = detalles.email
+        } else if (row.tipo_accion === 'llamada' && detalles.telefono) {
+          destino = detalles.telefono
+        } else if (row.tipo_accion === 'sms' && detalles.telefono) {
+          destino = detalles.telefono
+        } else if (row.tipo_accion === 'whatsapp' && detalles.telefono) {
+          destino = detalles.telefono
         }
       }
 
