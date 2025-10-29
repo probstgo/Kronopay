@@ -41,6 +41,100 @@ Este documento te guía en la implementación del backend y la aplicación despu
 
 ## 1. Implementar las Automatizaciones (REQUERIDO)
 
+### Suscripciones (Fase 2) — Endpoints API
+
+- Endpoints API necesarios:
+  - `GET /api/suscripciones/actual` - Plan y estado actual
+  - `GET /api/suscripciones/uso` - Uso del mes actual
+  - `GET /api/suscripciones/facturas` - Historial de facturas
+  - `POST /api/suscripciones/cambiar-plan` - Cambiar plan
+  - `GET /api/suscripciones/planes` - Lista de planes disponibles
+
+#### Contratos de API (Request/Response)
+
+1) GET `/api/suscripciones/actual`
+```
+Response 200
+{
+  "plan": {
+    "id": "uuid",
+    "nombre": "string",
+    "precio_mensual": number,
+    "limite_emails": number,
+    "limite_llamadas": number,
+    "limite_sms": number,
+    "limite_whatsapp": number,
+    "limite_memoria_mb": number
+  },
+  "estado_suscripcion": "activo|vencido|cancelado|suspendido",
+  "fecha_inicio_suscripcion": "ISO-8601|null",
+  "fecha_renovacion": "ISO-8601|null"
+}
+```
+
+2) GET `/api/suscripciones/uso`
+```
+Query: none (usa usuario autenticado y periodo actual)
+Response 200
+{
+  "periodo": "YYYY-MM",
+  "emails_enviados": number,
+  "llamadas_ejecutadas": number,
+  "sms_enviados": number,
+  "whatsapp_enviados": number,
+  "duracion_llamadas": number,
+  "memoria_db_usada": number,
+  "costo_total": number
+}
+```
+
+3) GET `/api/suscripciones/facturas`
+```
+Response 200
+[
+  {
+    "id": "uuid",
+    "periodo": "YYYY-MM",
+    "fecha": "ISO-8601",
+    "monto": number,
+    "estado": "generada|pagada|vencida",
+    "pdf_url": "string|null"
+  }
+]
+```
+
+4) POST `/api/suscripciones/cambiar-plan`
+```
+Request JSON
+{ "suscripcion_id": "uuid" }
+
+Response 200
+{
+  "ok": true,
+  "plan_suscripcion_id": "uuid",
+  "fecha_renovacion": "ISO-8601|null"
+}
+```
+
+5) GET `/api/suscripciones/planes`
+```
+Response 200
+[
+  {
+    "id": "uuid",
+    "nombre": "string",
+    "descripcion": "string|null",
+    "precio_mensual": number,
+    "limite_emails": number,
+    "limite_llamadas": number,
+    "limite_sms": number,
+    "limite_whatsapp": number,
+    "limite_memoria_mb": number
+  }
+]
+```
+
+
 ### A) Crear el Job Programado (Ejecutor)
 
 **Qué es:** Función que se ejecuta automáticamente cada 1-5 minutos para procesar acciones programadas.

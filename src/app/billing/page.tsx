@@ -1,12 +1,25 @@
 import Protected from "@/components/Protected"
+import PlanActual from "./components/PlanActual"
+import UsoActual from "./components/UsoActual"
+import Facturacion from "./components/Facturacion"
+import ConsumoDetalle from "./components/ConsumoDetalle"
 
 export default function BillingPage() {
   return (
     <Protected>
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Billing</h1>
-        <div className="bg-white rounded-lg shadow p-6">
-          <p className="text-gray-500">Contenido por agregar...</p>
+        <h1 className="text-3xl font-bold mb-6">Suscripciones</h1>
+        
+        {/* Primera fila: Plan y Uso */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <PlanActual />
+          <UsoActual />
+        </div>
+        
+        {/* Segunda fila: Facturación y Consumo Detallado */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Facturacion />
+          <ConsumoDetalle />
         </div>
       </div>
     </Protected>

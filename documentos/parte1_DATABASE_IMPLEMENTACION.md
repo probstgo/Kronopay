@@ -285,6 +285,16 @@ CREATE TABLE IF NOT EXISTS public.usuarios (
 );
 ```
 
+**Actualización de usuarios (campos de suscripción):**
+```sql
+-- Agregar campos adicionales para suscripciones
+ALTER TABLE usuarios 
+ADD COLUMN IF NOT EXISTS fecha_inicio_suscripcion timestamptz,
+ADD COLUMN IF NOT EXISTS fecha_renovacion timestamptz,
+ADD COLUMN IF NOT EXISTS estado_suscripcion text DEFAULT 'activo' 
+  CHECK (estado_suscripcion IN ('activo', 'vencido', 'cancelado', 'suspendido'));
+```
+
 **Resto de tablas (completas):**
 
 ```sql
@@ -454,6 +464,23 @@ CREATE TABLE usos (
     updated_at timestamptz DEFAULT now()
 );
 CREATE INDEX idx_usos_rut ON usos(rut);
+```
+
+```sql
+-- Tabla: facturas
+CREATE TABLE facturas (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  usuario_id uuid REFERENCES usuarios(id) NOT NULL,
+  suscripcion_id uuid REFERENCES suscripciones(id),
+  monto numeric NOT NULL,
+  fecha timestamptz NOT NULL,
+  periodo text NOT NULL, -- "2025-01" formato
+  descripcion text,
+  estado text NOT NULL CHECK (estado IN ('generada', 'pagada', 'vencida')),
+  pdf_url text,
+  detalles jsonb, -- Items desglosados
+  created_at timestamptz DEFAULT now()
+);
 ```
 
 ```sql
@@ -659,6 +686,7 @@ ALTER TABLE pagos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE pagos_usuarios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE usos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE configuraciones ENABLE ROW LEVEL SECURITY;
+ALTER TABLE facturas ENABLE ROW LEVEL SECURITY;
 
 -- Políticas para tablas con usuario_id
 CREATE POLICY "Filtro por usuario en deudores" ON deudores FOR ALL USING (auth.uid() = usuario_id) WITH CHECK (auth.uid() = usuario_id);
@@ -671,6 +699,7 @@ CREATE POLICY "Filtro por usuario en plantillas" ON plantillas FOR ALL USING (au
 CREATE POLICY "Filtro por usuario en pagos" ON pagos FOR ALL USING (auth.uid() = usuario_id) WITH CHECK (auth.uid() = usuario_id);
 CREATE POLICY "Filtro por usuario en pagos_usuarios" ON pagos_usuarios FOR ALL USING (auth.uid() = usuario_id) WITH CHECK (auth.uid() = usuario_id);
 CREATE POLICY "Filtro por usuario en usos" ON usos FOR ALL USING (auth.uid() = usuario_id) WITH CHECK (auth.uid() = usuario_id);
+CREATE POLICY "Filtro por usuario en facturas" ON facturas FOR ALL USING (auth.uid() = usuario_id) WITH CHECK (auth.uid() = usuario_id);
 
 -- Políticas para configuraciones: permite leer globales (usuario_id NULL) y propias; solo modificar propias
 CREATE POLICY "Leer configuraciones" ON configuraciones 
@@ -724,6 +753,9 @@ CREATE INDEX IF NOT EXISTS idx_pagos_usuario_id           ON pagos(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_pagos_usuarios_usuario_id  ON pagos_usuarios(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_usos_usuario_id            ON usos(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_configuraciones_usuario_id ON configuraciones(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_facturas_usuario_id        ON facturas(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_facturas_periodo           ON facturas(periodo);
+CREATE INDEX IF NOT EXISTS idx_facturas_estado            ON facturas(estado);
 
 -- Índices compuestos opcionales
 CREATE INDEX IF NOT EXISTS idx_programaciones_user_estado_fecha

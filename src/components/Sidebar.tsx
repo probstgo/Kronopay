@@ -56,7 +56,7 @@ const navigationItems = [
     icon: CreditCard,
   },
   {
-    title: "Billing",
+    title: "Suscripciones",
     href: "/billing",
     icon: Receipt,
   },
@@ -86,7 +86,7 @@ export function Sidebar() {
     <div className="flex h-full w-64 flex-col border-r bg-background">
       {/* Header */}
       <div className="flex h-16 items-center border-b px-6">
-        <h2 className="text-lg font-semibold">Cobranza</h2>
+        <h2 className="text-lg font-semibold">KronoPay</h2>
       </div>
 
       {/* Navigation */}
