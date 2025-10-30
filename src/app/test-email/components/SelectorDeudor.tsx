@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Deudor } from '@/lib/database'
+import { Deudor, Deuda, Contacto } from '@/lib/database'
 import { supabase } from '@/lib/supabase'
 
 interface SelectorDeudorProps {
@@ -40,33 +40,33 @@ export default function SelectorDeudor({ onDeudorSelect, selectedDeudor }: Selec
         if (deudasError) throw deudasError
         if (contactosError) throw contactosError
 
-        const deudasPorDeudor = (deudasData || []).reduce((acc: Record<string, any[]>, deuda: any) => {
+        const deudasPorDeudor = (deudasData || []).reduce((acc: Record<string, Deuda[]>, deuda: Deuda) => {
           if (!acc[deuda.deudor_id]) acc[deuda.deudor_id] = []
           acc[deuda.deudor_id].push(deuda)
           return acc
         }, {})
 
-        const contactosPorDeudor = (contactosData || []).reduce((acc: Record<string, any[]>, contacto: any) => {
+        const contactosPorDeudor = (contactosData || []).reduce((acc: Record<string, Contacto[]>, contacto: Contacto) => {
           if (!acc[contacto.deudor_id]) acc[contacto.deudor_id] = []
           acc[contacto.deudor_id].push(contacto)
           return acc
         }, {})
 
         const combinados: DeudorUI[] = (deudoresData || []).map((d: Deudor) => {
-          const deudas = deudasPorDeudor[d.id] || []
-          const contactos = contactosPorDeudor[d.id] || []
+          const deudas: Deuda[] = deudasPorDeudor[d.id] || []
+          const contactos: Contacto[] = contactosPorDeudor[d.id] || []
 
-          const emailPreferido = contactos.find((c) => c.tipo_contacto === 'email' && c.preferido) || contactos.find((c) => c.tipo_contacto === 'email')
-          const telefonoPreferido = contactos.find((c) => c.tipo_contacto === 'telefono' && c.preferido) || contactos.find((c) => c.tipo_contacto === 'telefono')
+          const emailPreferido = contactos.find((c: Contacto) => c.tipo_contacto === 'email' && c.preferido) || contactos.find((c: Contacto) => c.tipo_contacto === 'email')
+          const telefonoPreferido = contactos.find((c: Contacto) => c.tipo_contacto === 'telefono' && c.preferido) || contactos.find((c: Contacto) => c.tipo_contacto === 'telefono')
 
-          const montoTotal = deudas.reduce((sum: number, deuda: any) => sum + (deuda.monto || 0), 0)
+          const montoTotal = deudas.reduce((sum: number, deuda: Deuda) => sum + (deuda.monto || 0), 0)
 
           let estadoGeneral = 'sin_deudas'
           if (deudas.length > 0) {
-            const tieneVencidas = deudas.some((x: any) => x.estado === 'vencida')
-            const tienePendientes = deudas.some((x: any) => x.estado === 'pendiente')
-            const tieneNuevas = deudas.some((x: any) => x.estado === 'nueva')
-            const todasPagadas = deudas.every((x: any) => x.estado === 'pagado')
+            const tieneVencidas = deudas.some((x: Deuda) => (x as unknown as { estado?: string }).estado === 'vencida')
+            const tienePendientes = deudas.some((x: Deuda) => x.estado === 'pendiente')
+            const tieneNuevas = deudas.some((x: Deuda) => x.estado === 'nueva')
+            const todasPagadas = deudas.every((x: Deuda) => x.estado === 'pagado')
             if (tieneVencidas) estadoGeneral = 'vencida'
             else if (tienePendientes) estadoGeneral = 'pendiente'
             else if (tieneNuevas) estadoGeneral = 'nueva'
