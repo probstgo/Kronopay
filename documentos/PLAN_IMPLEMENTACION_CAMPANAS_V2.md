@@ -323,7 +323,7 @@ export function TopToolbar({ onAddNode, availableNodeTypes = [] }: TopToolbarPro
 // Tipos base
 export interface BaseNodeData {
   id: string
-  tipo: 'email' | 'llamada' | 'espera' | 'sms' | 'condicion' | 'estadistica'
+  tipo: 'email' | 'llamada' | 'espera' | 'sms' | 'condicion'
   configuracion: Record<string, any>
 }
 
@@ -470,7 +470,6 @@ export const connectionColors = {
 #### **Tareas:**
 - [x] Implementar `SMSNode.tsx`
 - [x] Implementar `CondicionNode.tsx`
-- [x] Implementar `EstadisticaNode.tsx`
 - [x] Formularios de configuración completos
 - [x] Validaciones TypeScript
 - [x] Guardar configuración en estado
@@ -653,8 +652,7 @@ const nodeTypes = {
   llamada: LlamadaNode,
   espera: EsperaNode,
   sms: SMSNode,
-  condicion: CondicionNode,
-  estadistica: EstadisticaNode
+  condicion: CondicionNode
 }
 
 // Tipos de conexiones personalizadas
@@ -714,7 +712,7 @@ export const theme = {
 - **Performance**: < 100ms para operaciones básicas
 
 ### **Funcionalidad**
-- **Nodos implementados**: 6 tipos
+- **Nodos implementados**: 5 tipos
 - **Conexiones**: 4 tipos diferentes
 - **Persistencia**: 100% funcional
 - **Ejecución**: Sistema paso a paso
@@ -845,13 +843,11 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 #### **Archivos Creados:**
 - ✅ `src/app/campanas/components/nodes/SMSNode.tsx` - Nodo de SMS
 - ✅ `src/app/campanas/components/nodes/CondicionNode.tsx` - Nodo de condición
-- ✅ `src/app/campanas/components/nodes/EstadisticaNode.tsx` - Nodo de estadística
 - ✅ `src/app/campanas/components/forms/EmailConfigForm.tsx` - Formulario de email
 - ✅ `src/app/campanas/components/forms/LlamadaConfigForm.tsx` - Formulario de llamada
 - ✅ `src/app/campanas/components/forms/EsperaConfigForm.tsx` - Formulario de espera
 - ✅ `src/app/campanas/components/forms/SMSConfigForm.tsx` - Formulario de SMS
 - ✅ `src/app/campanas/components/forms/CondicionConfigForm.tsx` - Formulario de condición
-- ✅ `src/app/campanas/components/forms/EstadisticaConfigForm.tsx` - Formulario de estadística
 
 #### **Modificaciones:**
 - ✅ `src/app/campanas/components/JourneyBuilder.tsx` - Sistema Make.com implementado
@@ -860,8 +856,8 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 #### **Funcionalidades Implementadas:**
 - ✅ Sistema Make.com completo (círculo "+" inicial + handles "+" en nodos)
-- ✅ 6 tipos de nodos completamente funcionales
-- ✅ 6 formularios de configuración específicos
+- ✅ 5 tipos de nodos completamente funcionales
+- ✅ 5 formularios de configuración específicos
 - ✅ Panel de configuración integrado y funcional
 - ✅ Handles "+" completamente integrados en React Flow
 - ✅ Menú de selección de nodos con diseño profesional

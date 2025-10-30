@@ -255,7 +255,7 @@ export function TopToolbar({ onAddNode, availableNodeTypes = [], onAddNote }: To
 
       {/* Panel de Analytics */}
       <Sheet open={analyticsOpen} onOpenChange={setAnalyticsOpen}>
-        <SheetContent side="right" className="sm:max-w-md">
+        <SheetContent side="right" className="sm:max-w-md p-6">
           <SheetHeader>
             <SheetTitle>Estadísticas y Reportes</SheetTitle>
             <SheetDescription>
