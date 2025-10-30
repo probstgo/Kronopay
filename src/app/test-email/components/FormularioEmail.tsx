@@ -9,8 +9,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Deudor } from '@/lib/database'
 import { Send, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 
+type DeudorSeleccion = Deudor & { email?: string; monto_deuda: number }
+
 interface FormularioEmailProps {
-  deudorSeleccionado: Deudor | null
+  deudorSeleccionado: DeudorSeleccion | null
 }
 
 interface EnvioResultado {

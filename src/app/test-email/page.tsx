@@ -6,8 +6,10 @@ import SelectorDeudor from './components/SelectorDeudor'
 import FormularioEmail from './components/FormularioEmail'
 import { Deudor } from '@/lib/database'
 
+type DeudorSeleccion = Deudor & { email?: string; monto_deuda: number }
+
 export default function TestEmailPage() {
-  const [deudorSeleccionado, setDeudorSeleccionado] = useState<Deudor | null>(null)
+  const [deudorSeleccionado, setDeudorSeleccionado] = useState<DeudorSeleccion | null>(null)
 
   return (
     <Protected>
