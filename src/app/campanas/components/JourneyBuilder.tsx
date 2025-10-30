@@ -11,7 +11,6 @@ import { LlamadaNode } from './nodes/LlamadaNode'
 import { EsperaNode } from './nodes/EsperaNode'
 import { SMSNode } from './nodes/SMSNode'
 import { CondicionNode } from './nodes/CondicionNode'
-import { EstadisticaNode } from './nodes/EstadisticaNode'
 import { NoteNode } from './nodes/NoteNode'
 
 // Componente para el nodo "+" inicial
@@ -48,7 +47,6 @@ function NodeWrapper({ nodeType, ...props }: { nodeType: string; [key: string]: 
     espera: EsperaNode,
     sms: SMSNode,
     condicion: CondicionNode,
-    estadistica: EstadisticaNode,
     initialPlus: InitialPlusNode
   }
   
@@ -72,8 +70,6 @@ const nodeTypes = {
   sms: (props: any) => <NodeWrapper {...props} nodeType="sms" />,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   condicion: (props: any) => <NodeWrapper {...props} nodeType="condicion" />,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  estadistica: (props: any) => <NodeWrapper {...props} nodeType="estadistica" />,
   initialPlus: InitialPlusNode,
   note: NoteNode
 }
@@ -129,13 +125,6 @@ const availableNodeTypes = [
     description: 'Evaluar condición lógica',
     icon: '🔀',
     color: 'orange'
-  },
-  {
-    id: 'estadistica',
-    name: 'Estadística',
-    description: 'Mostrar estadísticas',
-    icon: '📊',
-    color: 'indigo'
   }
 ]
 
@@ -250,17 +239,7 @@ export function JourneyBuilder() {
           }
         }
         break
-      case 'estadistica':
-        defaultData = {
-          ...defaultData,
-          titulo: 'Nueva Estadística',
-          configuracion: {
-            tipo_estadistica: 'resumen',
-            metricas: ['total_ejecutados', 'exitosos', 'fallidos'],
-            formato_reporte: 'tabla'
-          }
-        }
-        break
+      // eliminado: estadistica
     }
 
     return {

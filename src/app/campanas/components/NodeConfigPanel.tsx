@@ -5,7 +5,6 @@ import { LlamadaConfigForm } from './forms/LlamadaConfigForm'
 import { EsperaConfigForm } from './forms/EsperaConfigForm'
 import { SMSConfigForm } from './forms/SMSConfigForm'
 import { CondicionConfigForm } from './forms/CondicionConfigForm'
-import { EstadisticaConfigForm } from './forms/EstadisticaConfigForm'
 
 interface NodeConfigPanelProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,8 +36,6 @@ export function NodeConfigPanel({ node, onClose, onSaveConfig }: NodeConfigPanel
         return node.data.texto || 'Configuración de SMS'
       case 'condicion':
         return node.data.condicion || 'Configuración de Condición'
-      case 'estadistica':
-        return node.data.titulo || 'Configuración de Estadística'
       default:
         return 'Configuración'
     }
@@ -93,10 +90,6 @@ export function NodeConfigPanel({ node, onClose, onSaveConfig }: NodeConfigPanel
         
         {node.data.tipo === 'condicion' && (
           <CondicionConfigForm node={node} onSave={handleSaveConfig} />
-        )}
-        
-        {node.data.tipo === 'estadistica' && (
-          <EstadisticaConfigForm node={node} onSave={handleSaveConfig} />
         )}
       </div>
     </div>
