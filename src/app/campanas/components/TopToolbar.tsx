@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, Plus, BarChart3, Settings, Lightbulb, Play } from 'lucide-react'
+import { ArrowLeft, Plus, BarChart3, Settings, Lightbulb, Play, StickyNote } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
@@ -44,9 +44,10 @@ interface NodeType {
 interface TopToolbarProps {
   onAddNode?: (nodeType: string) => void
   availableNodeTypes?: NodeType[]
+  onAddNote?: () => void
 }
 
-export function TopToolbar({ onAddNode, availableNodeTypes = [] }: TopToolbarProps) {
+export function TopToolbar({ onAddNode, availableNodeTypes = [], onAddNote }: TopToolbarProps) {
   const [nodesMenuOpen, setNodesMenuOpen] = useState(false)
   const [analyticsOpen, setAnalyticsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -108,6 +109,24 @@ export function TopToolbar({ onAddNode, availableNodeTypes = [] }: TopToolbarPro
               </TooltipTrigger>
               <TooltipContent>
                 <p>Agregar nodos al canvas</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Botón Agregar Nota */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onAddNote?.()}
+                  className="h-9 w-9"
+                  aria-label="Agregar nota"
+                >
+                  <StickyNote className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Agregar nota</p>
               </TooltipContent>
             </Tooltip>
 

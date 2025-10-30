@@ -60,6 +60,16 @@ Crear un sistema de campañas con **Journey Builder visual** usando **React Flow
 - **Barra superior** con acciones principales
 - **Flujo horizontal** natural de izquierda a derecha
 
+### 📝 Notas flotantes (nuevo)
+- Botón "Agregar nota" en la top bar (`TopToolbar.tsx`).
+- Las notas son nodos libres de React Flow (sin handles), movibles y editables.
+- Traen botón "X" para eliminar.
+- Posicionamiento inteligente:
+  - Si solo existe el nodo inicial "+" morado, la nota aparece encima de ese nodo.
+  - Si existen nodos del flujo, la nota aparece encima del nodo más a la derecha con un offset vertical (no lo tapa).
+  - Nunca elimina ni oculta el nodo inicial.
+  
+
 ---
 
 ## 🏗️ Arquitectura Técnica con React Flow
@@ -476,23 +486,82 @@ export const connectionColors = {
 ### **Fase 3: Persistencia y Gestión (Semana 3)**
 
 #### **Objetivos:**
-- Guardar/cargar workflows
+- Guardar/cargar workflows (incluye notas)
 - Gestión de campañas
 - Integración con Supabase
 - Sistema de metadatos
 
 #### **Tareas:**
 - [ ] Integrar con Supabase
-- [ ] Sistema de guardar/cargar workflows
+- [ ] Sistema de guardar/cargar workflows (nodos, conexiones y notas)
 - [ ] Modal de gestión de campañas
 - [ ] Metadatos de campañas
 - [ ] Sistema de versiones básico
 
 #### **Entregables:**
-- Persistencia completa
+- Persistencia completa (incluye notas)
 - Gestión de campañas
 - Integración con BD
 - Sistema de metadatos
+
+---
+
+## ☁️ Integración Backend y BBDD (Notas y flujos enlazados a campaña/usuario)
+
+### Modelo de datos recomendado (JSONB en `workflows_cobranza`)
+- Usar `workflows_cobranza.canvas_data` (JSONB) para persistir el canvas completo: `nodes`, `edges` y `notes`.
+- Cada campaña está en `workflows_cobranza` y pertenece a un `usuario_id` único (RLS ya aplicado).
+
+Ejemplo de `canvas_data`:
+```json
+{
+  "nodes": [
+    { "id": "node_abc", "type": "email", "position": { "x": 0, "y": 0 }, "data": { "plantilla": "Nueva Plantilla", "configuracion": {} } }
+  ],
+  "edges": [
+    { "id": "edge_node_abc_node_def", "source": "node_abc", "target": "node_def", "type": "smoothstep", "animated": true }
+  ],
+  "notes": [
+    { "id": "note_123", "text": "Llamar a clientes VIP primero", "position": { "x": 300, "y": -120 }, "createdAt": "2025-10-30T12:00:00Z", "updatedAt": "2025-10-30T12:05:00Z" }
+  ]
+}
+```
+
+Ventajas:
+- No requiere nuevas tablas; RLS existente limita el acceso por `usuario_id`.
+- Guardado/lectura atómica del canvas.
+
+Alternativa (si se requiere auditoría por nota):
+- Crear `workflow_notes` (FK `workflow_id` → `workflows_cobranza.id`) con RLS por usuario y timestamps. Opcional.
+
+### Endpoints/API (Next.js App Router)
+- `GET /api/campanas/:id/canvas`: retorna `canvas_data` de la campaña del usuario autenticado.
+- `PUT /api/campanas/:id/canvas`: actualiza `canvas_data` (validación con Zod). Verifica que `usuario_id` de la campaña coincide con `auth.uid()`.
+
+Zod mínimo para `canvas_data`:
+- `nodes[]`: `{ id, type, position{x,y}, data }`
+- `edges[]`: `{ id, source, target, type? }`
+- `notes[]`: `{ id, text, position{x,y}, createdAt?, updatedAt? }`
+
+### Seguridad
+- Mantener políticas RLS definidas (usuario solo ve/edita sus campañas).
+- Usar Supabase SSR para obtener `auth.uid()` en los endpoints.
+
+### Cambios Frontend para persistir
+1. Al crear/editar/eliminar una nota o nodo, actualizar estado local.
+2. Agregar acción "Guardar" (o autosave con debounce ~800ms):
+   - Construir `canvas_data` `{ nodes, edges, notes }`.
+   - `PUT /api/campanas/:id/canvas`.
+3. Al cargar `campanas/[id]`:
+   - `GET /api/campanas/:id/canvas` y poblar estado.
+4. Todas las operaciones deben estar siempre asociadas al `campaignId` de la ruta y al usuario autenticado.
+
+### Checklist Backend/BBDD
+- [ ] Implementar endpoints `GET/PUT /api/campanas/:id/canvas`.
+- [ ] Validar pertenencia de la campaña al usuario (`usuario_id` = `auth.uid()`).
+- [ ] Validar estructura con Zod (incluye `notes`).
+- [ ] Actualizar `canvas_data` en `workflows_cobranza`.
+- [ ] Añadir `updatedAt` en notas/nodos si se desea auditoría ligera.
 
 ---
 
@@ -937,6 +1006,23 @@ const handleAddNodeFromToolbar = useCallback((nodeType: string) => {
 - ✅ **Transiciones Suaves**: Animaciones en modales y paneles
 - ✅ **Información Contextual**: Tooltips que explican cada acción
 - ✅ **Flujo Intuitivo**: Cada botón tiene un propósito claro y funcional
+
+---
+
+### **✅ FASE 2.3 COMPLETADA - 30 Diciembre 2024 (Notas flotantes)**
+
+#### Cambios UI/UX
+- Botón "Agregar nota" en `TopToolbar.tsx` (icono StickyNote + tooltip).
+- `NoteNode` editable con `Textarea` (sin handles) y botón "X" para eliminar.
+- Arrastre libre respetando pan/zoom del canvas.
+- Posicionamiento:
+  - Sobre el nodo inicial "+" si es el único en el lienzo.
+  - Sobre el nodo más a la derecha con offset vertical (no tapa el nodo) si ya existen nodos.
+
+#### Cambios técnicos (frontend)
+- Registro del tipo de nodo `note` en `JourneyBuilder.tsx`.
+- Inyección de `onChange` y `onDelete` a cada `note` al renderizar los `nodes`.
+- Lógica de `onAddNote` que calcula ancla (nodo inicial o más a la derecha) y aplica `OFFSET_Y`.
 
 ---
 

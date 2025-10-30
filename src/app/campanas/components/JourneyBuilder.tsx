@@ -12,6 +12,7 @@ import { EsperaNode } from './nodes/EsperaNode'
 import { SMSNode } from './nodes/SMSNode'
 import { CondicionNode } from './nodes/CondicionNode'
 import { EstadisticaNode } from './nodes/EstadisticaNode'
+import { NoteNode } from './nodes/NoteNode'
 
 // Componente para el nodo "+" inicial
 function InitialPlusNode({ data }: { data: Record<string, unknown> }) {
@@ -73,7 +74,8 @@ const nodeTypes = {
   condicion: (props: any) => <NodeWrapper {...props} nodeType="condicion" />,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   estadistica: (props: any) => <NodeWrapper {...props} nodeType="estadistica" />,
-  initialPlus: InitialPlusNode
+  initialPlus: InitialPlusNode,
+  note: NoteNode
 }
 
 // Nodos iniciales - EMPEZAR CON NODO "+" INICIAL
@@ -498,6 +500,38 @@ export function JourneyBuilder() {
         {/* Barra Superior */}
         <TopToolbar 
           onAddNode={handleAddNodeFromToolbar}
+          onAddNote={() => {
+            // Nodos "reales" del flujo (excluye initial-plus y notas)
+            const realFlowNodes = nodes.filter(n => n.type !== 'initialPlus' && n.type !== 'note')
+            const OFFSET_Y = 120 // espacio para no tapar el nodo
+            const position = (() => {
+              if (realFlowNodes.length === 0) {
+                // Colocar sobre el nodo inicial "+" morado
+                const initial = nodes.find(n => n.id === 'initial-plus')
+                if (initial) {
+                  return { x: initial.position.x, y: initial.position.y - OFFSET_Y }
+                }
+                // Fallback razonable si no se encuentra
+                return { x: 0, y: -OFFSET_Y }
+              }
+              // Colocar sobre el nodo más a la derecha
+              const rightmost = realFlowNodes.reduce((prev, curr) => (curr.position.x > prev.position.x ? curr : prev))
+              return { x: rightmost.position.x, y: rightmost.position.y - OFFSET_Y }
+            })()
+
+            const id = `note_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+            const newNote: Node = {
+              id,
+              type: 'note',
+              position,
+              data: { text: '' },
+              draggable: true,
+              selectable: true
+            }
+
+            // Mantener siempre el nodo "+" inicial; solo agregamos la nota
+            setNodes(prev => [...prev, newNote])
+          }}
           availableNodeTypes={availableNodeTypes}
         />
         
@@ -505,7 +539,19 @@ export function JourneyBuilder() {
         <div className="flex-1 flex">
           <div className="flex-1 relative">
             <ReactFlow
-              nodes={nodes}
+              nodes={nodes.map(n =>
+                n.type === 'note'
+                  ? {
+                      ...n,
+                      data: {
+                        ...n.data,
+                        onChange: (text: string) =>
+                          setNodes(curr => curr.map(cn => (cn.id === n.id ? { ...cn, data: { ...cn.data, text } } : cn))),
+                        onDelete: () => setNodes(curr => curr.filter(cn => cn.id !== n.id))
+                      }
+                    }
+                  : n
+              )}
               edges={edges}
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
