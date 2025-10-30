@@ -8,8 +8,8 @@ import { Deudor, Deuda, Contacto } from '@/lib/database'
 import { supabase } from '@/lib/supabase'
 
 interface SelectorDeudorProps {
-  onDeudorSelect: (deudor: Deudor | null) => void
-  selectedDeudor: Deudor | null
+  onDeudorSelect: (deudor: DeudorUI | null) => void
+  selectedDeudor: DeudorUI | null
 }
 
 type DeudorUI = Deudor & {
