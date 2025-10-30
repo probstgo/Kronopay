@@ -4,15 +4,23 @@ import { useState, useEffect } from 'react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Deudor, getDeudores } from '@/lib/database'
+import { Deudor } from '@/lib/database'
+import { supabase } from '@/lib/supabase'
 
 interface SelectorDeudorProps {
   onDeudorSelect: (deudor: Deudor | null) => void
   selectedDeudor: Deudor | null
 }
 
+type DeudorUI = Deudor & {
+  email?: string
+  telefono?: string
+  monto_deuda: number
+  estado: string
+}
+
 export default function SelectorDeudor({ onDeudorSelect, selectedDeudor }: SelectorDeudorProps) {
-  const [deudores, setDeudores] = useState<Deudor[]>([])
+  const [deudores, setDeudores] = useState<DeudorUI[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -20,11 +28,62 @@ export default function SelectorDeudor({ onDeudorSelect, selectedDeudor }: Selec
     const cargarDeudores = async () => {
       try {
         setLoading(true)
-        console.log('🔍 Cargando deudores directamente desde database.ts...')
-        
-        const data = await getDeudores()
-        console.log('📊 Deudores obtenidos:', data?.length || 0)
-        setDeudores(data || [])
+        console.log('🔍 Cargando deudores desde Supabase...')
+
+        const [{ data: deudoresData, error: deudoresError }, { data: deudasData, error: deudasError }, { data: contactosData, error: contactosError }] = await Promise.all([
+          supabase.from('deudores').select('*').order('created_at', { ascending: false }),
+          supabase.from('deudas').select('*').order('fecha_vencimiento', { ascending: true }),
+          supabase.from('contactos').select('*')
+        ])
+
+        if (deudoresError) throw deudoresError
+        if (deudasError) throw deudasError
+        if (contactosError) throw contactosError
+
+        const deudasPorDeudor = (deudasData || []).reduce((acc: Record<string, any[]>, deuda: any) => {
+          if (!acc[deuda.deudor_id]) acc[deuda.deudor_id] = []
+          acc[deuda.deudor_id].push(deuda)
+          return acc
+        }, {})
+
+        const contactosPorDeudor = (contactosData || []).reduce((acc: Record<string, any[]>, contacto: any) => {
+          if (!acc[contacto.deudor_id]) acc[contacto.deudor_id] = []
+          acc[contacto.deudor_id].push(contacto)
+          return acc
+        }, {})
+
+        const combinados: DeudorUI[] = (deudoresData || []).map((d: Deudor) => {
+          const deudas = deudasPorDeudor[d.id] || []
+          const contactos = contactosPorDeudor[d.id] || []
+
+          const emailPreferido = contactos.find((c) => c.tipo_contacto === 'email' && c.preferido) || contactos.find((c) => c.tipo_contacto === 'email')
+          const telefonoPreferido = contactos.find((c) => c.tipo_contacto === 'telefono' && c.preferido) || contactos.find((c) => c.tipo_contacto === 'telefono')
+
+          const montoTotal = deudas.reduce((sum: number, deuda: any) => sum + (deuda.monto || 0), 0)
+
+          let estadoGeneral = 'sin_deudas'
+          if (deudas.length > 0) {
+            const tieneVencidas = deudas.some((x: any) => x.estado === 'vencida')
+            const tienePendientes = deudas.some((x: any) => x.estado === 'pendiente')
+            const tieneNuevas = deudas.some((x: any) => x.estado === 'nueva')
+            const todasPagadas = deudas.every((x: any) => x.estado === 'pagado')
+            if (tieneVencidas) estadoGeneral = 'vencida'
+            else if (tienePendientes) estadoGeneral = 'pendiente'
+            else if (tieneNuevas) estadoGeneral = 'nueva'
+            else if (todasPagadas) estadoGeneral = 'pagada'
+          }
+
+          return {
+            ...d,
+            email: emailPreferido?.valor,
+            telefono: telefonoPreferido?.valor,
+            monto_deuda: montoTotal,
+            estado: estadoGeneral
+          }
+        })
+
+        console.log('📊 Deudores obtenidos:', combinados.length)
+        setDeudores(combinados)
       } catch (err) {
         console.error('❌ Error al cargar deudores:', err)
         setError(err instanceof Error ? err.message : 'Error desconocido')
