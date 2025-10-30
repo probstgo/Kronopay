@@ -6,6 +6,15 @@ import { Eye } from 'lucide-react'
 import { PreviewPlantilla } from './PreviewPlantilla'
 import { reemplazarVariables } from '@/lib/plantillaUtils'
 
+type VariablesSistema = {
+  nombre: string
+  monto: string
+  fecha_vencimiento: string
+  empresa: string
+  telefono: string
+  email: string
+}
+
 interface PreviewDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -14,13 +23,30 @@ interface PreviewDialogProps {
   tipo: 'email' | 'sms' | 'whatsapp'
   tipoContenido: 'texto' | 'html'
   contenido: string
-  variables: Record<string, string>
+  variables?: Partial<VariablesSistema>
 }
 
 export function PreviewDialog({ open, onOpenChange, nombre, asunto, tipo, tipoContenido, contenido, variables }: PreviewDialogProps) {
   const asuntoProcesado = useMemo(() => {
-    return reemplazarVariables(asunto || '', variables)
+    const vars: Record<string, string> = {
+      nombre: variables?.nombre ?? 'Juan Pérez',
+      monto: variables?.monto ?? '$150.000',
+      fecha_vencimiento: variables?.fecha_vencimiento ?? '15 de enero, 2025',
+      empresa: variables?.empresa ?? 'Mi Empresa',
+      telefono: variables?.telefono ?? '+56912345678',
+      email: variables?.email ?? 'contacto@miempresa.com'
+    }
+    return reemplazarVariables(asunto || '', vars)
   }, [asunto, variables])
+
+  const variablesCompletas: VariablesSistema = useMemo(() => ({
+    nombre: variables?.nombre ?? 'Juan Pérez',
+    monto: variables?.monto ?? '$150.000',
+    fecha_vencimiento: variables?.fecha_vencimiento ?? '15 de enero, 2025',
+    empresa: variables?.empresa ?? 'Mi Empresa',
+    telefono: variables?.telefono ?? '+56912345678',
+    email: variables?.email ?? 'contacto@miempresa.com'
+  }), [variables])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -39,7 +65,7 @@ export function PreviewDialog({ open, onOpenChange, nombre, asunto, tipo, tipoCo
             tipo={tipo}
             contenido={contenido}
             tipoContenido={tipoContenido}
-            variables={variables}
+            variables={variablesCompletas}
           />
         </div>
       </DialogContent>
