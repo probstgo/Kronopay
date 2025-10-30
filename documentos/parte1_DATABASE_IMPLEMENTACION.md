@@ -355,6 +355,17 @@ CREATE TABLE plantillas (
     contenido text NOT NULL,
     created_at timestamptz DEFAULT now()
 );
+
+-- UP: agregar columna "asunto" a la tabla plantillas
+begin;
+
+alter table if exists public.plantillas
+  add column if not exists asunto text;
+
+comment on column public.plantillas.asunto is 'Asunto del email de la plantilla (solo aplica cuando tipo = email)';
+
+commit;
+
 ```
 
 ```sql

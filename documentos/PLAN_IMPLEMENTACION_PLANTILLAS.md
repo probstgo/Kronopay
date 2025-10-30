@@ -12,7 +12,7 @@
 - **Sección completa** de plantillas implementada
 - **CRUD funcional** para crear, editar, eliminar y duplicar plantillas
 - **Editor avanzado** con variables dinámicas
-- **Preview en tiempo real** por tipo de canal
+- **Preview en tiempo real** por tipo de canal y **modal unificado** para crear/editar
 - **Integración Supabase** establecida
 - **Compilación exitosa** sin errores críticos
 
@@ -21,7 +21,7 @@
 - ✅ **Crear Plantilla**: Formulario completo con validaciones
 - ✅ **Editar Plantilla**: Modificación de plantillas existentes
 - ✅ **Editor Avanzado**: Insertar variables con un clic
-- ✅ **Preview Dinámico**: Renderizado específico por canal
+- ✅ **Preview Dinámico**: Renderizado específico por canal y modal unificado
 - ✅ **Duplicación**: Crear copias de plantillas existentes
 - ✅ **Eliminación**: Borrado con confirmación
 - ✅ **Estadísticas**: Contadores por tipo de plantilla
@@ -29,6 +29,7 @@
 - ✅ **Preview Rápido**: Vista previa sin entrar a editar
 - ✅ **Validación HTML**: Seguridad contra tags peligrosos
 - ✅ **Test de Emails**: Probar plantillas antes de guardarlas o desde plantillas guardadas
+- ✅ **Asunto en Emails**: Campo de asunto para plantillas de email con soporte de variables
 
 ### 🎯 **Objetivos Cumplidos**
 1. ✅ **Crear** sistema completo de gestión de plantillas
@@ -65,7 +66,8 @@
 - Formulario completo con validaciones
 - Selector de tipo con descripciones
 - Editor avanzado con variables dinámicas
-- Preview en tiempo real
+- Preview en tiempo real en **modal unificado**
+- Campo **Asunto** para emails (validado y persistido)
 - Panel de variables disponibles
 - Recomendaciones por tipo de plantilla
 - Manejo de estados de carga
@@ -78,7 +80,8 @@
 - Carga automática de datos existentes
 - Formulario pre-poblado
 - Funcionalidad de eliminación
-- Preview con datos de ejemplo
+- Preview con datos de ejemplo en **modal unificado**
+- Campo **Asunto** para emails (carga, edición y persistencia)
 - Información de la plantilla (fecha, caracteres, variables)
 - Manejo de errores de carga
 - Confirmación de eliminación
@@ -165,6 +168,7 @@
 - Email: Formato de email con headers y contenido
 - SMS: Formato de mensaje con contador de caracteres
 - WhatsApp: Formato de mensaje con información adicional
+ - Modal unificado de preview en crear y editar
 ```
 
 ---
@@ -382,7 +386,16 @@
   5. Vista previa muestra contenido procesado en tiempo real
   6. Click en "Enviar Email de Prueba"
   7. Email se envía con variables reemplazadas
-
+### **Unificación de Preview y Campo Asunto** ✅ COMPLETADO (Octubre 2025)
+- ✅ **Modal de Preview Unificado**: Ahora crear y editar usan el mismo modal (`PreviewDialog`)
+- ✅ **Campo Asunto (Email)**: Agregado en crear y editar; validado y persistido
+- ✅ **Variables en Asunto**: Reemplazo de variables en el asunto dentro del modal de preview
+- ✅ **Migración SQL**: `alter table if exists public.plantillas add column if not exists asunto text;`
+- ✅ **Integraciones**:
+  - `NuevaPlantillaPage.tsx`: `formData.asunto`, validación y `INSERT` con `asunto`
+  - `EditarPlantillaPage.tsx`: carga/edición y `UPDATE` con `asunto`
+  - `PreviewDialog.tsx`: muestra asunto procesado
+  - `TestEmailModal.tsx`: recibe `asunto` y lo envía como `subject`
 ---
 
 ## 🚀 Próximos Pasos Sugeridos

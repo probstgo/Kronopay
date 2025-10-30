@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation'
 import { EditorContenido } from '../components/EditorContenido'
 import { PreviewPlantilla } from '../components/PreviewPlantilla'
 import { TestEmailModal } from '../components/TestEmailModal'
+import { PreviewDialog } from '../components/PreviewDialog'
 
 const TIPOS_PLANTILLA = [
   { value: 'email', label: 'Email', icon: Mail, descripcion: 'Para envío de emails de cobranza' },
@@ -38,6 +39,7 @@ export default function NuevaPlantillaPage() {
     nombre: '',
     tipo: 'email' as 'email' | 'sms' | 'whatsapp',
     tipo_contenido: 'texto' as 'texto' | 'html',
+    asunto: '',
     contenido: ''
   })
   const [loading, setLoading] = useState(false)
@@ -52,6 +54,11 @@ export default function NuevaPlantillaPage() {
       return
     }
     
+    if (formData.tipo === 'email' && !formData.asunto.trim()) {
+      toast.error('El asunto es requerido para emails')
+      return
+    }
+
     if (!formData.contenido.trim()) {
       toast.error('El contenido es requerido')
       return
@@ -65,6 +72,7 @@ export default function NuevaPlantillaPage() {
           nombre: formData.nombre.trim(),
           tipo: formData.tipo,
           tipo_contenido: formData.tipo_contenido,
+          asunto: formData.tipo === 'email' ? formData.asunto.trim() : null,
           contenido: formData.contenido.trim(),
           usuario_id: user?.id
         })
@@ -122,67 +130,81 @@ export default function NuevaPlantillaPage() {
                     />
                   </div>
 
-                  {/* Tipo */}
-                  <div>
-                    <Label>Tipo de Plantilla</Label>
-                    <Select 
-                      value={formData.tipo} 
-                      onValueChange={(value: 'email' | 'sms' | 'whatsapp') => setFormData(prev => ({ ...prev, tipo: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TIPOS_PLANTILLA.map(tipo => {
-                          const IconComponent = tipo.icon
-                          return (
-                            <SelectItem key={tipo.value} value={tipo.value}>
+                  {/* Tipo y Tipo de Contenido (lado a lado) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Tipo de Plantilla</Label>
+                      <Select 
+                        value={formData.tipo} 
+                        onValueChange={(value: 'email' | 'sms' | 'whatsapp') => setFormData(prev => ({ ...prev, tipo: value }))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TIPOS_PLANTILLA.map(tipo => {
+                            const IconComponent = tipo.icon
+                            return (
+                              <SelectItem key={tipo.value} value={tipo.value}>
+                                <div className="flex items-center gap-2">
+                                  <IconComponent className="h-4 w-4" />
+                                  <div>
+                                    <div className="font-medium">{tipo.label}</div>
+                                    <div className="text-xs text-gray-500">{tipo.descripcion}</div>
+                                  </div>
+                                </div>
+                              </SelectItem>
+                            )
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {formData.tipo === 'email' && (
+                      <div>
+                        <Label>Tipo de Contenido</Label>
+                        <Select 
+                          value={formData.tipo_contenido} 
+                          onValueChange={(value: 'texto' | 'html') => setFormData(prev => ({ ...prev, tipo_contenido: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona el tipo de contenido" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="texto">
                               <div className="flex items-center gap-2">
-                                <IconComponent className="h-4 w-4" />
+                                <Type className="h-4 w-4" />
                                 <div>
-                                  <div className="font-medium">{tipo.label}</div>
-                                  <div className="text-xs text-gray-500">{tipo.descripcion}</div>
+                                  <div className="font-medium">Texto Plano</div>
+                                  <div className="text-xs text-gray-500">Contenido en texto simple</div>
                                 </div>
                               </div>
                             </SelectItem>
-                          )
-                        })}
-                      </SelectContent>
-                    </Select>
+                            <SelectItem value="html">
+                              <div className="flex items-center gap-2">
+                                <Code className="h-4 w-4" />
+                                <div>
+                                  <div className="font-medium">HTML</div>
+                                  <div className="text-xs text-gray-500">Contenido con formato HTML</div>
+                                </div>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Tipo de Contenido - Solo para Email */}
+                  {/* Asunto - Solo para Email */}
                   {formData.tipo === 'email' && (
                     <div>
-                      <Label>Tipo de Contenido</Label>
-                      <Select 
-                        value={formData.tipo_contenido} 
-                        onValueChange={(value: 'texto' | 'html') => setFormData(prev => ({ ...prev, tipo_contenido: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona el tipo de contenido" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="texto">
-                            <div className="flex items-center gap-2">
-                              <Type className="h-4 w-4" />
-                              <div>
-                                <div className="font-medium">Texto Plano</div>
-                                <div className="text-xs text-gray-500">Contenido en texto simple</div>
-                              </div>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="html">
-                            <div className="flex items-center gap-2">
-                              <Code className="h-4 w-4" />
-                              <div>
-                                <div className="font-medium">HTML</div>
-                                <div className="text-xs text-gray-500">Contenido con formato HTML</div>
-                              </div>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label htmlFor="asunto">Asunto</Label>
+                      <Input
+                        id="asunto"
+                        value={formData.asunto}
+                        onChange={(e) => setFormData(prev => ({ ...prev, asunto: e.target.value }))}
+                        placeholder="Asunto del email..."
+                      />
                     </div>
                   )}
 
@@ -194,10 +216,10 @@ export default function NuevaPlantillaPage() {
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => setMostrarPreview(!mostrarPreview)}
+                        onClick={() => setMostrarPreview(true)}
                       >
                         <Eye className="h-4 w-4 mr-2" />
-                        {mostrarPreview ? 'Ocultar' : 'Mostrar'} Preview
+                        Ver Preview
                       </Button>
                     </div>
                     <EditorContenido
@@ -240,32 +262,6 @@ export default function NuevaPlantillaPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Preview */}
-            {mostrarPreview && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Eye className="h-5 w-5" />
-                    Preview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <PreviewPlantilla
-                    tipo={formData.tipo}
-                    contenido={formData.contenido}
-                    tipoContenido={formData.tipo_contenido}
-                    variables={{
-                      nombre: 'Juan Pérez',
-                      monto: '$150.000',
-                      fecha_vencimiento: '15 de enero, 2025',
-                      empresa: 'Mi Empresa',
-                      telefono: '+56912345678',
-                      email: 'contacto@miempresa.com'
-                    }}
-                  />
-                </CardContent>
-              </Card>
-            )}
 
             {/* Variables Disponibles */}
             <Card>
@@ -334,10 +330,30 @@ export default function NuevaPlantillaPage() {
           </div>
         </div>
 
+        {/* Modal de Preview */}
+        <PreviewDialog
+          open={mostrarPreview}
+          onOpenChange={setMostrarPreview}
+          nombre={formData.nombre}
+          asunto={formData.tipo === 'email' ? formData.asunto : undefined}
+          tipo={formData.tipo}
+          tipoContenido={formData.tipo_contenido}
+          contenido={formData.contenido}
+          variables={{
+            nombre: 'Juan Pérez',
+            monto: '$150.000',
+            fecha_vencimiento: '15 de enero, 2025',
+            empresa: 'Mi Empresa',
+            telefono: '+56912345678',
+            email: 'contacto@miempresa.com'
+          }}
+        />
+
         {/* Modal de Test Email */}
         <TestEmailModal
           contenido={formData.contenido}
           tipoContenido={formData.tipo_contenido}
+          asunto={formData.tipo === 'email' ? formData.asunto : ''}
           open={mostrarTestEmail}
           onOpenChange={setMostrarTestEmail}
         />
