@@ -1,0 +1,266 @@
+'use client'
+
+import { useState, useEffect, useMemo } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
+import { AlertCircle, DollarSign, Calendar, CreditCard } from 'lucide-react'
+import Link from 'next/link'
+import type { PlanActualData } from '../types'
+
+interface UsoPlanData {
+  emailsUsado: number
+  emailsLimite: number
+  minutosUsado: number
+  minutosLimite: number
+  smsUsado: number
+  smsLimite: number
+  costoTotal: number
+  planNombre: string
+  fechaRenovacion: string | null
+}
+
+export function UsoPlanCostosCard() {
+  const [usoData, setUsoData] = useState<UsoPlanData | null>(null)
+  const [planData, setPlanData] = useState<PlanActualData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const [usoResponse, planResponse] = await Promise.all([
+        fetch('/api/suscripciones/uso', { cache: 'no-store' }),
+        fetch('/api/suscripciones/actual', { cache: 'no-store' })
+      ])
+
+      if (!usoResponse.ok || !planResponse.ok) {
+        throw new Error('Error al cargar datos de uso')
+      }
+
+      const usoJson = await usoResponse.json()
+      const planJson = await planResponse.json()
+
+      // Obtener límites del plan (convertir límites de llamadas a minutos)
+      const plan = planJson.plan || null
+      const limiteEmails = plan?.limite_emails || 0
+      const limiteLlamadas = plan?.limite_llamadas || 0
+      const limiteMinutos = limiteLlamadas * 10 // Asumir 10 minutos por llamada
+      const limiteSms = plan?.limite_sms || 0
+
+      // Calcular minutos usados desde duracion_llamadas (en minutos)
+      const minutosUsados = Math.round((usoJson.duracion_llamadas || 0) / 60)
+
+      setUsoData({
+        emailsUsado: usoJson.emails_enviados || 0,
+        emailsLimite: limiteEmails,
+        minutosUsado: minutosUsados,
+        minutosLimite: limiteMinutos,
+        smsUsado: usoJson.sms_enviados || 0,
+        smsLimite: limiteSms,
+        costoTotal: usoJson.costo_total || 0,
+        planNombre: plan?.nombre || 'Sin Plan',
+        fechaRenovacion: planJson.fecha_renovacion || null,
+      })
+
+      setPlanData(planJson)
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error desconocido')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getProgressPercentage = (usado: number, limite: number) => {
+    if (limite === 0) return 0
+    return Math.min((usado / limite) * 100, 100)
+  }
+
+  const getProgressColor = (percentage: number) => {
+    if (percentage >= 95) return 'bg-red-500'
+    if (percentage >= 80) return 'bg-orange-500'
+    return 'bg-green-500'
+  }
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'No disponible'
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
+
+  if (loading && !usoData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Uso del Plan y Costos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-64 w-full" />
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (error && !usoData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-red-500" />
+            Uso del Plan y Costos
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={fetchData} variant="outline" size="sm">
+            Reintentar
+          </Button>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (!usoData || !planData) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Uso del Plan y Costos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground mb-4">No se pudieron cargar los datos</p>
+          <Link href="/billing">
+            <Button variant="outline" size="sm">
+              Ver Suscripciones
+            </Button>
+          </Link>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Caso: Usuario sin plan
+  if (!planData.plan) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Uso del Plan y Costos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">No tienes un plan activo</p>
+            <Link href="/billing">
+              <Button variant="outline" size="sm">
+                Ver Planes
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const usageItems = [
+    {
+      label: 'Emails',
+      usado: usoData.emailsUsado,
+      limite: usoData.emailsLimite,
+      unidad: 'emails',
+    },
+    {
+      label: 'Minutos',
+      usado: usoData.minutosUsado,
+      limite: usoData.minutosLimite,
+      unidad: 'minutos',
+    },
+    {
+      label: 'SMS',
+      usado: usoData.smsUsado,
+      limite: usoData.smsLimite,
+      unidad: 'SMS',
+    },
+  ]
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Uso del Plan y Costos</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Barras de progreso */}
+        <div className="space-y-4">
+          {usageItems.map((item) => {
+            const percentage = getProgressPercentage(item.usado, item.limite)
+            return (
+              <div key={item.label} className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">{item.label}</span>
+                  <span className="text-muted-foreground">
+                    {item.usado.toLocaleString()} / {item.limite.toLocaleString()} {item.unidad}
+                  </span>
+                </div>
+                <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full transition-all ${getProgressColor(percentage)}`}
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {percentage.toFixed(1)}% utilizado
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Costo total del mes */}
+        <div className="pt-4 border-t">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-green-600" />
+              <span className="font-medium">Costo Total del Mes</span>
+            </div>
+            <span className="text-2xl font-bold text-green-600">
+              ${usoData.costoTotal.toLocaleString('es-ES')}
+            </span>
+          </div>
+        </div>
+
+        {/* Resumen del plan */}
+        <div className="pt-4 border-t">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">{usoData.planNombre}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">
+                Renueva el {formatDate(usoData.fechaRenovacion)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-4 border-t">
+          <Link href="/billing">
+            <Button variant="outline" size="sm" className="w-full">
+              Ver detalles
+            </Button>
+          </Link>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
