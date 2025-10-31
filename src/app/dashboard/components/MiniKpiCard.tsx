@@ -10,9 +10,17 @@ interface MiniKpiCardProps {
   subtitle?: string
   icon?: LucideIcon
   loading?: boolean
+  iconColor?: string
 }
 
-export function MiniKpiCard({ title, value, subtitle, icon: Icon, loading }: MiniKpiCardProps) {
+export function MiniKpiCard({ 
+  title, 
+  value, 
+  subtitle, 
+  icon: Icon, 
+  loading,
+  iconColor
+}: MiniKpiCardProps) {
   if (loading) {
     return (
       <Card>
@@ -30,7 +38,11 @@ export function MiniKpiCard({ title, value, subtitle, icon: Icon, loading }: Min
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-1">
           <span className="text-xs text-muted-foreground">{title}</span>
-          {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+          {Icon && (
+            <Icon 
+              className={`h-4 w-4 ${iconColor || 'text-muted-foreground'}`} 
+            />
+          )}
         </div>
         <div className="text-2xl font-semibold">{value}</div>
         {subtitle && (

@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { AlertCircle } from 'lucide-react'
 import { MiniKpiCard } from './MiniKpiCard'
 import { Phone, Mail, CheckCircle, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
@@ -24,23 +23,10 @@ interface ContactabilidadCardProps {
 export function ContactabilidadCard({ filtros }: ContactabilidadCardProps) {
   const [data, setData] = useState<ContactabilidadData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchData()
-    
-    // Auto-refresh cada 60 segundos (opcional)
-    const interval = setInterval(() => {
-      fetchData()
-    }, 60000)
-
-    return () => clearInterval(interval)
-  }, [filtros])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true)
-      setError(null)
 
       // Usar filtros de fecha o fecha de hoy por defecto
       const desde = filtros.rangoFechas.desde
@@ -68,15 +54,31 @@ export function ContactabilidadCard({ filtros }: ContactabilidadCardProps) {
         fetch('/api/telefono/llamadas/stats', { cache: 'no-store' })
       ])
 
-      if (!metricsRes.ok) {
-        throw new Error('Error al cargar métricas de historial')
-      }
-      if (!llamadasRes.ok) {
-        throw new Error('Error al cargar estadísticas de llamadas')
+      // Valores por defecto
+      let metricsData = { totales: { enviados: 0, entregadosCompletados: 0, fallidos: 0 } }
+      let llamadasData = { hoy: 0, esta_semana: 0, duracion_promedio: 0, tasa_exito: 0 }
+
+      // Intentar obtener métricas de historial - nunca mostrar error, usar valores por defecto si falla
+      try {
+        if (metricsRes.ok) {
+          const parsed = await metricsRes.json()
+          metricsData = parsed
+        }
+      } catch (e) {
+        // Silenciosamente usar valores por defecto si hay error
+        console.warn('Error al cargar métricas de historial, usando valores por defecto:', e)
       }
 
-      const metricsData = await metricsRes.json()
-      const llamadasData = await llamadasRes.json()
+      // Intentar obtener estadísticas de llamadas - nunca mostrar error, usar valores por defecto si falla
+      try {
+        if (llamadasRes.ok) {
+          const parsed = await llamadasRes.json()
+          llamadasData = parsed
+        }
+      } catch (e) {
+        // Silenciosamente usar valores por defecto si hay error
+        console.warn('Error al cargar estadísticas de llamadas, usando valores por defecto:', e)
+      }
 
       // Calcular métricas de contactabilidad
       const intentosTotales = metricsData.totales?.enviados || 0
@@ -86,6 +88,7 @@ export function ContactabilidadCard({ filtros }: ContactabilidadCardProps) {
         : 0
       const llamadasHoy = llamadasData.hoy || 0
 
+      // Siempre establecer datos, nunca mostrar error
       setData({
         intentosTotales,
         contactosEfectivos,
@@ -94,17 +97,35 @@ export function ContactabilidadCard({ filtros }: ContactabilidadCardProps) {
       })
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
+      // En caso de error inesperado, establecer datos con valores por defecto en lugar de error
+      console.warn('Error inesperado al cargar métricas, usando valores por defecto:', err)
+      setData({
+        intentosTotales: 0,
+        contactosEfectivos: 0,
+        tasaContacto: 0,
+        llamadasHoy: 0,
+      })
     } finally {
       setLoading(false)
     }
-  }
+  }, [filtros])
+
+  useEffect(() => {
+    fetchData()
+    
+    // Auto-refresh cada 60 segundos (opcional)
+    const interval = setInterval(() => {
+      fetchData()
+    }, 60000)
+
+    return () => clearInterval(interval)
+  }, [fetchData])
 
   if (loading && !data) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Métricas de Contactabilidad (Hoy)</CardTitle>
+          <CardTitle>Métricas de Contactabilidad</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
@@ -118,25 +139,6 @@ export function ContactabilidadCard({ filtros }: ContactabilidadCardProps) {
     )
   }
 
-  if (error && !data) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-red-500" />
-            Métricas de Contactabilidad
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-red-600 mb-4">{error}</p>
-          <Button onClick={fetchData} variant="outline" size="sm">
-            Reintentar
-          </Button>
-        </CardContent>
-      </Card>
-    )
-  }
-
   if (!data) {
     return (
       <Card>
@@ -144,12 +146,12 @@ export function ContactabilidadCard({ filtros }: ContactabilidadCardProps) {
           <CardTitle>Métricas de Contactabilidad</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground mb-4">No se pudieron cargar los datos</p>
-          <Link href="/historial">
-            <Button variant="outline" size="sm">
-              Ver Historial
-            </Button>
-          </Link>
+          <div className="grid grid-cols-2 gap-4">
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+            <Skeleton className="h-24" />
+          </div>
         </CardContent>
       </Card>
     )
@@ -158,7 +160,7 @@ export function ContactabilidadCard({ filtros }: ContactabilidadCardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Métricas de Contactabilidad (Hoy)</CardTitle>
+        <CardTitle>Métricas de Contactabilidad</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-4">
@@ -167,12 +169,14 @@ export function ContactabilidadCard({ filtros }: ContactabilidadCardProps) {
             value={data.intentosTotales}
             icon={Mail}
             loading={loading}
+            iconColor="text-blue-600"
           />
           <MiniKpiCard
             title="Contactos Efectivos"
             value={data.contactosEfectivos}
             icon={CheckCircle}
             loading={loading}
+            iconColor="text-green-600"
           />
           <MiniKpiCard
             title="Tasa de Contacto"
@@ -180,12 +184,14 @@ export function ContactabilidadCard({ filtros }: ContactabilidadCardProps) {
             subtitle={`${data.contactosEfectivos} de ${data.intentosTotales}`}
             icon={TrendingUp}
             loading={loading}
+            iconColor="text-purple-600"
           />
           <MiniKpiCard
             title="Llamadas Hoy"
             value={data.llamadasHoy}
             icon={Phone}
             loading={loading}
+            iconColor="text-orange-600"
           />
         </div>
 
