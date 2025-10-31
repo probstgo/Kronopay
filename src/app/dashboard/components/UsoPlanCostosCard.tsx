@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { DollarSign, Calendar, CreditCard, Info } from 'lucide-react'
 import Link from 'next/link'
+import type { PlanActualData } from '../types'
 
 interface UsoPlanData {
   emailsUsado: number
@@ -38,7 +39,17 @@ export function UsoPlanCostosCard() {
         sms_enviados: 0,
         costo_total: 0
       }
-      let planJson = { plan: null, fecha_renovacion: null }
+      let planJson: {
+        plan: PlanActualData['plan'] | null
+        estado_suscripcion?: PlanActualData['estado_suscripcion']
+        fecha_inicio_suscripcion?: PlanActualData['fecha_inicio_suscripcion']
+        fecha_renovacion?: PlanActualData['fecha_renovacion']
+      } = {
+        plan: null,
+        estado_suscripcion: 'cancelado',
+        fecha_inicio_suscripcion: null,
+        fecha_renovacion: null
+      }
 
       // Intentar obtener datos de uso, usar valores por defecto si falla
       try {
@@ -54,14 +65,15 @@ export function UsoPlanCostosCard() {
       try {
         const planResponse = await fetch('/api/suscripciones/actual', { cache: 'no-store' })
         if (planResponse.ok) {
-          planJson = await planResponse.json()
+          const responseData = await planResponse.json() as PlanActualData
+          planJson = responseData
         }
       } catch (e) {
         console.warn('Error al cargar datos del plan, usando valores por defecto:', e)
       }
 
       // Obtener límites del plan (convertir límites de llamadas a minutos)
-      const plan = planJson.plan || null
+      const plan = planJson.plan
       const limiteEmails = plan?.limite_emails || 0
       const limiteLlamadas = plan?.limite_llamadas || 0
       const limiteMinutos = limiteLlamadas * 10 // Asumir 10 minutos por llamada
