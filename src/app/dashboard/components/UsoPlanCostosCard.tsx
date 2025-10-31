@@ -1,13 +1,11 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { DollarSign, Calendar, CreditCard } from 'lucide-react'
 import Link from 'next/link'
-import type { PlanActualData } from '../types'
 
 interface UsoPlanData {
   emailsUsado: number
@@ -23,7 +21,6 @@ interface UsoPlanData {
 
 export function UsoPlanCostosCard() {
   const [usoData, setUsoData] = useState<UsoPlanData | null>(null)
-  const [planData, setPlanData] = useState<PlanActualData | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -85,8 +82,6 @@ export function UsoPlanCostosCard() {
         fechaRenovacion: planJson.fecha_renovacion || null,
       })
 
-      setPlanData(planJson)
-
     } catch (err) {
       // En caso de error inesperado, establecer datos con valores por defecto
       console.warn('Error inesperado al cargar datos, usando valores por defecto:', err)
@@ -101,7 +96,6 @@ export function UsoPlanCostosCard() {
         planNombre: 'Sin Plan',
         fechaRenovacion: null,
       })
-      setPlanData({ plan: null, fecha_renovacion: null })
     } finally {
       setLoading(false)
     }

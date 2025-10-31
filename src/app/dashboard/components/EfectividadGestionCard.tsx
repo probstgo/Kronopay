@@ -52,7 +52,9 @@ export const EfectividadGestionCard = memo(function EfectividadGestionCard({ fil
       params.set('from', inicioMesActual.toISOString())
       params.set('to', finMesActual.toISOString())
 
-      let metricsData = { porCanal: {} }
+      let metricsData: {
+        porCanal?: Partial<Record<Canal, { entregadosCompletados: number }>>
+      } = { porCanal: {} }
 
       // Intentar obtener datos, usar valores por defecto si falla
       try {
