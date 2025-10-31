@@ -26,7 +26,7 @@
   - Los filtros deben aplicarse globalmente a todos los KPIs del dashboard
   - Los filtros se sincronizan con los endpoints mediante query params
 - Reutilización de UI:
-  - `src/app/billing/components/{PlanActual, UsoActual, Facturacion, ConsumoDetalle}.tsx` para tarjetas resumidas.
+  - `src/app/billing/components/{PlanActual, UsoActual, Facturacion}.tsx` para tarjetas resumidas.
   - `src/app/historial/components/MetricasHeader.tsx` como guía para KPIs de encabezado.
   - `src/app/historial/components/FiltrosHistorial.tsx` como referencia para implementar filtros.
   - `src/components/ui/*` para tarjetas, tablas, skeletons.

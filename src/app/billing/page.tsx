@@ -2,7 +2,6 @@ import Protected from "@/components/Protected"
 import PlanActual from "./components/PlanActual"
 import UsoActual from "./components/UsoActual"
 import Facturacion from "./components/Facturacion"
-import ConsumoDetalle from "./components/ConsumoDetalle"
 
 export default function BillingPage() {
   return (
@@ -16,10 +15,9 @@ export default function BillingPage() {
           <UsoActual />
         </div>
         
-        {/* Segunda fila: Facturación y Consumo Detallado */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Segunda fila: Facturación */}
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
           <Facturacion />
-          <ConsumoDetalle />
         </div>
       </div>
     </Protected>

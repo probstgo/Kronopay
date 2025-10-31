@@ -33,7 +33,6 @@ src/app/billing/
     ├── PlanActual.tsx          # Card con plan actual y estado
     ├── UsoActual.tsx           # Métricas de uso del mes (emails, llamadas, SMS)
     ├── Facturacion.tsx         # Próximo cargo y historial de facturas
-    ├── ConsumoDetalle.tsx      # Tabla de consumo detallado
     └── LimitesPlan.tsx         # Límites y alertas del plan
 ```
 
@@ -55,9 +54,6 @@ src/app/billing/
 
 #### **Facturacion.tsx**
 - Implementado. Próximo cargo e historial. Maneja base vacía y sin plan.
-
-#### **ConsumoDetalle.tsx**
-- Implementado. Tabla y desglose. Maneja base vacía y sin plan.
 
 #### **LimitesPlan.tsx**
 - Pendiente. UI de límites y alertas visuales.
@@ -159,7 +155,6 @@ ADD COLUMN IF NOT EXISTS estado_suscripcion text DEFAULT 'activo'
 
 ### 3. **Facturación**
 - Historial de facturas (descargar PDFs)
-- Detalle de consumo mensual
 
 ### 4. **Alertas y Límites**
 - Alertas cuando uso > 80% del límite
@@ -306,7 +301,6 @@ Response 200
 - [x] Crear componente PlanActual
 - [x] Crear componente UsoActual
 - [x] Crear componente Facturacion
-- [x] Crear componente ConsumoDetalle
 - [ ] Crear componente LimitesPlan
 
 ### Backend / API
