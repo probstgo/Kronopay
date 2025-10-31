@@ -11,7 +11,7 @@ export interface RecuperosData {
 }
 
 export interface AgingBucket {
-  rango: '0-30' | '31-60' | '61-90' | '+90'
+  rango: 'vigentes' | '1-30' | '31-60' | '61-90' | '+90'
   monto: number
   label: string
 }

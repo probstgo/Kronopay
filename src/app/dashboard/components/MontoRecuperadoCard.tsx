@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { DollarSign, TrendingUp, TrendingDown, AlertCircle, Info } from 'lucide-react'
+import { TrendingUp, TrendingDown, AlertCircle, Info } from 'lucide-react'
 import { formatearMontoCLP } from '@/lib/formateo'
 import Link from 'next/link'
 import type { FiltrosDashboard } from '../types'
@@ -158,7 +158,6 @@ export const MontoRecuperadoCard = memo(function MontoRecuperadoCard({ filtros }
       </CardHeader>
       <CardContent>
         <div className="flex items-baseline gap-2 mb-2">
-          <DollarSign className="h-6 w-6 text-green-600" />
           <div className="text-4xl font-bold text-green-600">
             {formatearMontoCLP(data.montoRecuperadoMes)}
           </div>

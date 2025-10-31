@@ -71,7 +71,9 @@ export const SaludCarteraCard = memo(function SaludCarteraCard({ filtros }: Salu
 
   const getColor = (rango: string) => {
     switch (rango) {
-      case '0-30':
+      case 'vigentes':
+        return '#3b82f6' // blue (color salud/confianza)
+      case '1-30':
         return '#22c55e' // green
       case '31-60':
         return '#eab308' // yellow
