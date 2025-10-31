@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { DollarSign, Calendar, CreditCard } from 'lucide-react'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { DollarSign, Calendar, CreditCard, Info } from 'lucide-react'
 import Link from 'next/link'
 
 interface UsoPlanData {
@@ -125,7 +126,19 @@ export function UsoPlanCostosCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Uso del Plan y Costos</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Uso del Plan y Costos
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Uso actual del plan y costos asociados</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-64 w-full" />
@@ -138,7 +151,19 @@ export function UsoPlanCostosCard() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Uso del Plan y Costos</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Uso del Plan y Costos
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Uso actual del plan y costos asociados</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-64 w-full" />
@@ -171,7 +196,19 @@ export function UsoPlanCostosCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Uso del Plan y Costos</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          Uso del Plan y Costos
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Uso actual del plan y costos asociados</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Barras de progreso */}

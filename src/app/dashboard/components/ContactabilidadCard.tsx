@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { MiniKpiCard } from './MiniKpiCard'
-import { Phone, Mail, CheckCircle, TrendingUp } from 'lucide-react'
+import { Phone, Mail, CheckCircle, TrendingUp, Info } from 'lucide-react'
 import Link from 'next/link'
 import type { FiltrosDashboard } from '../types'
 
@@ -125,7 +126,19 @@ export function ContactabilidadCard({ filtros }: ContactabilidadCardProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Métricas de Contactabilidad</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Métricas de Contactabilidad
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Métricas de contactabilidad por canal de comunicación</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
@@ -143,7 +156,19 @@ export function ContactabilidadCard({ filtros }: ContactabilidadCardProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Métricas de Contactabilidad</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Métricas de Contactabilidad
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Métricas de contactabilidad por canal de comunicación</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
@@ -160,7 +185,19 @@ export function ContactabilidadCard({ filtros }: ContactabilidadCardProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Métricas de Contactabilidad</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          Métricas de Contactabilidad
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Métricas de contactabilidad por canal de comunicación</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 gap-4">
