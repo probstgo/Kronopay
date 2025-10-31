@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
-import { AlertCircle, DollarSign, Calendar, CreditCard } from 'lucide-react'
+import { DollarSign, Calendar, CreditCard } from 'lucide-react'
 import Link from 'next/link'
 import type { PlanActualData } from '../types'
 
@@ -25,7 +25,6 @@ export function UsoPlanCostosCard() {
   const [usoData, setUsoData] = useState<UsoPlanData | null>(null)
   const [planData, setPlanData] = useState<PlanActualData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -34,19 +33,34 @@ export function UsoPlanCostosCard() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      setError(null)
 
-      const [usoResponse, planResponse] = await Promise.all([
-        fetch('/api/suscripciones/uso', { cache: 'no-store' }),
-        fetch('/api/suscripciones/actual', { cache: 'no-store' })
-      ])
+      let usoJson = {
+        emails_enviados: 0,
+        duracion_llamadas: 0,
+        sms_enviados: 0,
+        costo_total: 0
+      }
+      let planJson = { plan: null, fecha_renovacion: null }
 
-      if (!usoResponse.ok || !planResponse.ok) {
-        throw new Error('Error al cargar datos de uso')
+      // Intentar obtener datos de uso, usar valores por defecto si falla
+      try {
+        const usoResponse = await fetch('/api/suscripciones/uso', { cache: 'no-store' })
+        if (usoResponse.ok) {
+          usoJson = await usoResponse.json()
+        }
+      } catch (e) {
+        console.warn('Error al cargar datos de uso, usando valores por defecto:', e)
       }
 
-      const usoJson = await usoResponse.json()
-      const planJson = await planResponse.json()
+      // Intentar obtener datos del plan, usar valores por defecto si falla
+      try {
+        const planResponse = await fetch('/api/suscripciones/actual', { cache: 'no-store' })
+        if (planResponse.ok) {
+          planJson = await planResponse.json()
+        }
+      } catch (e) {
+        console.warn('Error al cargar datos del plan, usando valores por defecto:', e)
+      }
 
       // Obtener límites del plan (convertir límites de llamadas a minutos)
       const plan = planJson.plan || null
@@ -58,6 +72,7 @@ export function UsoPlanCostosCard() {
       // Calcular minutos usados desde duracion_llamadas (en minutos)
       const minutosUsados = Math.round((usoJson.duracion_llamadas || 0) / 60)
 
+      // Siempre establecer datos, incluso si son 0
       setUsoData({
         emailsUsado: usoJson.emails_enviados || 0,
         emailsLimite: limiteEmails,
@@ -73,7 +88,20 @@ export function UsoPlanCostosCard() {
       setPlanData(planJson)
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
+      // En caso de error inesperado, establecer datos con valores por defecto
+      console.warn('Error inesperado al cargar datos, usando valores por defecto:', err)
+      setUsoData({
+        emailsUsado: 0,
+        emailsLimite: 0,
+        minutosUsado: 0,
+        minutosLimite: 0,
+        smsUsado: 0,
+        smsLimite: 0,
+        costoTotal: 0,
+        planNombre: 'Sin Plan',
+        fechaRenovacion: null,
+      })
+      setPlanData({ plan: null, fecha_renovacion: null })
     } finally {
       setLoading(false)
     }
@@ -112,59 +140,14 @@ export function UsoPlanCostosCard() {
     )
   }
 
-  if (error && !usoData) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-red-500" />
-            Uso del Plan y Costos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-red-600 mb-4">{error}</p>
-          <Button onClick={fetchData} variant="outline" size="sm">
-            Reintentar
-          </Button>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (!usoData || !planData) {
+  if (!usoData) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Uso del Plan y Costos</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground mb-4">No se pudieron cargar los datos</p>
-          <Link href="/billing">
-            <Button variant="outline" size="sm">
-              Ver Suscripciones
-            </Button>
-          </Link>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  // Caso: Usuario sin plan
-  if (!planData.plan) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Uso del Plan y Costos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-muted-foreground mb-4">No tienes un plan activo</p>
-            <Link href="/billing">
-              <Button variant="outline" size="sm">
-                Ver Planes
-              </Button>
-            </Link>
-          </div>
+          <Skeleton className="h-64 w-full" />
         </CardContent>
       </Card>
     )

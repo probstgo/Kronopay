@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { AlertCircle, Info } from 'lucide-react'
+import { Info } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts'
 import { formatearMontoCLP } from '@/lib/formateo'
 import Link from 'next/link'
@@ -30,7 +30,6 @@ interface EfectividadGestionCardProps {
 export const EfectividadGestionCard = memo(function EfectividadGestionCard({ filtros }: EfectividadGestionCardProps) {
   const [data, setData] = useState<EfectividadData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchData()
@@ -39,7 +38,6 @@ export const EfectividadGestionCard = memo(function EfectividadGestionCard({ fil
   const fetchData = async () => {
     try {
       setLoading(true)
-      setError(null)
 
       // Usar filtros de fecha o mes actual por defecto
       const ahora = new Date()
@@ -54,16 +52,22 @@ export const EfectividadGestionCard = memo(function EfectividadGestionCard({ fil
       params.set('from', inicioMesActual.toISOString())
       params.set('to', finMesActual.toISOString())
 
-      const response = await fetch(
-        `/api/historial/metrics?${params.toString()}`,
-        { cache: 'no-store' }
-      )
-      
-      if (!response.ok) {
-        throw new Error('Error al cargar datos de efectividad')
-      }
+      let metricsData = { porCanal: {} }
 
-      const metricsData = await response.json()
+      // Intentar obtener datos, usar valores por defecto si falla
+      try {
+        const response = await fetch(
+          `/api/historial/metrics?${params.toString()}`,
+          { cache: 'no-store' }
+        )
+        
+        if (response.ok) {
+          metricsData = await response.json()
+        }
+      } catch (e) {
+        // Silenciosamente usar valores por defecto si hay error
+        console.warn('Error al cargar datos de efectividad, usando valores por defecto:', e)
+      }
 
       // Calcular efectividad basada en acciones completadas por canal
       // Por ahora, usamos una estimación basada en acciones completadas
@@ -92,13 +96,25 @@ export const EfectividadGestionCard = memo(function EfectividadGestionCard({ fil
         porcentaje: total > 0 ? (item.montoRecuperado / total) * 100 : 0,
       }))
 
+      // Siempre establecer datos, incluso si son 0
       setData({
         porCanal: porCanalConPorcentajes,
         total,
       })
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
+      // En caso de error inesperado, establecer datos con valores por defecto
+      console.warn('Error inesperado al cargar métricas, usando valores por defecto:', err)
+      const canales: Canal[] = ['email', 'llamada', 'sms', 'whatsapp']
+      setData({
+        porCanal: canales.map((canal) => ({
+          canal,
+          montoRecuperado: 0,
+          porcentaje: 0,
+          label: canal === 'llamada' ? 'Teléfono' : canal.charAt(0).toUpperCase() + canal.slice(1),
+        })),
+        total: 0,
+      })
     } finally {
       setLoading(false)
     }
@@ -154,38 +170,26 @@ export const EfectividadGestionCard = memo(function EfectividadGestionCard({ fil
     )
   }
 
-  if (error) {
+  if (!data) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-red-500" />
             Efectividad de la Gestión
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Comparativa de recupero por canal o agente</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-red-600 mb-4">{error}</p>
-          <Button onClick={fetchData} variant="outline" size="sm">
-            Reintentar
-          </Button>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (!data || data.total === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Efectividad de la Gestión</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground mb-4">No hay datos de efectividad disponibles</p>
-          <Link href="/historial">
-            <Button variant="outline" size="sm">
-              Ver Historial
-            </Button>
-          </Link>
+          <Skeleton className="h-64 w-full" />
         </CardContent>
       </Card>
     )
