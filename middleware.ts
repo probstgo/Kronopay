@@ -78,7 +78,9 @@ export async function middleware(request: NextRequest) {
   
   // Obtener la sesión actual
   const { data: { session } } = await supabase.auth.getSession()
-  console.log(`🔑 Sesión encontrada: ${session ? 'SÍ ✅' : 'NO ❌'}`)
+  // Validar que la sesión tenga un usuario válido
+  const isValidSession = session?.user !== null && session?.user !== undefined
+  console.log(`🔑 Sesión encontrada: ${isValidSession ? 'SÍ ✅' : 'NO ❌'}`)
   
   // Verificar si la ruta actual es protegida
   const isProtectedRoute = protectedRoutes.some(route => 
@@ -98,16 +100,16 @@ export async function middleware(request: NextRequest) {
   })
   console.log(`🌍 ¿Es ruta pública?: ${isPublicRoute}`)
   
-  // Si es una ruta protegida y no hay sesión
-  if (isProtectedRoute && !session) {
+  // Si es una ruta protegida y no hay sesión válida
+  if (isProtectedRoute && !isValidSession) {
     console.log(`🔒 BLOQUEANDO ACCESO a ${pathname} - Usuario no autenticado - REDIRIGIENDO A LOGIN\n`)
     const loginUrl = new URL('/login', request.url)
     loginUrl.searchParams.set('redirectTo', pathname)
     return NextResponse.redirect(loginUrl)
   }
   
-  // Si es una ruta de auth y ya hay sesión
-  if (isAuthRoute && session) {
+  // Si es una ruta de auth y ya hay sesión válida, redirigir al dashboard
+  if (isAuthRoute && isValidSession) {
     console.log(`🔄 Redirigiendo usuario autenticado desde ${pathname} al dashboard\n`)
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
@@ -119,7 +121,7 @@ export async function middleware(request: NextRequest) {
   }
   
   // Para cualquier otra ruta, verificar si está autenticado
-  if (!session) {
+  if (!isValidSession) {
     console.log(`🔒 BLOQUEANDO ACCESO a ${pathname} - Ruta no configurada - REDIRIGIENDO A LOGIN\n`)
     return NextResponse.redirect(new URL('/login', request.url))
   }
