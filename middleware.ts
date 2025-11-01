@@ -76,11 +76,34 @@ export async function middleware(request: NextRequest) {
     }
   )
   
-  // Obtener la sesión actual
-  const { data: { session } } = await supabase.auth.getSession()
-  // Validar que la sesión tenga un usuario válido
-  const isValidSession = session?.user !== null && session?.user !== undefined
+  // Obtener la sesión actual con manejo de errores
+  let session = null
+  try {
+    const { data: { session: sessionData }, error } = await supabase.auth.getSession()
+    if (error) {
+      console.log(`⚠️ Error al obtener sesión: ${error.message}`)
+    }
+    session = sessionData
+  } catch (error) {
+    console.log(`⚠️ Error inesperado al obtener sesión: ${error}`)
+    session = null
+  }
+  
+  // Validar que la sesión tenga un usuario válido con propiedades requeridas
+  const isValidSession = 
+    session !== null &&
+    session !== undefined &&
+    session.user !== null &&
+    session.user !== undefined &&
+    typeof session.user === 'object' &&
+    session.user.id !== null &&
+    session.user.id !== undefined &&
+    session.user.id !== ''
+  
   console.log(`🔑 Sesión encontrada: ${isValidSession ? 'SÍ ✅' : 'NO ❌'}`)
+  if (session && !isValidSession) {
+    console.log(`⚠️ Sesión inválida - session existe pero user no es válido`)
+  }
   
   // Verificar si la ruta actual es protegida
   const isProtectedRoute = protectedRoutes.some(route => 
