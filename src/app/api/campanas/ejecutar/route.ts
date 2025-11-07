@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     const nodosCampana: NodoCampana[] = nodos.map((nodo: { id: string, type: string, data: Record<string, unknown> }) => ({
       id: nodo.id,
       tipo: nodo.type as NodoCampana['tipo'],
-      configuracion: nodo.data.configuracion || {},
+      configuracion: (nodo.data.configuracion || {}) as Record<string, unknown>,
       data: nodo.data
     }))
 
