@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useCallback, createContext, useContext } from 'react'
+import { useState, useCallback, createContext, useContext, useEffect } from 'react'
 import { ReactFlow, Background, Controls, MiniMap, Node, Edge, addEdge, useNodesState, useEdgesState, Connection } from 'reactflow'
+import { toast } from 'sonner'
+import { useRouter } from 'next/navigation'
 import 'reactflow/dist/style.css'
 
 import { TopToolbar } from './TopToolbar'
@@ -139,7 +141,16 @@ const availableNodeTypes = [
   }
 ]
 
-export function JourneyBuilder() {
+interface JourneyBuilderProps {
+  params?: Promise<{ id: string }>
+}
+
+export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
+  const router = useRouter()
+  const [campaignId, setCampaignId] = useState<string | null>(null)
+  const [campaignName, setCampaignName] = useState('Campaña de Cobranza')
+  const [campaignDescription, setCampaignDescription] = useState('')
+  const [loading, setLoading] = useState(false)
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
@@ -147,6 +158,97 @@ export function JourneyBuilder() {
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
   const [sourceNodeId, setSourceNodeId] = useState<string | null>(null)
   const [shouldFitView, setShouldFitView] = useState(true)
+
+  // Cargar campaña si hay params (edición)
+  useEffect(() => {
+    if (params) {
+      params.then(({ id }) => {
+        setCampaignId(id)
+        cargarCampana(id)
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [params])
+
+  // Función para cargar campaña desde la API
+  const cargarCampana = async (id: string) => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/campanas/${id}/canvas`)
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al cargar la campaña')
+      }
+
+      const { canvas_data, nombre, descripcion } = result.data
+
+      // Restaurar nombre y descripción
+      if (nombre) {
+        setCampaignName(nombre)
+      }
+      if (descripcion) {
+        setCampaignDescription(descripcion)
+      }
+
+      // Restaurar nodos (agregar nodo inicial "+" si no hay nodos)
+      if (canvas_data.nodes && canvas_data.nodes.length > 0) {
+        const restoredNodes: Node[] = canvas_data.nodes.map((node: any) => ({
+          id: node.id,
+          type: node.type,
+          position: node.position,
+          data: node.data
+        }))
+        setNodes(restoredNodes)
+      } else {
+        // Si no hay nodos, mostrar nodo inicial "+"
+        setNodes(initialNodes)
+      }
+
+      // Restaurar conexiones
+      if (canvas_data.edges && canvas_data.edges.length > 0) {
+        const restoredEdges: Edge[] = canvas_data.edges.map((edge: any) => ({
+          id: edge.id,
+          source: edge.source,
+          target: edge.target,
+          type: edge.type || 'smoothstep',
+          animated: edge.animated || false
+        }))
+        setEdges(restoredEdges)
+      } else {
+        setEdges([])
+      }
+
+      // Restaurar notas
+      if (canvas_data.notes && canvas_data.notes.length > 0) {
+        const restoredNotes: Node[] = canvas_data.notes.map((note: any) => ({
+          id: note.id,
+          type: 'note',
+          position: note.position,
+          data: { text: note.text },
+          draggable: true,
+          selectable: true
+        }))
+        // Agregar notas a los nodos existentes
+        setNodes(prev => {
+          const existingNoteIds = new Set(prev.filter(n => n.type === 'note').map(n => n.id))
+          const newNotes = restoredNotes.filter(note => !existingNoteIds.has(note.id))
+          return [...prev, ...newNotes]
+        })
+      }
+
+      setShouldFitView(true)
+      toast.success('Campaña cargada exitosamente')
+    } catch (error) {
+      console.error('Error cargando campaña:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      toast.error(`Error al cargar la campaña: ${errorMessage}`)
+      // Redirigir a lista si hay error
+      router.push('/campanas')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Generar ID único para nodos
   const generateNodeId = () => `node_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -500,12 +602,144 @@ export function JourneyBuilder() {
     setSourceNodeId(null)
   }, [])
 
+  // Función para guardar la campaña (Fase 3.1: integración con API)
+  const handleSave = useCallback(async (metadata: { nombre: string; descripcion: string }) => {
+    console.log('💾 Iniciando guardado de campaña...')
+    
+    // Mostrar loading
+    const toastId = toast.loading('Guardando campaña...')
+    
+    try {
+      // Filtrar nodos: excluir el nodo inicial "+" y separar notas
+      const realNodes = nodes.filter(n => n.id !== 'initial-plus' && n.type !== 'note')
+      const noteNodes = nodes.filter(n => n.type === 'note')
+      
+      // Preparar nodos para canvas_data (sin el nodo inicial)
+      const canvasNodes = realNodes.map(node => ({
+        id: node.id,
+        type: node.type,
+        position: node.position,
+        data: node.data
+      }))
+      
+      // Preparar conexiones (edges)
+      const canvasEdges = edges.map(edge => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        type: edge.type || 'smoothstep',
+        animated: edge.animated || false
+      }))
+      
+      // Preparar notas
+      const canvasNotes = noteNodes.map(note => ({
+        id: note.id,
+        text: note.data?.text || '',
+        position: note.position,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }))
+      
+      // Estructurar canvas_data según workflows_cobranza
+      const canvasData = {
+        nodes: canvasNodes,
+        edges: canvasEdges,
+        notes: canvasNotes
+      }
+      
+      // Estructurar payload completo según la tabla workflows_cobranza
+      const payload = {
+        nombre: metadata.nombre || 'Campaña de Cobranza',
+        descripcion: metadata.descripcion || '',
+        canvas_data: canvasData,
+        configuracion: {}, // Configuración global (por ahora vacía)
+        estado: 'borrador' // Estado inicial
+      }
+      
+      // Log del payload preparado (para verificación)
+      console.log('📦 Payload preparado para guardar:', payload)
+      console.log('📊 Resumen:', {
+        totalNodos: canvasNodes.length,
+        totalConexiones: canvasEdges.length,
+        totalNotas: canvasNotes.length,
+        nombre: payload.nombre
+      })
+      
+      // Llamar a la API (POST si es nueva, PUT si es edición)
+      let response: Response
+      let data: any
+
+      if (campaignId) {
+        // Actualizar campaña existente (canvas_data, nombre y descripción)
+        response = await fetch(`/api/campanas/${campaignId}/canvas`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            canvas_data: canvasData,
+            nombre: metadata.nombre || campaignName,
+            descripcion: metadata.descripcion || campaignDescription
+          })
+        })
+        data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Error al actualizar la campaña')
+        }
+
+        toast.success(`Campaña "${payload.nombre}" actualizada exitosamente`, { id: toastId })
+        console.log('✅ Campaña actualizada exitosamente:', data)
+      } else {
+        // Crear nueva campaña
+        response = await fetch('/api/campanas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+        data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Error al guardar la campaña')
+        }
+
+        // Si se creó exitosamente, actualizar campaignId y redirigir
+        if (data.data && data.data.id) {
+          setCampaignId(data.data.id)
+          // Redirigir a la página de edición
+          router.push(`/campanas/${data.data.id}`)
+        }
+
+        toast.success(`Campaña "${payload.nombre}" guardada exitosamente`, { id: toastId })
+        console.log('✅ Campaña guardada exitosamente:', data)
+      }
+      
+    } catch (error) {
+      console.error('❌ Error al guardar:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      toast.error(`Error al guardar la campaña: ${errorMessage}`, { id: toastId })
+    }
+  }, [nodes, edges, campaignId, campaignName, campaignDescription, router])
+
   return (
     <NodeActionsContext.Provider value={{ onConfigure: handleConfigureNode, onDelete: handleDeleteNode }}>
       <div className="h-screen flex flex-col">
+        {/* Loading overlay */}
+        {loading && (
+          <div className="absolute inset-0 bg-white/80 z-50 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-gray-600">Cargando campaña...</p>
+            </div>
+          </div>
+        )}
+
         {/* Barra Superior */}
         <TopToolbar 
           onAddNode={handleAddNodeFromToolbar}
+          onSave={handleSave}
+          initialName={campaignName}
+          initialDescription={campaignDescription}
+          onNameChange={setCampaignName}
+          onDescriptionChange={setCampaignDescription}
           onAddNote={() => {
             // Nodos "reales" del flujo (excluye initial-plus y notas)
             const realFlowNodes = nodes.filter(n => n.type !== 'initialPlus' && n.type !== 'note')

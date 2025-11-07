@@ -509,24 +509,119 @@ export const connectionColors = {
 
 ### **Fase 3: Persistencia y Gestión (Semana 3)**
 
+#### **Fase 3.0: Preparación Frontend para Guardado - ✅ COMPLETADA**
+
 #### **Objetivos:**
-- Guardar/cargar workflows (incluye notas)
-- Gestión de campañas
-- Integración con Supabase
-- Sistema de metadatos
+- Preparar función `handleSave` en el frontend
+- Estructurar payload según `workflows_cobranza`
+- Cambiar botón "Ejecutar" por "Guardar"
 
 #### **Tareas:**
-- [ ] Integrar con Supabase
-- [ ] Sistema de guardar/cargar workflows (nodos, conexiones y notas)
-- [ ] Modal de gestión de campañas
-- [ ] Metadatos de campañas
-- [ ] Sistema de versiones básico
+- [x] Cambiar botón "Ejecutar" por "Guardar" en TopToolbar
+- [x] Implementar función `handleSave` en JourneyBuilder
+- [x] Recopilar nodos, conexiones y notas
+- [x] Estructurar `canvas_data` según formato de BD
+- [x] Estructurar payload completo para `workflows_cobranza`
+- [x] Agregar logs para verificación
+- [x] Preparar comentarios TODO para Fase 3.1
 
 #### **Entregables:**
-- Persistencia completa (incluye notas)
-- Gestión de campañas
-- Integración con BD
+- ✅ Función `handleSave` implementada
+- ✅ Payload estructurado correctamente
+- ✅ Botón "Guardar" funcionando
+- ✅ Dialog de confirmación actualizado
+
+---
+
+#### **Fase 3.1: Endpoints de API - ✅ COMPLETADA**
+
+#### **Objetivos:**
+- Crear endpoints para guardar/cargar workflows
+- Validación con Zod
+- Integración con Supabase
+
+#### **Tareas:**
+- [x] Crear endpoint `POST /api/campanas` (crear nueva campaña)
+- [x] Crear endpoint `PUT /api/campanas/[id]/canvas` (actualizar campaña)
+- [x] Crear endpoint `GET /api/campanas/[id]/canvas` (cargar campaña)
+- [x] Implementar validación con Zod del payload
+- [x] Integrar con Supabase para guardar en `workflows_cobranza`
+- [x] Manejo de errores y validaciones
+- [x] Reemplazar mensaje temporal por feedback visual
+
+#### **Entregables:**
+- ✅ Endpoints de API funcionando
+- ✅ Validación completa con Zod
+- ✅ Integración con Supabase
+- ✅ Feedback visual apropiado (toast notifications con sonner)
+
+---
+
+#### **Fase 3.2: Cargar Workflows - ✅ COMPLETADA**
+
+#### **Objetivos:**
+- Cargar workflows desde la base de datos
+- Restaurar nodos, conexiones y notas en el canvas
+- Crear estructura de navegación (lista, nueva, editar)
+
+#### **Tareas:**
+- [x] Crear endpoint GET /api/campanas para listar campañas
+- [x] Crear endpoint DELETE /api/campanas/[id] para eliminar campañas
+- [x] Crear página de lista de campañas (/campanas/page.tsx)
+- [x] Crear página de nueva campaña (/campanas/nueva/page.tsx)
+- [x] Crear página de editar campaña (/campanas/[id]/page.tsx)
+- [x] Implementar carga de workflow desde BD
+- [x] Restaurar nodos en el canvas
+- [x] Restaurar conexiones entre nodos
+- [x] Restaurar notas flotantes
+- [x] Restaurar nombre y descripción de la campaña
+- [x] Manejar workflows inexistentes o sin permisos
+- [x] Actualizar endpoint PUT para incluir nombre y descripción
+- [x] Botón "Volver" funcional en toolbar
+
+#### **Entregables:**
+- ✅ Sistema de carga completo
+- ✅ Restauración correcta del canvas
+- ✅ Estructura de navegación completa
+- ✅ Lista de campañas funcional
+
+---
+
+#### **Fase 3.3: Gestión de Campañas - 🔄 PENDIENTE**
+
+#### **Objetivos:**
+- Modal de gestión de campañas
+- Listar campañas del usuario
+- Crear/editar/eliminar campañas
+
+#### **Tareas:**
+- [ ] Modal de gestión de campañas
+- [ ] Listar todas las campañas del usuario
+- [ ] Crear nueva campaña
+- [ ] Editar campaña existente
+- [ ] Eliminar campaña
+- [ ] Filtros y búsqueda
+
+#### **Entregables:**
+- Modal de gestión completo
+- CRUD completo de campañas
+
+---
+
+#### **Fase 3.4: Metadatos y Versiones - 🔄 PENDIENTE**
+
+#### **Objetivos:**
 - Sistema de metadatos
+- Sistema de versiones básico
+
+#### **Tareas:**
+- [ ] Metadatos de campañas (fecha creación, última modificación, etc.)
+- [ ] Sistema de versiones básico
+- [ ] Historial de cambios
+
+#### **Entregables:**
+- Sistema de metadatos completo
+- Sistema de versiones funcionando
 
 ---
 
@@ -581,11 +676,13 @@ Zod mínimo para `canvas_data`:
 4. Todas las operaciones deben estar siempre asociadas al `campaignId` de la ruta y al usuario autenticado.
 
 ### Checklist Backend/BBDD
-- [ ] Implementar endpoints `GET/PUT /api/campanas/:id/canvas`.
-- [ ] Validar pertenencia de la campaña al usuario (`usuario_id` = `auth.uid()`).
-- [ ] Validar estructura con Zod (incluye `notes`).
-- [ ] Actualizar `canvas_data` en `workflows_cobranza`.
-- [ ] Añadir `updatedAt` en notas/nodos si se desea auditoría ligera.
+- [x] Implementar endpoints `GET/PUT /api/campanas/:id/canvas`.
+- [x] Implementar endpoint `POST /api/campanas` para crear campañas.
+- [x] Validar pertenencia de la campaña al usuario (`usuario_id` = `auth.uid()`).
+- [x] Validar estructura con Zod (incluye `notes`).
+- [x] Actualizar `canvas_data` en `workflows_cobranza`.
+- [x] Actualizar `actualizado_at` automáticamente al modificar canvas.
+- [ ] Añadir `updatedAt` en notas/nodos si se desea auditoría ligera (opcional).
 
 ---
 
@@ -761,13 +858,17 @@ export const theme = {
 6. **✅ COMPLETADA Fase 2** - Nodos Completos y Configuración funcionando
 7. **✅ COMPLETADA Fase 2.1** - Mejoras UX/UI y Acciones de Nodos funcionando
 8. **✅ COMPLETADA Fase 2.2** - Mejoras TopToolbar con Modales Funcionales funcionando
+9. **✅ COMPLETADA Fase 3.0** - Preparación Frontend para Guardado (Diciembre 2024)
+10. **✅ COMPLETADA Fase 3.1** - Endpoints de API (Diciembre 2024)
+11. **✅ COMPLETADA Fase 3.2** - Sistema de Cargar Workflows (Diciembre 2024)
 
 ### **🔄 PRÓXIMO - Fase 3: Persistencia y Gestión**
-1. **Integrar** con Supabase
-2. **Sistema** de guardar/cargar workflows
-3. **Modal** de gestión de campañas
-4. **Metadatos** de campañas
-5. **Sistema** de versiones básico
+1. **✅ Fase 3.0 COMPLETADA** - Preparación frontend (función handleSave implementada)
+2. **✅ Fase 3.1 COMPLETADA** - Endpoints de API (POST /api/campanas, PUT/GET /api/campanas/[id]/canvas)
+3. **✅ Fase 3.2 COMPLETADA** - Sistema de cargar workflows desde BD
+4. **🔄 Fase 3.3** - Modal de gestión de campañas (opcional - ya existe lista)
+5. **🔄 Fase 3.4** - Metadatos de campañas
+6. **🔄 Fase 3.5** - Sistema de versiones básico
 
 ### **🔄 FUTURO - Fase 4**
 1. **Fase 4**: Motor de ejecución
@@ -805,7 +906,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 ---
 
-**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales. **Próximo:** Fase 3 - Persistencia y Gestión.
+**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows. **Próximo:** Fase 3.3 - Modal de Gestión de Campañas (opcional) o Fase 4 - Motor de Ejecución.
 
 ---
 
@@ -822,9 +923,13 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 - **✅ Fase 2**: Nodos Completos y Configuración (Semana 2) - COMPLETADA
 - **✅ Fase 2.1**: Mejoras UX/UI y Acciones de Nodos (Semana 2) - COMPLETADA
 - **✅ Fase 2.2**: Mejoras TopToolbar con Modales Funcionales (Diciembre 2024) - COMPLETADA
+- **✅ Fase 2.3**: Notas Flotantes (30 Diciembre 2024) - COMPLETADA
+- **✅ Fase 3.0**: Preparación Frontend para Guardado (Diciembre 2024) - COMPLETADA
+- **✅ Fase 3.1**: Endpoints de API (Diciembre 2024) - COMPLETADA
+- **✅ Fase 3.2**: Sistema de Cargar Workflows (Diciembre 2024) - COMPLETADA
 
 ### **⏳ Próximas Fases:**
-- **Fase 3**: Persistencia y Gestión (Semana 3)
+- **Fase 3.3-3.5**: Persistencia y Gestión (Gestión de Campañas, Metadatos, Versiones) - Opcionales
 - **Fase 4**: Motor de Ejecución (Semana 4)
 
 ---
@@ -1044,6 +1149,319 @@ const handleAddNodeFromToolbar = useCallback((nodeType: string) => {
 - Registro del tipo de nodo `note` en `JourneyBuilder.tsx`.
 - Inyección de `onChange` y `onDelete` a cada `note` al renderizar los `nodes`.
 - Lógica de `onAddNote` que calcula ancla (nodo inicial o más a la derecha) y aplica `OFFSET_Y`.
+
+---
+
+### **✅ FASE 3.0 COMPLETADA - Diciembre 2024 (Preparación Frontend para Guardado)**
+
+#### Cambios UI/UX
+- **Botón "Guardar" reemplaza "Ejecutar"**: Cambio de icono `Play` → `Save` en `TopToolbar.tsx`.
+- **Dialog de confirmación actualizado**: Ahora pregunta "¿Guardar campaña?" en lugar de "¿Ejecutar campaña?".
+- **Modal de Ayuda actualizado**: Texto actualizado para mencionar "Guardar campaña" en lugar de "Ejecutar campaña".
+- **Feedback temporal**: Mensaje de alerta mostrando resumen de datos preparados (será reemplazado en Fase 3.1).
+
+#### Cambios técnicos (frontend)
+
+**1. TopToolbar.tsx:**
+- Cambiado import: `Play` → `Save` de `lucide-react`.
+- Agregada prop `onSave?: (data: { nombre: string; descripcion: string }) => void`.
+- Cambiado estado: `executeOpen` → `saveOpen`.
+- Cambiado función: `handleExecute` → `handleSave`.
+- Función `handleSave` ahora llama a `onSave` con nombre y descripción de la campaña.
+- Botón actualizado: texto "Ejecutar" → "Guardar", icono `Play` → `Save`.
+- Dialog de confirmación actualizado con nuevo texto y acciones.
+
+**2. JourneyBuilder.tsx:**
+- Implementada función `handleSave` que:
+  - Recopila nodos del flujo (excluye nodo inicial "+" y notas).
+  - Recopila todas las conexiones (edges).
+  - Recopila todas las notas con timestamps.
+  - Estructura `canvas_data` con formato:
+    ```typescript
+    {
+      nodes: [...], // Nodos del flujo sin el inicial
+      edges: [...], // Todas las conexiones
+      notes: [...]  // Todas las notas con createdAt/updatedAt
+    }
+    ```
+  - Estructura payload completo según `workflows_cobranza`:
+    ```typescript
+    {
+      nombre: string,
+      descripcion: string,
+      canvas_data: {...},
+      configuracion: {}, // Vacío por ahora
+      estado: 'borrador'
+    }
+    ```
+  - Logs en consola para verificación del payload.
+  - Mensaje temporal al usuario (será reemplazado en Fase 3.1).
+  - Comentarios TODO marcando dónde se integrará la API en Fase 3.1.
+- Pasada prop `onSave={handleSave}` al componente `TopToolbar`.
+
+#### Estructura del Payload Preparado
+
+El payload está estructurado según la tabla `workflows_cobranza`:
+
+```typescript
+{
+  nombre: string,              // Nombre de la campaña
+  descripcion: string,         // Descripción opcional
+  canvas_data: {
+    nodes: Array<{            // Nodos del flujo (sin initial-plus)
+      id: string,
+      type: string,
+      position: { x: number, y: number },
+      data: Record<string, any>
+    }>,
+    edges: Array<{            // Conexiones entre nodos
+      id: string,
+      source: string,
+      target: string,
+      type: string,
+      animated: boolean
+    }>,
+    notes: Array<{            // Notas flotantes
+      id: string,
+      text: string,
+      position: { x: number, y: number },
+      createdAt: string,
+      updatedAt: string
+    }>
+  },
+  configuracion: {},          // Configuración global (vacía por ahora)
+  estado: 'borrador'          // Estado inicial
+}
+```
+
+---
+
+### **✅ FASE 3.1 COMPLETADA - Diciembre 2024 (Endpoints de API)**
+
+#### Cambios técnicos (backend)
+
+**1. Schema de Validación (`src/lib/validations/campanaSchema.ts`):**
+- Creado schema `canvasDataSchema` para validar `canvas_data` (nodes, edges, notes).
+- Creado schema `saveCampanaSchema` para validar payload completo de guardado.
+- Creado schema `updateCanvasSchema` para validar actualización de canvas_data.
+- Tipos TypeScript inferidos de los schemas (`SaveCampanaInput`, `CanvasDataInput`, `UpdateCanvasInput`).
+
+**2. Endpoint POST /api/campanas (`src/app/api/campanas/route.ts`):**
+- Verifica autenticación con Supabase SSR.
+- Valida payload con Zod usando `saveCampanaSchema`.
+- Inserta nueva campaña en `workflows_cobranza`.
+- Asigna `usuario_id` automáticamente desde sesión.
+- Retorna ID de la campaña creada.
+- Manejo completo de errores con mensajes descriptivos.
+
+**3. Endpoint GET /api/campanas/[id]/canvas (`src/app/api/campanas/[id]/canvas/route.ts`):**
+- Verifica autenticación con Supabase SSR.
+- Obtiene `canvas_data` de una campaña específica.
+- Verifica que la campaña pertenece al usuario (RLS).
+- Retorna `canvas_data` completo (nodes, edges, notes).
+- Manejo de errores para campañas inexistentes o sin permisos.
+
+**4. Endpoint PUT /api/campanas/[id]/canvas (`src/app/api/campanas/[id]/canvas/route.ts`):**
+- Verifica autenticación con Supabase SSR.
+- Valida payload con Zod usando `updateCanvasSchema`.
+- Verifica que la campaña existe y pertenece al usuario (RLS).
+- Actualiza `canvas_data` y `actualizado_at` automáticamente.
+- Retorna éxito con timestamp de actualización.
+- Manejo completo de errores.
+
+**5. JourneyBuilder.tsx (actualizado):**
+- Importado `toast` de `sonner` para notificaciones.
+- Función `handleSave` convertida a `async`.
+- Implementada llamada a `POST /api/campanas`.
+- Muestra loading con `toast.loading('Guardando campaña...')`.
+- Muestra éxito con `toast.success()` incluyendo nombre de la campaña.
+- Muestra errores con `toast.error()` con mensaje descriptivo.
+- Manejo completo de errores con try/catch.
+- Logs en consola para debugging.
+
+#### Funcionalidades Implementadas
+
+**Validación:**
+- ✅ Validación completa con Zod del payload.
+- ✅ Validación de estructura de `canvas_data` (nodes, edges, notes).
+- ✅ Validación de nombre de campaña (requerido, max 255 caracteres).
+- ✅ Validación de descripción (opcional).
+- ✅ Validación de estado (enum: 'borrador', 'activo', 'pausado', 'archivado').
+
+**Seguridad:**
+- ✅ Autenticación con Supabase SSR en todos los endpoints.
+- ✅ Verificación de sesión en cada request.
+- ✅ RLS (Row Level Security) asegura que cada usuario solo ve/edita sus campañas.
+- ✅ Validación de pertenencia de campaña al usuario antes de actualizar.
+
+**Feedback Visual:**
+- ✅ Notificaciones toast con `sonner`:
+  - Loading durante guardado.
+  - Éxito con nombre de campaña.
+  - Error con mensaje descriptivo.
+- ✅ Logs en consola para debugging.
+
+**Manejo de Errores:**
+- ✅ Validación de datos con mensajes descriptivos.
+- ✅ Manejo de errores de autenticación (401).
+- ✅ Manejo de errores de validación (400).
+- ✅ Manejo de errores de base de datos (500).
+- ✅ Mensajes de error descriptivos para el usuario.
+
+#### Archivos Creados
+
+- ✅ `src/lib/validations/campanaSchema.ts` - Schemas de validación con Zod
+- ✅ `src/app/api/campanas/route.ts` - Endpoint POST para crear campañas
+- ✅ `src/app/api/campanas/[id]/canvas/route.ts` - Endpoints GET y PUT para canvas
+
+#### Archivos Modificados
+
+- ✅ `src/app/campanas/components/JourneyBuilder.tsx` - Integración con API y feedback visual
+
+---
+
+### **✅ FASE 3.2 COMPLETADA - Diciembre 2024 (Sistema de Cargar Workflows)**
+
+#### Cambios UI/UX
+- **Página de Lista de Campañas**: Nueva página `/campanas` que muestra todas las campañas guardadas del usuario.
+- **Cards de Campañas**: Cada campaña se muestra en un card con nombre, estado, fecha de actualización y versión.
+- **Búsqueda**: Barra de búsqueda para filtrar campañas por nombre o descripción.
+- **Botón "Nueva Campaña"**: Crea una nueva campaña con canvas vacío.
+- **Botón "Editar"**: Abre la campaña en el editor con datos cargados.
+- **Botón "Eliminar"**: Elimina campaña con confirmación.
+- **Botón "Volver"**: En el toolbar, navega de vuelta a la lista de campañas.
+- **Loading Overlay**: Muestra indicador de carga mientras se cargan los datos.
+
+#### Cambios técnicos (backend y frontend)
+
+**1. Endpoint GET /api/campanas (`src/app/api/campanas/route.ts`):**
+- Lista todas las campañas del usuario autenticado.
+- Retorna: id, nombre, descripcion, estado, version, creado_at, actualizado_at, ejecutado_at.
+- Ordenadas por `actualizado_at` descendente (más recientes primero).
+- RLS asegura que solo ve sus campañas.
+
+**2. Endpoint DELETE /api/campanas/[id] (`src/app/api/campanas/[id]/route.ts`):**
+- Elimina una campaña específica.
+- Verifica que la campaña pertenece al usuario (RLS).
+- Retorna éxito o error descriptivo.
+
+**3. Endpoint GET /api/campanas/[id]/canvas (actualizado):**
+- Ahora retorna también `nombre` y `descripcion` de la campaña.
+- Corregido para usar `await params` (Next.js 15).
+
+**4. Endpoint PUT /api/campanas/[id]/canvas (actualizado):**
+- Ahora acepta y actualiza también `nombre` y `descripcion` opcionales.
+- Actualiza `actualizado_at` automáticamente.
+
+**5. Schema de Validación (`src/lib/validations/campanaSchema.ts`):**
+- `updateCanvasSchema` actualizado para incluir `nombre` y `descripcion` opcionales.
+
+**6. Página de Lista (`src/app/campanas/page.tsx`):**
+- Lista todas las campañas del usuario.
+- Cards con información completa (nombre, estado, fecha, versión).
+- Búsqueda por nombre/descripción.
+- Botones de acción: Editar, Eliminar.
+- Estado vacío cuando no hay campañas.
+- Estado de búsqueda sin resultados.
+
+**7. Página Nueva Campaña (`src/app/campanas/nueva/page.tsx`):**
+- Renderiza `JourneyBuilder` sin params.
+- Canvas vacío para crear desde cero.
+
+**8. Página Editar Campaña (`src/app/campanas/[id]/page.tsx`):**
+- Renderiza `JourneyBuilder` con params (id de la campaña).
+- Canvas con datos cargados desde BD.
+
+**9. JourneyBuilder.tsx (actualizado):**
+- Agregado prop `params?: Promise<{ id: string }>`.
+- Estados: `campaignId`, `campaignName`, `campaignDescription`, `loading`.
+- Función `cargarCampana` que:
+  - Llama a `GET /api/campanas/[id]/canvas`.
+  - Restaura nombre y descripción.
+  - Restaura nodos del flujo (sin nodo inicial "+").
+  - Restaura conexiones (edges).
+  - Restaura notas flotantes.
+  - Muestra loading overlay.
+  - Maneja errores con redirección a lista.
+- Función `handleSave` actualizada:
+  - Si hay `campaignId` → `PUT` (actualiza canvas + nombre + descripción).
+  - Si no hay `campaignId` → `POST` (crea nueva) y redirige a edición.
+- Loading overlay mientras carga datos.
+- Redirección automática a lista si hay error al cargar.
+
+**10. TopToolbar.tsx (actualizado):**
+- Agregadas props: `initialName`, `initialDescription`, `onNameChange`, `onDescriptionChange`.
+- Sincronización con props iniciales usando `useEffect`.
+- Botón "Volver" activado → navega a `/campanas` usando `useRouter`.
+- Muestra nombre de la campaña en el botón de navegación.
+
+#### Funcionalidades Implementadas
+
+**Navegación:**
+- ✅ Lista de campañas con cards informativos.
+- ✅ Crear nueva campaña desde lista.
+- ✅ Editar campaña existente desde lista.
+- ✅ Eliminar campaña con confirmación.
+- ✅ Botón "Volver" funcional en toolbar.
+- ✅ Búsqueda de campañas por nombre/descripción.
+
+**Carga de Datos:**
+- ✅ Carga de campaña desde BD al abrir `/campanas/[id]`.
+- ✅ Restauración de nodos del flujo.
+- ✅ Restauración de conexiones entre nodos.
+- ✅ Restauración de notas flotantes.
+- ✅ Restauración de nombre y descripción.
+- ✅ Loading overlay durante carga.
+- ✅ Manejo de errores con redirección.
+
+**Guardado:**
+- ✅ Crear nueva campaña (POST) → redirige a edición.
+- ✅ Actualizar campaña existente (PUT) → actualiza canvas + nombre + descripción.
+- ✅ Actualización automática de `actualizado_at`.
+
+#### Archivos Creados
+
+- ✅ `src/app/campanas/page.tsx` - Página de lista de campañas
+- ✅ `src/app/campanas/nueva/page.tsx` - Página de nueva campaña
+- ✅ `src/app/campanas/[id]/page.tsx` - Página de editar campaña
+- ✅ `src/app/api/campanas/[id]/route.ts` - Endpoint DELETE para eliminar campañas
+
+#### Archivos Modificados
+
+- ✅ `src/app/api/campanas/route.ts` - Agregado endpoint GET para listar campañas
+- ✅ `src/app/api/campanas/[id]/canvas/route.ts` - Actualizado para retornar/actualizar nombre y descripción
+- ✅ `src/lib/validations/campanaSchema.ts` - Actualizado `updateCanvasSchema`
+- ✅ `src/app/campanas/components/JourneyBuilder.tsx` - Agregada carga de datos y navegación
+- ✅ `src/app/campanas/components/TopToolbar.tsx` - Agregada sincronización de nombre/descripción y botón "Volver"
+
+#### Flujo Completo Implementado
+
+```
+Sidebar "Campañas" 
+  ↓
+/campanas (Lista de campañas)
+  ├─ Click "Nueva Campaña" → /campanas/nueva → Canvas vacío
+  │     ↓
+  │   Usuario crea flujo y guarda
+  │     ↓
+  │   POST /api/campanas → Redirige a /campanas/[id]
+  │
+  └─ Click "Editar" → /campanas/[id] → Canvas con datos cargados
+        ↓
+      GET /api/campanas/[id]/canvas → Carga nodos, edges, notes, nombre, descripción
+        ↓
+      Usuario edita y guarda
+        ↓
+      PUT /api/campanas/[id]/canvas → Actualiza canvas + nombre + descripción
+        ↓
+      Toast de éxito
+```
+
+#### Próximos Pasos (Fase 3.3 - Opcional)
+- Modal de gestión de campañas (ya existe lista, pero se puede mejorar con más opciones).
+- Duplicar campaña.
+- Cambiar estado de campaña (activo/pausado/archivado).
+- Filtros avanzados en lista (por estado, fecha, etc.).
 
 ---
 

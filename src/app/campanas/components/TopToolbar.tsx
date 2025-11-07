@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { ArrowLeft, Plus, BarChart3, Settings, Lightbulb, Play, StickyNote } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft, Plus, BarChart3, Settings, Lightbulb, Save, StickyNote } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
@@ -45,16 +46,41 @@ interface TopToolbarProps {
   onAddNode?: (nodeType: string) => void
   availableNodeTypes?: NodeType[]
   onAddNote?: () => void
+  onSave?: (data: { nombre: string; descripcion: string }) => void
+  initialName?: string
+  initialDescription?: string
+  onNameChange?: (name: string) => void
+  onDescriptionChange?: (description: string) => void
 }
 
-export function TopToolbar({ onAddNode, availableNodeTypes = [], onAddNote }: TopToolbarProps) {
+export function TopToolbar({ 
+  onAddNode, 
+  availableNodeTypes = [], 
+  onAddNote, 
+  onSave,
+  initialName = 'Campaña de Cobranza',
+  initialDescription = '',
+  onNameChange,
+  onDescriptionChange
+}: TopToolbarProps) {
+  const router = useRouter()
   const [nodesMenuOpen, setNodesMenuOpen] = useState(false)
   const [analyticsOpen, setAnalyticsOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
-  const [executeOpen, setExecuteOpen] = useState(false)
-  const [campaignName, setCampaignName] = useState('Campaña de Cobranza')
-  const [campaignDescription, setCampaignDescription] = useState('')
+  const [saveOpen, setSaveOpen] = useState(false)
+  const [campaignName, setCampaignName] = useState(initialName)
+  const [campaignDescription, setCampaignDescription] = useState(initialDescription)
+
+  // Sincronizar con props iniciales cuando cambian
+  useEffect(() => {
+    if (initialName !== campaignName) {
+      setCampaignName(initialName)
+    }
+    if (initialDescription !== campaignDescription) {
+      setCampaignDescription(initialDescription)
+    }
+  }, [initialName, initialDescription])
 
   const handleNodeSelect = (nodeType: string) => {
     if (onAddNode) {
@@ -63,32 +89,35 @@ export function TopToolbar({ onAddNode, availableNodeTypes = [], onAddNote }: To
     setNodesMenuOpen(false)
   }
 
-  const handleExecute = () => {
-    // Aquí se agregaría la lógica de ejecución cuando se conecte con el backend
-    setExecuteOpen(false)
-    // Simulación: mostrar mensaje de éxito
-    alert('Campaña ejecutada exitosamente')
+  const handleSave = () => {
+    if (onSave) {
+      onSave({
+        nombre: campaignName,
+        descripcion: campaignDescription
+      })
+    }
+    setSaveOpen(false)
   }
 
   return (
     <>
     <div className="bg-white border-b border-gray-200 px-4 py-3">
-      <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  disabled
-                  className="flex items-center space-x-2 text-gray-400 cursor-not-allowed"
-                  aria-label="Volver atrás (desactivado)"
+                  onClick={() => router.push('/campanas')}
+                  className="flex items-center space-x-2"
+                  aria-label="Volver a lista de campañas"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span>{campaignName}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Botón desactivado</p>
+                <p>Volver a lista de campañas</p>
               </TooltipContent>
             </Tooltip>
         </div>
@@ -184,20 +213,20 @@ export function TopToolbar({ onAddNode, availableNodeTypes = [], onAddNote }: To
               </TooltipContent>
             </Tooltip>
 
-            {/* Botón Ejecutar */}
+            {/* Botón Guardar */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  onClick={() => setExecuteOpen(true)}
+                  onClick={() => setSaveOpen(true)}
                   className="bg-blue-500 text-white hover:bg-blue-600 flex items-center gap-2"
-                  aria-label="Ejecutar campaña"
+                  aria-label="Guardar campaña"
                 >
-                  <Play className="h-4 w-4" />
-                  Ejecutar
+                  <Save className="h-4 w-4" />
+                  Guardar
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Ejecutar la campaña de cobranza</p>
+                <p>Guardar la campaña de cobranza</p>
               </TooltipContent>
             </Tooltip>
           </div>
@@ -311,7 +340,10 @@ export function TopToolbar({ onAddNode, availableNodeTypes = [], onAddNote }: To
               <Input
                 id="campaign-name"
                 value={campaignName}
-                onChange={(e) => setCampaignName(e.target.value)}
+                onChange={(e) => {
+                  setCampaignName(e.target.value)
+                  onNameChange?.(e.target.value)
+                }}
                 placeholder="Nombre de la campaña"
               />
             </div>
@@ -320,7 +352,10 @@ export function TopToolbar({ onAddNode, availableNodeTypes = [], onAddNote }: To
               <Textarea
                 id="campaign-description"
                 value={campaignDescription}
-                onChange={(e) => setCampaignDescription(e.target.value)}
+                onChange={(e) => {
+                  setCampaignDescription(e.target.value)
+                  onDescriptionChange?.(e.target.value)
+                }}
                 placeholder="Describe el propósito de esta campaña..."
                 rows={4}
               />
@@ -361,9 +396,9 @@ export function TopToolbar({ onAddNode, availableNodeTypes = [], onAddNote }: To
                 </p>
               </div>
               <div>
-                <h3 className="font-semibold text-sm mb-1">Ejecutar campaña</h3>
+                <h3 className="font-semibold text-sm mb-1">Guardar campaña</h3>
                 <p className="text-sm text-gray-600">
-                  Una vez configurada tu campaña, haz clic en &quot;Ejecutar&quot; para iniciar el proceso de cobranza automático.
+                  Una vez configurada tu campaña, haz clic en &quot;Guardar&quot; para guardar el flujo de cobranza.
                 </p>
         </div>
       </div>
@@ -376,22 +411,21 @@ export function TopToolbar({ onAddNode, availableNodeTypes = [], onAddNote }: To
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de Confirmación de Ejecución */}
-      <AlertDialog open={executeOpen} onOpenChange={setExecuteOpen}>
+      {/* Dialog de Confirmación de Guardado */}
+      <AlertDialog open={saveOpen} onOpenChange={setSaveOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Ejecutar campaña?</AlertDialogTitle>
+            <AlertDialogTitle>¿Guardar campaña?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción iniciará la ejecución de la campaña &quot;{campaignName}&quot;. 
-              Los deudores seleccionados recibirán los mensajes y llamadas según la configuración de los nodos.
+              Esta acción guardará la campaña &quot;{campaignName}&quot; con todos sus nodos, conexiones y configuraciones.
               <br /><br />
               ¿Estás seguro de que deseas continuar?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleExecute}>
-              Ejecutar campaña
+            <AlertDialogAction onClick={handleSave}>
+              Guardar campaña
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
