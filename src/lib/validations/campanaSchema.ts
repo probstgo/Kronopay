@@ -8,7 +8,7 @@ const nodeSchema = z.object({
     x: z.number(),
     y: z.number()
   }),
-  data: z.record(z.any())
+  data: z.record(z.string(), z.any())
 })
 
 // Schema para una conexión (edge) del canvas
@@ -44,7 +44,7 @@ export const saveCampanaSchema = z.object({
   nombre: z.string().min(1, 'El nombre de la campaña es requerido').max(255),
   descripcion: z.string().optional().nullable(),
   canvas_data: canvasDataSchema,
-  configuracion: z.record(z.any()).optional().default({}),
+  configuracion: z.record(z.string(), z.any()).optional().default({}),
   estado: z.enum(['borrador', 'activo', 'pausado', 'archivado']).optional().default('borrador')
 })
 
