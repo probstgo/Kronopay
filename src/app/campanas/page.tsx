@@ -6,11 +6,19 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, Megaphone, Edit, Trash2, Copy, Calendar } from 'lucide-react'
+import { Plus, Search, Megaphone, Edit, Trash2, Copy, Calendar, MoreVertical, Play, Pause, Archive } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface Campana {
   id: string
@@ -36,6 +44,7 @@ export default function CampanasPage() {
   const [campanas, setCampanas] = useState<Campana[]>([])
   const [loading, setLoading] = useState(true)
   const [busqueda, setBusqueda] = useState('')
+  const [filtroEstado, setFiltroEstado] = useState<string>('todos')
 
   useEffect(() => {
     if (user) {
@@ -84,10 +93,61 @@ export default function CampanasPage() {
     }
   }
 
-  const campanasFiltradas = campanas.filter(campana =>
-    campana.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-    (campana.descripcion && campana.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
-  )
+  const duplicarCampana = async (id: string, nombre: string) => {
+    try {
+      const response = await fetch(`/api/campanas/${id}/duplicar`, {
+        method: 'POST'
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al duplicar campaña')
+      }
+
+      toast.success('Campaña duplicada exitosamente')
+      cargarCampanas()
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      toast.error('Error al duplicar campaña: ' + errorMessage)
+    }
+  }
+
+  const cambiarEstado = async (id: string, nuevoEstado: 'borrador' | 'activo' | 'pausado' | 'archivado') => {
+    try {
+      const response = await fetch(`/api/campanas/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: nuevoEstado })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al cambiar estado')
+      }
+
+      const estadoLabels: Record<string, string> = {
+        borrador: 'borrador',
+        activo: 'activa',
+        pausado: 'pausada',
+        archivado: 'archivada'
+      }
+
+      toast.success(`Campaña marcada como ${estadoLabels[nuevoEstado]}`)
+      cargarCampanas()
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      toast.error('Error al cambiar estado: ' + errorMessage)
+    }
+  }
+
+  const campanasFiltradas = campanas.filter(campana => {
+    const coincideBusqueda = campana.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+      (campana.descripcion && campana.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
+    const coincideEstado = filtroEstado === 'todos' || campana.estado === filtroEstado
+    return coincideBusqueda && coincideEstado
+  })
 
   return (
     <Protected>
@@ -105,9 +165,9 @@ export default function CampanasPage() {
           </Link>
         </div>
 
-        {/* Barra de búsqueda */}
-        <div className="mb-6">
-          <div className="relative">
+        {/* Barra de búsqueda y filtros */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <Input
               placeholder="Buscar campañas..."
@@ -116,6 +176,18 @@ export default function CampanasPage() {
               className="pl-10"
             />
           </div>
+          <Select value={filtroEstado} onValueChange={setFiltroEstado}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Filtrar por estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todos los estados</SelectItem>
+              <SelectItem value="borrador">Borrador</SelectItem>
+              <SelectItem value="activo">Activa</SelectItem>
+              <SelectItem value="pausado">Pausada</SelectItem>
+              <SelectItem value="archivado">Archivada</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Loading */}
@@ -183,14 +255,52 @@ export default function CampanasPage() {
                           Editar
                         </Button>
                       </Link>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => eliminarCampana(campana.id, campana.nombre)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => duplicarCampana(campana.id, campana.nombre)}>
+                            <Copy className="h-4 w-4 mr-2" />
+                            Duplicar
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {campana.estado !== 'activo' && (
+                            <DropdownMenuItem onClick={() => cambiarEstado(campana.id, 'activo')}>
+                              <Play className="h-4 w-4 mr-2" />
+                              Activar
+                            </DropdownMenuItem>
+                          )}
+                          {campana.estado !== 'pausado' && campana.estado !== 'borrador' && (
+                            <DropdownMenuItem onClick={() => cambiarEstado(campana.id, 'pausado')}>
+                              <Pause className="h-4 w-4 mr-2" />
+                              Pausar
+                            </DropdownMenuItem>
+                          )}
+                          {campana.estado !== 'archivado' && (
+                            <DropdownMenuItem onClick={() => cambiarEstado(campana.id, 'archivado')}>
+                              <Archive className="h-4 w-4 mr-2" />
+                              Archivar
+                            </DropdownMenuItem>
+                          )}
+                          {campana.estado === 'archivado' && (
+                            <DropdownMenuItem onClick={() => cambiarEstado(campana.id, 'borrador')}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Desarchivar
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => eliminarCampana(campana.id, campana.nombre)}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </CardContent>
                 </Card>

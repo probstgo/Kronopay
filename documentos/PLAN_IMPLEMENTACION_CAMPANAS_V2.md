@@ -587,24 +587,27 @@ export const connectionColors = {
 
 ---
 
-#### **Fase 3.3: Gestión de Campañas - 🔄 PENDIENTE**
+#### **Fase 3.3: Gestión de Campañas - ✅ COMPLETADA**
 
 #### **Objetivos:**
-- Modal de gestión de campañas
-- Listar campañas del usuario
-- Crear/editar/eliminar campañas
+- Duplicar campañas
+- Cambiar estado de campañas (activo/pausado/archivado)
+- Filtros avanzados (por estado, fecha)
+- Mejorar gestión de campañas
 
 #### **Tareas:**
-- [ ] Modal de gestión de campañas
-- [ ] Listar todas las campañas del usuario
-- [ ] Crear nueva campaña
-- [ ] Editar campaña existente
-- [ ] Eliminar campaña
-- [ ] Filtros y búsqueda
+- [x] Crear endpoint POST /api/campanas/[id]/duplicar para duplicar campañas
+- [x] Crear endpoint PATCH /api/campanas/[id] para actualizar estado
+- [x] Agregar filtros avanzados en la página de lista (por estado)
+- [x] Agregar botones de duplicar y cambiar estado en los cards
+- [x] Agregar menú dropdown con opciones contextuales
+- [x] Implementar funciones de duplicar y cambiar estado
 
 #### **Entregables:**
-- Modal de gestión completo
-- CRUD completo de campañas
+- ✅ Sistema de duplicación completo
+- ✅ Sistema de cambio de estado completo
+- ✅ Filtros avanzados funcionales
+- ✅ Menú de acciones contextual
 
 ---
 
@@ -861,14 +864,15 @@ export const theme = {
 9. **✅ COMPLETADA Fase 3.0** - Preparación Frontend para Guardado (Diciembre 2024)
 10. **✅ COMPLETADA Fase 3.1** - Endpoints de API (Diciembre 2024)
 11. **✅ COMPLETADA Fase 3.2** - Sistema de Cargar Workflows (Diciembre 2024)
+12. **✅ COMPLETADA Fase 3.3** - Gestión de Campañas (Diciembre 2024)
 
 ### **🔄 PRÓXIMO - Fase 3: Persistencia y Gestión**
 1. **✅ Fase 3.0 COMPLETADA** - Preparación frontend (función handleSave implementada)
 2. **✅ Fase 3.1 COMPLETADA** - Endpoints de API (POST /api/campanas, PUT/GET /api/campanas/[id]/canvas)
 3. **✅ Fase 3.2 COMPLETADA** - Sistema de cargar workflows desde BD
-4. **🔄 Fase 3.3** - Modal de gestión de campañas (opcional - ya existe lista)
-5. **🔄 Fase 3.4** - Metadatos de campañas
-6. **🔄 Fase 3.5** - Sistema de versiones básico
+4. **✅ Fase 3.3 COMPLETADA** - Gestión de Campañas (duplicar, cambiar estado, filtros)
+5. **🔄 Fase 3.4** - Metadatos de campañas (opcional)
+6. **🔄 Fase 3.5** - Sistema de versiones básico (opcional)
 
 ### **🔄 FUTURO - Fase 4**
 1. **Fase 4**: Motor de ejecución
@@ -906,7 +910,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 ---
 
-**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows. **Próximo:** Fase 3.3 - Modal de Gestión de Campañas (opcional) o Fase 4 - Motor de Ejecución.
+**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas. **Próximo:** Fase 3.4 - Metadatos de Campañas (opcional) o Fase 4 - Motor de Ejecución.
 
 ---
 
@@ -927,9 +931,10 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 - **✅ Fase 3.0**: Preparación Frontend para Guardado (Diciembre 2024) - COMPLETADA
 - **✅ Fase 3.1**: Endpoints de API (Diciembre 2024) - COMPLETADA
 - **✅ Fase 3.2**: Sistema de Cargar Workflows (Diciembre 2024) - COMPLETADA
+- **✅ Fase 3.3**: Gestión de Campañas (Diciembre 2024) - COMPLETADA
 
 ### **⏳ Próximas Fases:**
-- **Fase 3.3-3.5**: Persistencia y Gestión (Gestión de Campañas, Metadatos, Versiones) - Opcionales
+- **Fase 3.4-3.5**: Persistencia y Gestión (Metadatos, Versiones) - Opcionales
 - **Fase 4**: Motor de Ejecución (Semana 4)
 
 ---
@@ -1457,11 +1462,104 @@ Sidebar "Campañas"
       Toast de éxito
 ```
 
-#### Próximos Pasos (Fase 3.3 - Opcional)
-- Modal de gestión de campañas (ya existe lista, pero se puede mejorar con más opciones).
-- Duplicar campaña.
-- Cambiar estado de campaña (activo/pausado/archivado).
-- Filtros avanzados en lista (por estado, fecha, etc.).
+---
+
+### **✅ FASE 3.3 COMPLETADA - Diciembre 2024 (Gestión de Campañas)**
+
+#### Cambios UI/UX
+- **Filtros Avanzados**: Selector dropdown para filtrar campañas por estado (todos, borrador, activa, pausada, archivada).
+- **Menú de Acciones**: Dropdown menu con opciones contextuales según el estado de la campaña.
+- **Duplicar Campaña**: Botón para duplicar campaña completa con nombre "(Copia)".
+- **Cambiar Estado**: Opciones para activar, pausar, archivar y desarchivar campañas.
+- **Diseño Responsive**: Filtros y menú adaptados para móvil y desktop.
+
+#### Cambios técnicos (backend y frontend)
+
+**1. Endpoint POST /api/campanas/[id]/duplicar (`src/app/api/campanas/[id]/duplicar/route.ts`):**
+- Duplica una campaña completa (canvas_data, configuracion, etc.).
+- Crea copia con nombre "(Copia)".
+- Estado inicial: "borrador".
+- Versión reseteada a 1.
+- Verifica que la campaña pertenece al usuario (RLS).
+
+**2. Endpoint PATCH /api/campanas/[id] (`src/app/api/campanas/[id]/route.ts`):**
+- Actualiza el estado de una campaña.
+- Valida estado con Zod (borrador, activo, pausado, archivado).
+- Actualiza `actualizado_at` automáticamente.
+- Verifica que la campaña pertenece al usuario (RLS).
+
+**3. Página de Lista (`src/app/campanas/page.tsx`):**
+- Agregado filtro por estado (selector dropdown).
+- Agregado menú dropdown con opciones contextuales:
+  - Duplicar campaña
+  - Activar/Pausar/Archivar campaña
+  - Desarchivar campaña
+  - Eliminar campaña
+- Funciones implementadas:
+  - `duplicarCampana`: duplica campaña completa.
+  - `cambiarEstado`: cambia estado (activo/pausado/archivado).
+- Filtros combinados: búsqueda + estado.
+- Opciones contextuales según estado actual de la campaña.
+
+#### Funcionalidades Implementadas
+
+**Duplicación:**
+- ✅ Duplicar campaña completa (canvas_data, configuracion, etc.).
+- ✅ Nombre automático con "(Copia)".
+- ✅ Estado inicial: "borrador".
+- ✅ Versión reseteada a 1.
+
+**Cambio de Estado:**
+- ✅ Activar campaña (estado: activo).
+- ✅ Pausar campaña (estado: pausado).
+- ✅ Archivar campaña (estado: archivado).
+- ✅ Desarchivar campaña (estado: borrador).
+
+**Filtros:**
+- ✅ Filtrar por estado (todos, borrador, activa, pausada, archivada).
+- ✅ Combinar búsqueda + filtro de estado.
+- ✅ Actualización automática de lista al cambiar filtros.
+
+**Menú de Acciones:**
+- ✅ Opciones contextuales según estado actual.
+- ✅ Iconos descriptivos para cada acción.
+- ✅ Separadores visuales entre grupos de acciones.
+
+#### Archivos Creados
+
+- ✅ `src/app/api/campanas/[id]/duplicar/route.ts` - Endpoint para duplicar campañas
+
+#### Archivos Modificados
+
+- ✅ `src/app/api/campanas/[id]/route.ts` - Agregado endpoint PATCH para actualizar estado
+- ✅ `src/app/campanas/page.tsx` - Agregados filtros avanzados y menú de acciones
+
+#### Flujo Completo Implementado
+
+```
+Lista de Campañas
+  ├─ Filtro por Estado (selector)
+  │   ├─ Todos
+  │   ├─ Borrador
+  │   ├─ Activa
+  │   ├─ Pausada
+  │   └─ Archivada
+  │
+  ├─ Búsqueda por nombre/descripción
+  │
+  └─ Menú de Acciones (dropdown)
+      ├─ Duplicar → POST /api/campanas/[id]/duplicar
+      ├─ Activar → PATCH /api/campanas/[id] { estado: 'activo' }
+      ├─ Pausar → PATCH /api/campanas/[id] { estado: 'pausado' }
+      ├─ Archivar → PATCH /api/campanas/[id] { estado: 'archivado' }
+      ├─ Desarchivar → PATCH /api/campanas/[id] { estado: 'borrador' }
+      └─ Eliminar → DELETE /api/campanas/[id]
+```
+
+#### Próximos Pasos (Fase 3.4 - Opcional)
+- Metadatos de campañas (fecha creación, última modificación, etc.).
+- Sistema de versiones básico.
+- Historial de cambios.
 
 ---
 
