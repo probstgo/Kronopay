@@ -145,7 +145,7 @@ export async function programarAccionesMultiples(
     contacto_id?: string
     vars?: Record<string, string>
   }>,
-  params: Omit<ProgramarAccionParams, 'deuda_id' | 'rut' | 'contacto_id' | 'vars'>
+  params: Omit<ProgramarAccionParams, 'deuda_id' | 'rut' | 'contacto_id'> & { vars?: Record<string, string> }
 ): Promise<{ exitosas: number, fallidas: number }> {
   let exitosas = 0
   let fallidas = 0
