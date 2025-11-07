@@ -4,7 +4,7 @@ import { cookies } from 'next/headers'
 import { saveCampanaSchema } from '@/lib/validations/campanaSchema'
 
 // GET: Listar todas las campañas del usuario
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Crear cliente Supabase autenticado
     const cookieStore = await cookies()

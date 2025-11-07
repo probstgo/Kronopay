@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { updateCanvasSchema, canvasDataSchema } from '@/lib/validations/campanaSchema'
+import { updateCanvasSchema } from '@/lib/validations/campanaSchema'
 
 // GET: Obtener canvas_data de una campaña
 export async function GET(

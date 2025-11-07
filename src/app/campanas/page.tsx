@@ -10,7 +10,6 @@ import { Plus, Search, Megaphone, Edit, Trash2, Copy, Calendar, MoreVertical, Pl
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   DropdownMenu,
@@ -40,7 +39,6 @@ const ESTADOS_CONFIG = {
 
 export default function CampanasPage() {
   const { user } = useAuth()
-  const router = useRouter()
   const [campanas, setCampanas] = useState<Campana[]>([])
   const [loading, setLoading] = useState(true)
   const [busqueda, setBusqueda] = useState('')
@@ -93,7 +91,7 @@ export default function CampanasPage() {
     }
   }
 
-  const duplicarCampana = async (id: string, nombre: string) => {
+  const duplicarCampana = async (id: string) => {
     try {
       const response = await fetch(`/api/campanas/${id}/duplicar`, {
         method: 'POST'
@@ -262,7 +260,7 @@ export default function CampanasPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => duplicarCampana(campana.id, campana.nombre)}>
+                          <DropdownMenuItem onClick={() => duplicarCampana(campana.id)}>
                             <Copy className="h-4 w-4 mr-2" />
                             Duplicar
                           </DropdownMenuItem>

@@ -17,6 +17,7 @@ import { FiltroNode } from './nodes/FiltroNode'
 import { NoteNode } from './nodes/NoteNode'
 
 // Componente para el nodo "+" inicial
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function InitialPlusNode({ data }: { data: Record<string, unknown> }) {
   return (
     <div className="w-16 h-16 bg-purple-500 hover:bg-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 cursor-pointer">
@@ -193,7 +194,7 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
 
       // Restaurar nodos (agregar nodo inicial "+" si no hay nodos)
       if (canvas_data.nodes && canvas_data.nodes.length > 0) {
-        const restoredNodes: Node[] = canvas_data.nodes.map((node: any) => ({
+        const restoredNodes: Node[] = canvas_data.nodes.map((node: { id: string; type: string; position: { x: number; y: number }; data: Record<string, unknown> }) => ({
           id: node.id,
           type: node.type,
           position: node.position,
@@ -207,7 +208,7 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
 
       // Restaurar conexiones
       if (canvas_data.edges && canvas_data.edges.length > 0) {
-        const restoredEdges: Edge[] = canvas_data.edges.map((edge: any) => ({
+        const restoredEdges: Edge[] = canvas_data.edges.map((edge: { id: string; source: string; target: string; type?: string; animated?: boolean }) => ({
           id: edge.id,
           source: edge.source,
           target: edge.target,
@@ -221,7 +222,7 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
 
       // Restaurar notas
       if (canvas_data.notes && canvas_data.notes.length > 0) {
-        const restoredNotes: Node[] = canvas_data.notes.map((note: any) => ({
+        const restoredNotes: Node[] = canvas_data.notes.map((note: { id: string; text: string; position: { x: number; y: number } }) => ({
           id: note.id,
           type: 'note',
           position: note.position,
@@ -667,7 +668,7 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
       
       // Llamar a la API (POST si es nueva, PUT si es edición)
       let response: Response
-      let data: any
+      let data: { exito?: boolean; mensaje?: string; data?: { id?: string; nombre?: string; estado?: string; actualizado_at?: string } }
 
       if (campaignId) {
         // Actualizar campaña existente (canvas_data, nombre y descripción)
