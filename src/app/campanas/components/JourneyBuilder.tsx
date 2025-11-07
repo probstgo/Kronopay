@@ -668,7 +668,7 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
       
       // Llamar a la API (POST si es nueva, PUT si es edición)
       let response: Response
-      let data: { exito?: boolean; mensaje?: string; data?: { id?: string; nombre?: string; estado?: string; actualizado_at?: string } }
+      let data: { exito?: boolean; mensaje?: string; error?: string; data?: { id?: string; nombre?: string; estado?: string; actualizado_at?: string } }
 
       if (campaignId) {
         // Actualizar campaña existente (canvas_data, nombre y descripción)
