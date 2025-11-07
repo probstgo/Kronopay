@@ -114,7 +114,7 @@ export function FiltroConfigForm({ node, onSave }: FiltroConfigFormProps) {
         ...config,
         filtros: {
           ...config.filtros,
-          estado_deuda: estados.filter(e => e !== estado)
+          estado_deuda: estados.filter((e: string) => e !== estado)
         }
       })
     } else {
@@ -135,7 +135,7 @@ export function FiltroConfigForm({ node, onSave }: FiltroConfigFormProps) {
         ...config,
         filtros: {
           ...config.filtros,
-          tipo_contacto: tipos.filter(t => t !== tipo)
+          tipo_contacto: tipos.filter((t: string) => t !== tipo)
         }
       })
     } else {
@@ -156,7 +156,7 @@ export function FiltroConfigForm({ node, onSave }: FiltroConfigFormProps) {
         ...config,
         filtros: {
           ...config.filtros,
-          historial_acciones: acciones.filter(a => a !== accion)
+          historial_acciones: acciones.filter((a: string) => a !== accion)
         }
       })
     } else {
