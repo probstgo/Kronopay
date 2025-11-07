@@ -138,7 +138,7 @@ export async function PUT(
       return NextResponse.json(
         { 
           error: 'Datos inválidos', 
-          detalles: validationResult.error.errors 
+          detalles: validationResult.error.issues 
         },
         { status: 400 }
       )
