@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }))
 
     // Si no se proporcionan deudores iniciales, obtener todos los deudores del usuario
-    let deudoresIniciales = deudores_iniciales || []
+    const deudoresIniciales = deudores_iniciales || []
     
     if (deudoresIniciales.length === 0) {
       // Obtener todos los deudores del usuario

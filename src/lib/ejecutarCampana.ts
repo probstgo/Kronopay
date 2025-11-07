@@ -1,10 +1,4 @@
-import { programarAccion, calcularProximaFecha, programarAccionesMultiples, obtenerFechaActual } from './programarAcciones'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { calcularProximaFecha, programarAccionesMultiples } from './programarAcciones'
 
 /**
  * Interfaz para un nodo en el flujo de campaña
@@ -52,9 +46,7 @@ export async function ejecutarCampana(params: EjecutarCampanaParams): Promise<{
 }> {
   const { usuario_id, campana_id, nodos, conexiones, deudores_iniciales = [] } = params
 
-  let programacionesCreadas = 0
-  let exitosas = 0
-  let fallidas = 0
+  const contadores = { programacionesCreadas: 0, exitosas: 0, fallidas: 0 }
 
   // Encontrar el nodo inicial (FILTRO o el primer nodo sin entrada)
   const nodoInicial = encontrarNodoInicial(nodos, conexiones)
@@ -63,8 +55,8 @@ export async function ejecutarCampana(params: EjecutarCampanaParams): Promise<{
   }
 
   // Ejecutar el flujo desde el nodo inicial
-  let deudoresActuales = deudores_iniciales
-  let fechaActual = new Date()
+  const deudoresActuales = deudores_iniciales
+  const fechaActual = new Date()
 
   await ejecutarNodoRecursivo(
     nodoInicial,
@@ -74,13 +66,13 @@ export async function ejecutarCampana(params: EjecutarCampanaParams): Promise<{
     fechaActual,
     usuario_id,
     campana_id,
-    { programacionesCreadas, exitosas, fallidas }
+    contadores
   )
 
   return {
-    exitosas,
-    fallidas,
-    programaciones_creadas: programacionesCreadas
+    exitosas: contadores.exitosas,
+    fallidas: contadores.fallidas,
+    programaciones_creadas: contadores.programacionesCreadas
   }
 }
 
@@ -114,7 +106,7 @@ async function ejecutarNodoRecursivo(
   switch (nodo.tipo) {
     case 'filtro':
       // Filtrar deudores según configuración del filtro
-      deudoresParaSiguiente = await aplicarFiltro(deudores, nodo.configuracion, usuario_id)
+      deudoresParaSiguiente = await aplicarFiltro(deudores)
       break
 
     case 'email':
@@ -128,7 +120,7 @@ async function ejecutarNodoRecursivo(
           tipo_accion: nodo.tipo,
           fecha_programada: fechaEjecucion.toISOString(),
           plantilla_id: nodo.configuracion.plantilla_id as string,
-          vars: extraerVariablesDeudores(deudoresParaSiguiente)
+          vars: extraerVariablesDeudores()
         }
       )
       contadores.programacionesCreadas += resultadoEmailSMS.exitosas
@@ -146,7 +138,7 @@ async function ejecutarNodoRecursivo(
           tipo_accion: 'llamada',
           fecha_programada: fechaEjecucion.toISOString(),
           agente_id: nodo.configuracion.agente_id as string,
-          vars: extraerVariablesDeudores(deudoresParaSiguiente)
+          vars: extraerVariablesDeudores()
         }
       )
       contadores.programacionesCreadas += resultadoLlamada.exitosas
@@ -171,9 +163,7 @@ async function ejecutarNodoRecursivo(
     case 'condicion':
       // Evaluar condiciones y bifurcar flujo
       const { deudoresSi, deudoresNo } = await evaluarCondiciones(
-        deudoresParaSiguiente,
-        nodo.configuracion,
-        usuario_id
+        deudoresParaSiguiente
       )
 
       // Continuar con ambas ramas si existen
@@ -252,9 +242,7 @@ function encontrarNodoInicial(nodos: NodoCampana[], conexiones: ConexionCampana[
  * Aplica filtros a una lista de deudores
  */
 async function aplicarFiltro(
-  deudores: Array<{ deuda_id: string, rut: string, contacto_id?: string, vars?: Record<string, string> }>,
-  configuracion: Record<string, unknown>,
-  usuario_id: string
+  deudores: Array<{ deuda_id: string, rut: string, contacto_id?: string, vars?: Record<string, string> }>
 ): Promise<Array<{ deuda_id: string, rut: string, contacto_id?: string, vars?: Record<string, string> }>> {
   // TODO: Implementar filtrado real consultando la BD
   // Por ahora retornamos todos los deudores
@@ -266,9 +254,7 @@ async function aplicarFiltro(
  * Evalúa condiciones y divide deudores en dos grupos
  */
 async function evaluarCondiciones(
-  deudores: Array<{ deuda_id: string, rut: string, contacto_id?: string, vars?: Record<string, string> }>,
-  configuracion: Record<string, unknown>,
-  usuario_id: string
+  deudores: Array<{ deuda_id: string, rut: string, contacto_id?: string, vars?: Record<string, string> }>
 ): Promise<{
   deudoresSi: Array<{ deuda_id: string, rut: string, contacto_id?: string, vars?: Record<string, string> }>
   deudoresNo: Array<{ deuda_id: string, rut: string, contacto_id?: string, vars?: Record<string, string> }>
@@ -285,9 +271,7 @@ async function evaluarCondiciones(
 /**
  * Extrae variables de deudores para usar en plantillas
  */
-function extraerVariablesDeudores(
-  deudores: Array<{ deuda_id: string, rut: string, contacto_id?: string, vars?: Record<string, string> }>
-): Record<string, string> {
+function extraerVariablesDeudores(): Record<string, string> {
   // Retornar variables genéricas
   // En la implementación real, esto consultaría la BD para obtener datos reales
   return {
