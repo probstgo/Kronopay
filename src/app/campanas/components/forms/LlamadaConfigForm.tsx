@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 
 interface LlamadaConfigFormProps {
@@ -9,23 +9,67 @@ interface LlamadaConfigFormProps {
   onSave: (config: any) => void
 }
 
+interface Agente {
+  id: string
+  nombre: string
+  agent_id: string
+  activo: boolean
+}
+
 export function LlamadaConfigForm({ node, onSave }: LlamadaConfigFormProps) {
   const [config, setConfig] = useState(node.data.configuracion || {
     agente_id: '',
-    script_personalizado: '',
-    variables_dinamicas: {
-      nombre: true,
-      monto: true,
-      fecha_vencimiento: true
-    },
     configuracion_avanzada: {
       horario_llamadas: { inicio: '09:00', fin: '18:00' },
       reintentos: 3,
       grabar_conversacion: true
     }
   })
+  const [agentes, setAgentes] = useState<Agente[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Cargar agentes desde la BD
+  useEffect(() => {
+    const cargarAgentes = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await fetch('/api/telefono/agentes')
+        
+        if (!response.ok) {
+          throw new Error('Error al cargar agentes')
+        }
+        
+        const data = await response.json()
+        // Filtrar solo agentes activos
+        const agentesActivos = data.filter((agente: Agente) => agente.activo)
+        setAgentes(agentesActivos)
+      } catch (err) {
+        console.error('Error cargando agentes:', err)
+        setError('Error al cargar agentes. Por favor, recarga la página.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    cargarAgentes()
+  }, [])
 
   const handleSave = () => {
+    // Validar que se haya seleccionado un agente
+    if (!config.agente_id) {
+      setError('Debes seleccionar un agente de llamada para continuar')
+      return
+    }
+
+    // Validar que existan agentes disponibles
+    if (agentes.length === 0) {
+      setError('No hay agentes disponibles. Crea uno en la sección de Teléfono.')
+      return
+    }
+
+    setError(null)
     onSave(config)
   }
 
@@ -33,75 +77,42 @@ export function LlamadaConfigForm({ node, onSave }: LlamadaConfigFormProps) {
     <div className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Agente Asignado
+          Agente Asignado <span className="text-red-500">*</span>
         </label>
-        <select 
-          value={config.agente_id}
-          onChange={(e) => setConfig({...config, agente_id: e.target.value})}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
-          <option value="">Seleccionar agente</option>
-          <option value="agente_principal">Agente Principal</option>
-          <option value="agente_secundario">Agente Secundario</option>
-          <option value="agente_especializado">Agente Especializado</option>
-        </select>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Script Personalizado
-        </label>
-        <textarea 
-          value={config.script_personalizado}
-          onChange={(e) => setConfig({...config, script_personalizado: e.target.value})}
-          placeholder="Ej: Hola [NOMBRE], llamo para recordarte que tienes una deuda de $[MONTO]..."
-          rows={4}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Variables Dinámicas
-        </label>
-        <div className="space-y-2">
-          <label className="flex items-center">
-            <input 
-              type="checkbox"
-              checked={config.variables_dinamicas.nombre}
-              onChange={(e) => setConfig({
-                ...config, 
-                variables_dinamicas: {...config.variables_dinamicas, nombre: e.target.checked}
-              })}
-              className="mr-2"
-            />
-            <span className="text-sm">Incluir nombre del deudor</span>
-          </label>
-          <label className="flex items-center">
-            <input 
-              type="checkbox"
-              checked={config.variables_dinamicas.monto}
-              onChange={(e) => setConfig({
-                ...config, 
-                variables_dinamicas: {...config.variables_dinamicas, monto: e.target.checked}
-              })}
-              className="mr-2"
-            />
-            <span className="text-sm">Incluir monto de la deuda</span>
-          </label>
-          <label className="flex items-center">
-            <input 
-              type="checkbox"
-              checked={config.variables_dinamicas.fecha_vencimiento}
-              onChange={(e) => setConfig({
-                ...config, 
-                variables_dinamicas: {...config.variables_dinamicas, fecha_vencimiento: e.target.checked}
-              })}
-              className="mr-2"
-            />
-            <span className="text-sm">Incluir fecha de vencimiento</span>
-          </label>
-        </div>
+        {loading ? (
+          <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500 text-sm">
+            Cargando agentes...
+          </div>
+        ) : (
+          <select 
+            value={config.agente_id}
+            onChange={(e) => {
+              setConfig({...config, agente_id: e.target.value})
+              setError(null)
+            }}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+              error && !config.agente_id ? 'border-red-500' : 'border-gray-300'
+            }`}
+            required
+          >
+            <option value="">Seleccionar agente</option>
+            {agentes.map((agente) => (
+              <option key={agente.id} value={agente.id}>
+                {agente.nombre}
+              </option>
+            ))}
+          </select>
+        )}
+        {agentes.length === 0 && !loading && (
+          <p className="text-xs text-gray-500 mt-1">
+            No hay agentes disponibles. Crea uno en la sección de Teléfono.
+          </p>
+        )}
+        {error && (
+          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-xs text-red-600 font-medium">{error}</p>
+          </div>
+        )}
       </div>
 
       <div>
@@ -174,9 +185,14 @@ export function LlamadaConfigForm({ node, onSave }: LlamadaConfigFormProps) {
 
       <button 
         onClick={handleSave}
-        className="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition-colors"
+        disabled={!config.agente_id || agentes.length === 0}
+        className={`w-full py-2 px-4 rounded-md transition-colors ${
+          !config.agente_id || agentes.length === 0
+            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            : 'bg-green-500 text-white hover:bg-green-600'
+        }`}
       >
-        Guardar Configuración
+        {!config.agente_id ? 'Selecciona un agente para guardar' : 'Guardar Configuración'}
       </button>
     </div>
   )

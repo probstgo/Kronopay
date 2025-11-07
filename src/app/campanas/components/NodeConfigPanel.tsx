@@ -5,6 +5,7 @@ import { LlamadaConfigForm } from './forms/LlamadaConfigForm'
 import { EsperaConfigForm } from './forms/EsperaConfigForm'
 import { SMSConfigForm } from './forms/SMSConfigForm'
 import { CondicionConfigForm } from './forms/CondicionConfigForm'
+import { FiltroConfigForm } from './forms/FiltroConfigForm'
 
 interface NodeConfigPanelProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,6 +27,8 @@ export function NodeConfigPanel({ node, onClose, onSaveConfig }: NodeConfigPanel
   // Función para obtener el título del nodo según su tipo
   const getNodeTitle = () => {
     switch (node.data.tipo) {
+      case 'filtro':
+        return node.data.nombre || 'Configuración de Filtro'
       case 'email':
         return node.data.plantilla || 'Configuración de Email'
       case 'llamada':
@@ -72,6 +75,10 @@ export function NodeConfigPanel({ node, onClose, onSaveConfig }: NodeConfigPanel
       
       {/* Formulario específico según el tipo de nodo */}
       <div className="space-y-4">
+        {node.data.tipo === 'filtro' && (
+          <FiltroConfigForm node={node} onSave={handleSaveConfig} />
+        )}
+        
         {node.data.tipo === 'email' && (
           <EmailConfigForm node={node} onSave={handleSaveConfig} />
         )}

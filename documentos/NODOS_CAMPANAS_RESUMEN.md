@@ -21,9 +21,11 @@ Los nodos actuales son básicos y no aprovechan:
 **¿Qué hace?** Envía emails usando plantillas existentes
 **Mejoras:**
 - ✅ **Solo plantillas existentes** (dropdown obligatorio)
-- ✅ Variables automáticas: `{{nombre}}`, `{{monto}}`, `{{fecha_vencimiento}}`
+- ✅ **Variables automáticas desde plantilla**: Las variables `{{nombre}}`, `{{monto}}`, `{{fecha_vencimiento}}` están definidas en la plantilla y se reemplazan automáticamente
 - ✅ **Sin contenido personalizado** (solo plantillas)
-- ✅ Filtra deudores por estado, monto, días vencidos
+- ✅ **Sin configuración de variables en el nodo** (las variables se manejan desde la plantilla)
+- ✅ **Preview de plantilla**: Botón "Ver Preview" para ver cómo se verá el email con variables reemplazadas antes de guardar
+- ✅ **Filtrado mediante nodo FILTRO**: El filtrado de deudores se realiza mediante el nodo FILTRO dedicado (ver nodo FILTRO)
 - ✅ Horarios inteligentes (solo días laborables)
 - ✅ Usa API Resend existente
 
@@ -32,8 +34,9 @@ Los nodos actuales son básicos y no aprovechan:
 **Mejoras:**
 - ✅ **Solo agentes disponibles** (dropdown obligatorio)
 - ✅ **Sin configuración personalizada** (solo agentes existentes)
-- ✅ Script del agente con variables dinámicas
-- ✅ Filtra deudores con teléfono disponible
+- ✅ **Script del agente con variables dinámicas**: Las variables están definidas en el script del agente y se reemplazan automáticamente
+- ✅ **Sin configuración de variables en el nodo** (las variables se manejan desde el script del agente)
+- ✅ **Filtrado mediante nodo FILTRO**: El filtrado de deudores con teléfono se realiza mediante el nodo FILTRO dedicado (ver nodo FILTRO)
 - ✅ Configura grabación y reintentos
 - ✅ Usa API ElevenLabs existente
 
@@ -60,32 +63,53 @@ Los nodos actuales son básicos y no aprovechan:
 **¿Qué hace?** Envía SMS usando plantillas existentes
 **Mejoras:**
 - ✅ **Solo plantillas existentes** (dropdown obligatorio)
-- ✅ Variables automáticas: `{{nombre}}`, `{{monto}}`, `{{fecha_vencimiento}}`
+- ✅ **Variables automáticas desde plantilla**: Las variables `{{nombre}}`, `{{monto}}`, `{{fecha_vencimiento}}` están definidas en la plantilla y se reemplazan automáticamente
 - ✅ **Sin contenido personalizado** (solo plantillas)
-- ✅ Filtra deudores con teléfono disponible
+- ✅ **Sin configuración de variables en el nodo** (las variables se manejan desde la plantilla)
+- ✅ **Preview de plantilla**: Botón "Ver Preview" para ver cómo se verá el SMS con variables reemplazadas antes de guardar
+- ✅ **Filtrado mediante nodo FILTRO**: El filtrado de deudores con teléfono se realiza mediante el nodo FILTRO dedicado (ver nodo FILTRO)
 - ✅ Horarios inteligentes (solo días laborables)
 - ✅ Usa API Twilio existente
 
 ### **6. 🔍 FILTRO**
 **¿Qué hace?** Filtra y segmenta deudores antes de continuar
 **Mejoras:**
+- ✅ **Nodo dedicado para filtrado**: Este nodo centraliza todo el filtrado de deudores para ser reutilizado en múltiples flujos
 - ✅ Filtros por:
-  - Estado de deuda
-  - Rango de monto
-  - Días vencidos
+  - Estado de deuda (nueva, pendiente, vencida, pagada)
+  - Rango de monto (mínimo y máximo)
+  - Días vencidos (mínimo y máximo)
   - Tipo de contacto (email, teléfono)
-  - Historial de acciones
-- ✅ Ordenamiento por monto, fecha, días vencidos
-- ✅ Límite de resultados
-- ✅ Contador dinámico de deudores
+  - Historial de acciones (email enviado, llamada realizada, SMS enviado)
+- ✅ Ordenamiento por monto, fecha, días vencidos (ascendente/descendente)
+- ✅ Límite de resultados (opcional)
+- ✅ **Contador dinámico de deudores**: Muestra en tiempo real cuántos deudores pasarán el filtro
+- ✅ **Integración con BD**: Consulta real a la base de datos para calcular el contador
 
-### **7. 📅 PROGRAMACIÓN**
-**¿Qué hace?** Programa ejecución en fechas/horarios específicos
-**Mejoras:**
-- ✅ Tipos: inmediata, programada, recurrente
-- ✅ Recurrencia: diaria, semanal, mensual
-- ✅ Solo días laborables
-- ✅ Integra con cron job existente
+---
+
+## ⚙️ **PROGRAMACIÓN AUTOMÁTICA**
+
+**¿Cómo funciona?** La programación se maneja automáticamente con el cron job existente.
+
+**Sistema de ejecución:**
+- ✅ **Cron job diario** ejecuta todas las acciones programadas (configurado en `vercel.json`)
+- ✅ **Cada nodo programa su acción** en la tabla `programaciones`:
+  - **EMAIL/LLAMADA/SMS**: Programa envío inmediato o con horario específico
+  - **ESPERA**: Calcula próxima fecha y programa siguiente acción
+  - **CONDICIÓN**: Programa acciones según resultado (sí/no)
+- ✅ **Cron job procesa** todas las programaciones pendientes todos los días
+- ✅ **No se necesita nodo de programación** - la programación es automática
+
+**Ejemplo de flujo:**
+```
+FILTRO → EMAIL → ESPERA(3 días) → LLAMADA
+```
+1. FILTRO selecciona deudores
+2. EMAIL programa envío inmediato → se crea en `programaciones`
+3. ESPERA calcula fecha + 3 días → programa siguiente acción
+4. LLAMADA programa llamada para fecha calculada → se crea en `programaciones`
+5. **Cron job ejecuta** todas las programaciones pendientes automáticamente
 
 ---
 
@@ -102,13 +126,14 @@ FILTRO → EMAIL → ESPERA(3 días) → LLAMADA
 
 ### **Flujo 2: Cobranza Inteligente**
 ```
-FILTRO → CONDICIÓN → EMAIL/SMS/LLAMADA → PROGRAMACIÓN
+FILTRO → CONDICIÓN → EMAIL/SMS/LLAMADA → ESPERA(1 semana) → FILTRO
 ```
 - Filtra deudores vencidos > 30 días
 - Si tiene email → Envía email con plantilla
 - Si no tiene email pero tiene teléfono → Envía SMS con plantilla
 - Si no tiene contacto → Realiza llamada con agente
-- Programa próxima ejecución en 1 semana
+- Espera 1 semana (programa automáticamente con cron job)
+- Vuelve a filtrar para siguiente ciclo
 
 ---
 
@@ -137,12 +162,14 @@ const deudores = await supabase
 ### **Integración con APIs Existentes**
 ```typescript
 // Email usando Resend
+// Las variables se reemplazan automáticamente desde la plantilla
 await fetch('/api/send-email', {
   method: 'POST',
   body: JSON.stringify({
     to: deudor.email,
     subject: plantilla.asunto,
     message: procesarVariables(plantilla.contenido, deudor)
+    // procesarVariables() reemplaza automáticamente {{nombre}}, {{monto}}, etc.
   })
 })
 
@@ -158,11 +185,17 @@ if (!configuracion.agente_id) {
   throw new Error('Debe seleccionar un agente de llamada')
 }
 
+// Las variables dinámicas se pasan al agente desde el script del agente
 await fetch('/api/elevenlabs/call', {
   method: 'POST',
   body: JSON.stringify({
     agentId: agente.agent_id,
-    toNumber: deudor.telefono
+    toNumber: deudor.telefono,
+    dynamicVariables: {
+      nombre_deudor: deudor.nombre,
+      monto: deudor.monto,
+      fecha_vencimiento: deudor.fecha_vencimiento
+    }
   })
 })
 
@@ -178,11 +211,13 @@ if (!configuracion.plantilla_id) {
   throw new Error('Debe seleccionar una plantilla de SMS')
 }
 
+// Las variables se reemplazan automáticamente desde la plantilla
 await fetch('/api/send-sms', {
   method: 'POST',
   body: JSON.stringify({
     to: deudor.telefono,
     message: procesarVariables(plantilla.contenido, deudor)
+    // procesarVariables() reemplaza automáticamente {{nombre}}, {{monto}}, etc.
   })
 })
 ```
@@ -214,8 +249,8 @@ await fetch('/api/send-sms', {
 
 ### **Fase 2: Nodos Avanzados (1 semana)**
 1. ✅ Implementar nodo Filtro de Deudores
-2. ✅ Implementar nodo Programación
-3. ✅ Mejorar nodo Espera con opciones inteligentes
+2. ✅ Mejorar nodo Espera con opciones inteligentes
+3. ✅ Integrar programación automática con cron job existente
 
 ### **Fase 3: Integración Completa (1 semana)**
 1. ✅ Integrar con sistema de ejecución existente
@@ -233,7 +268,7 @@ await fetch('/api/send-sms', {
 - [ ] **Nodo Condición** con datos reales de BD
 - [ ] **Nodo Espera** con opciones inteligentes
 - [ ] **Nodo Filtro** para segmentar deudores
-- [ ] **Nodo Programación** para ejecutar en fechas específicas
+- [ ] **Programación automática** con cron job existente (sin nodo adicional)
 
 ### **¿Quieres que implemente:**
 - [ ] **Todos los nodos** según el plan
@@ -249,6 +284,61 @@ await fetch('/api/send-sms', {
 
 ---
 
-**✅ ESTADO:** 📋 PROPUESTA - Versión concisa para decisión  
-**Próximo:** Implementación según tu aprobación  
+**✅ ESTADO:** 🚀 TODAS LAS FASES COMPLETADAS  
+**Fase 1:** ✅ Nodos básicos mejorados  
+**Fase 2:** ✅ Nodo Filtro implementado  
+**Fase 3:** ✅ Integración con programación automática  
+**Fase 4:** ✅ Validaciones y mejoras de UX  
 **Fecha:** Diciembre 2024
+
+---
+
+## 📝 **NOTAS IMPORTANTES**
+
+### **Variables Dinámicas**
+- ✅ Las variables dinámicas (`{{nombre}}`, `{{monto}}`, `{{fecha_vencimiento}}`, etc.) **se definen en las plantillas**, no en los nodos
+- ✅ Los nodos **solo seleccionan** la plantilla/agente y configuran opciones avanzadas (horarios, reintentos)
+- ✅ Durante la ejecución, el sistema **reemplaza automáticamente** todas las variables encontradas en la plantilla con los datos del deudor
+- ✅ **No se necesita configurar variables en el nodo** - esto simplifica la configuración y evita redundancia
+
+### **Preview de Plantillas**
+- ✅ Los nodos **Email** y **SMS** incluyen un botón "Ver Preview" que aparece cuando se selecciona una plantilla
+- ✅ El preview muestra cómo se verá el mensaje con las variables reemplazadas usando datos de ejemplo
+- ✅ Para **Email**: Muestra asunto, remitente, destinatario y contenido completo (soporta HTML y texto)
+- ✅ Para **SMS**: Muestra destinatario y contenido con contador de caracteres
+- ✅ Permite verificar la plantilla antes de guardar la configuración del nodo
+
+### **Filtrado de Deudores**
+- ✅ **El filtrado se realiza mediante el nodo FILTRO dedicado**, no dentro de cada nodo individual (EMAIL, LLAMADA, SMS)
+- ✅ **Ventajas de este diseño:**
+  - **Reutilización**: Los filtros se pueden reutilizar en múltiples nodos
+  - **Flexibilidad**: Permite crear flujos complejos con filtros compartidos
+  - **Separación de responsabilidades**: Los nodos de acción se enfocan en ejecutar acciones, el nodo FILTRO se enfoca en segmentar
+  - **Eficiencia**: Un solo nodo FILTRO puede alimentar múltiples nodos de acción
+- ✅ **Ejemplo de uso:**
+  ```
+  FILTRO (deudores con email) → EMAIL
+  FILTRO (deudores con teléfono) → LLAMADA
+  FILTRO (deudores vencidos > 30 días) → SMS → ESPERA → LLAMADA
+  ```
+
+### **Validaciones y Mejoras de UX**
+- ✅ **Validaciones implementadas:**
+  - Email y SMS: Validan que se seleccione una plantilla antes de guardar
+  - Llamada: Valida que se seleccione un agente antes de guardar
+  - Todos los formularios validan que existan opciones disponibles
+- ✅ **Mensajes de error claros:**
+  - Mensajes específicos y accionables
+  - Diseño visual destacado (fondo rojo claro, borde)
+  - Ubicación visible en el formulario
+- ✅ **Feedback visual mejorado:**
+  - Botones deshabilitados cuando falta información
+  - Mensajes en el botón indicando qué falta
+  - Estados visuales claros (habilitado/deshabilitado)
+  - Transiciones suaves en cambios de estado
+- ✅ **Contador dinámico de deudores:**
+  - Cálculo en tiempo real con debounce (500ms)
+  - Indicador de carga con spinner animado
+  - Muestra número grande y claro
+  - Indica si se aplicó el límite de resultados
+  - Mensaje cuando no hay filtros configurados

@@ -11,6 +11,7 @@ import { LlamadaNode } from './nodes/LlamadaNode'
 import { EsperaNode } from './nodes/EsperaNode'
 import { SMSNode } from './nodes/SMSNode'
 import { CondicionNode } from './nodes/CondicionNode'
+import { FiltroNode } from './nodes/FiltroNode'
 import { NoteNode } from './nodes/NoteNode'
 
 // Componente para el nodo "+" inicial
@@ -47,6 +48,7 @@ function NodeWrapper({ nodeType, ...props }: { nodeType: string; [key: string]: 
     espera: EsperaNode,
     sms: SMSNode,
     condicion: CondicionNode,
+    filtro: FiltroNode,
     initialPlus: InitialPlusNode
   }
   
@@ -70,6 +72,8 @@ const nodeTypes = {
   sms: (props: any) => <NodeWrapper {...props} nodeType="sms" />,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   condicion: (props: any) => <NodeWrapper {...props} nodeType="condicion" />,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  filtro: (props: any) => <NodeWrapper {...props} nodeType="filtro" />,
   initialPlus: InitialPlusNode,
   note: NoteNode
 }
@@ -91,6 +95,13 @@ const initialEdges: Edge[] = []
 
 // Tipos de nodos disponibles para el menú
 const availableNodeTypes = [
+  {
+    id: 'filtro',
+    name: 'Filtro',
+    description: 'Filtrar y segmentar deudores',
+    icon: '🔍',
+    color: 'indigo'
+  },
   {
     id: 'email',
     name: 'Email',
@@ -191,8 +202,6 @@ export function JourneyBuilder() {
           plantilla: 'Nueva Plantilla',
           configuracion: {
             plantilla_id: '',
-            asunto_personalizado: '',
-            variables_dinamicas: { nombre: true, monto: true, fecha_vencimiento: true },
             configuracion_avanzada: { solo_dias_laborables: true, horario_trabajo: { inicio: '09:00', fin: '18:00' }, reintentos: 3 }
           }
         }
@@ -203,8 +212,6 @@ export function JourneyBuilder() {
           agente: 'Nuevo Agente',
           configuracion: {
             agente_id: '',
-            script_personalizado: '',
-            variables_dinamicas: { nombre: true, monto: true, fecha_vencimiento: true },
             configuracion_avanzada: { horario_llamadas: { inicio: '09:00', fin: '18:00' }, reintentos: 3, grabar_conversacion: true }
           }
         }
@@ -212,10 +219,9 @@ export function JourneyBuilder() {
       case 'sms':
         defaultData = {
           ...defaultData,
-          texto: 'Nuevo SMS',
+          plantilla: 'Nueva Plantilla SMS',
           configuracion: {
-            texto: '',
-            variables_dinamicas: { nombre: true, monto: true },
+            plantilla_id: '',
             configuracion_avanzada: { horario_envio: { inicio: '09:00', fin: '18:00' }, reintentos: 3 }
           }
         }
@@ -235,7 +241,28 @@ export function JourneyBuilder() {
           ...defaultData,
           condicion: 'Nueva Condición',
           configuracion: {
-            condiciones: [{ campo: 'respuesta_email', operador: 'igual', valor: '' }]
+            condiciones: [{ campo: 'estado_deuda', operador: 'igual', valor: '' }],
+            logica: 'AND'
+          }
+        }
+        break
+      case 'filtro':
+        defaultData = {
+          ...defaultData,
+          nombre: 'Filtro de Deudores',
+          configuracion: {
+            filtros: {
+              estado_deuda: [],
+              rango_monto: { min: null, max: null },
+              dias_vencidos: { min: null, max: null },
+              tipo_contacto: [],
+              historial_acciones: []
+            },
+            ordenamiento: {
+              campo: 'monto',
+              direccion: 'desc'
+            },
+            limite_resultados: null
           }
         }
         break

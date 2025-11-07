@@ -22,11 +22,12 @@ Crear un sistema de campañas con **Journey Builder visual** usando **React Flow
 
 ### 🆕 **Nuevo Diseño Inspirado en Make.com**
 - **Canvas infinito** con pan/zoom suave
-- **Nodos especializados** para cobranza (Email, Llamada, SMS, Espera, Condición)
+- **Nodos especializados** para cobranza (Email, Llamada, SMS, Espera, Condición, Filtro)
 - **Conexiones visuales** con diferentes tipos (éxito, error, timeout)
 - **Panel lateral** para configuración de nodos
 - **Barra superior** con acciones principales
 - **Flujo horizontal** natural de izquierda a derecha
+- **Programación automática** con cron job existente (sin nodo adicional)
 
 ---
 
@@ -40,8 +41,8 @@ Crear un sistema de campañas con **Journey Builder visual** usando **React Flow
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    │
-│  │  📧     │    │  ⏰     │    │  📞     │    │  📱     │    │  📊     │    │
-│  │ EMAIL   │───▶│ ESPERA  │───▶│ LLAMADA │───▶│  SMS    │───▶│ ESTADÍS │    │
+│  │  🔍     │    │  📧     │    │  ⏰     │    │  📞     │    │  📱     │    │
+│  │ FILTRO │───▶│ EMAIL   │───▶│ ESPERA  │───▶│ LLAMADA │───▶│  SMS    │    │
 │  │         │    │         │    │         │    │         │    │         │    │
 │  └─────────┘    └─────────┘    └─────────┘    └─────────┘    └─────────┘    │
 │                                                                             │
@@ -68,9 +69,32 @@ Crear un sistema de campañas con **Journey Builder visual** usando **React Flow
   - Si solo existe el nodo inicial "+" morado, la nota aparece encima de ese nodo.
   - Si existen nodos del flujo, la nota aparece encima del nodo más a la derecha con un offset vertical (no lo tapa).
   - Nunca elimina ni oculta el nodo inicial.
-  
+
+### ⚙️ Programación Automática
+**¿Cómo funciona?** La programación se maneja automáticamente con el cron job existente.
+
+**Sistema de ejecución:**
+- ✅ **Cron job diario** ejecuta todas las acciones programadas (configurado en `vercel.json`)
+- ✅ **Cada nodo programa su acción** en la tabla `programaciones`:
+  - **EMAIL/LLAMADA/SMS**: Programa envío inmediato o con horario específico
+  - **ESPERA**: Calcula próxima fecha y programa siguiente acción
+  - **CONDICIÓN**: Programa acciones según resultado (sí/no)
+  - **FILTRO**: Filtra deudores antes de continuar
+- ✅ **Cron job procesa** todas las programaciones pendientes todos los días
+- ✅ **No se necesita nodo de programación** - la programación es automática
+
+**Ejemplo de flujo:**
+```
+FILTRO → EMAIL → ESPERA(3 días) → LLAMADA
+```
+1. FILTRO selecciona deudores
+2. EMAIL programa envío inmediato → se crea en `programaciones`
+3. ESPERA calcula fecha + 3 días → programa siguiente acción
+4. LLAMADA programa llamada para fecha calculada → se crea en `programaciones`
+5. **Cron job ejecuta** todas las programaciones pendientes automáticamente
 
 ---
+
 
 ## 🏗️ Arquitectura Técnica con React Flow
 
@@ -252,6 +276,7 @@ export function NodeConfigPanel({ nodeId, onClose }: Props) {
       {node.type === 'espera' && <EsperaConfigForm node={node} />}
       {node.type === 'sms' && <SMSConfigForm node={node} />}
       {node.type === 'condicion' && <CondicionConfigForm node={node} />}
+      {node.type === 'filtro' && <FiltroConfigForm node={node} />}
     </div>
   )
 }
@@ -602,14 +627,14 @@ src/
 │   │   │   ├── EsperaNode.tsx          # Nodo de espera
 │   │   │   ├── SMSNode.tsx             # Nodo de SMS
 │   │   │   ├── CondicionNode.tsx       # Nodo de condición
-│   │   │   └── EstadisticaNode.tsx     # Nodo de estadística
+│   │   │   └── FiltroNode.tsx          # Nodo de filtro
 │   │   ├── forms/
 │   │   │   ├── EmailConfigForm.tsx     # Formulario de email
 │   │   │   ├── LlamadaConfigForm.tsx   # Formulario de llamada
 │   │   │   ├── EsperaConfigForm.tsx     # Formulario de espera
 │   │   │   ├── SMSConfigForm.tsx       # Formulario de SMS
 │   │   │   ├── CondicionConfigForm.tsx  # Formulario de condición
-│   │   │   └── EstadisticaConfigForm.tsx # Formulario de estadística
+│   │   │   └── FiltroConfigForm.tsx    # Formulario de filtro
 │   │   └── types/
 │   │       ├── nodeTypes.ts            # Tipos de nodos
 │   │       ├── connectionTypes.ts      # Tipos de conexiones
@@ -712,10 +737,10 @@ export const theme = {
 - **Performance**: < 100ms para operaciones básicas
 
 ### **Funcionalidad**
-- **Nodos implementados**: 5 tipos
+- **Nodos implementados**: 6 tipos (Email, Llamada, SMS, Espera, Condición, Filtro)
 - **Conexiones**: 4 tipos diferentes
 - **Persistencia**: 100% funcional
-- **Ejecución**: Sistema paso a paso
+- **Ejecución**: Sistema paso a paso con programación automática (cron job)
 
 ### **UX**
 - **Tiempo de carga**: < 2 segundos
