@@ -45,6 +45,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validar tipos de nodos soportados
+    const tiposValidos: NodoCampana['tipo'][] = ['filtro', 'email', 'llamada', 'sms', 'whatsapp', 'espera', 'condicion']
+    const nodosInvalidos = nodos.filter((nodo: { type: string }) => !tiposValidos.includes(nodo.type as NodoCampana['tipo']))
+    
+    if (nodosInvalidos.length > 0) {
+      const tiposInvalidos = nodosInvalidos.map((n: { id: string, type: string }) => `${n.id}:${n.type}`).join(', ')
+      return NextResponse.json(
+        { error: `Tipos de nodos no soportados: ${tiposInvalidos}` },
+        { status: 400 }
+      )
+    }
+
     // Convertir nodos y conexiones al formato esperado
     const nodosCampana: NodoCampana[] = nodos.map((nodo: { id: string, type: string, data: Record<string, unknown> }) => ({
       id: nodo.id,

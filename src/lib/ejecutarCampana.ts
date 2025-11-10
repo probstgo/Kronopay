@@ -8,7 +8,7 @@ import { registrarLogEjecucion } from './logsEjecucion'
  */
 export interface NodoCampana {
   id: string
-  tipo: 'filtro' | 'email' | 'llamada' | 'sms' | 'espera' | 'condicion'
+  tipo: 'filtro' | 'email' | 'llamada' | 'sms' | 'whatsapp' | 'espera' | 'condicion'
   configuracion: Record<string, unknown>
   data?: Record<string, unknown>
 }
@@ -122,7 +122,7 @@ async function ejecutarNodoRecursivo(
       ejecucion_id,
       nodo_id: nodo.id,
       paso_numero: pasoActual,
-      tipo_accion: nodo.tipo === 'email' || nodo.tipo === 'sms' || nodo.tipo === 'llamada' 
+      tipo_accion: nodo.tipo === 'email' || nodo.tipo === 'sms' || nodo.tipo === 'llamada' || nodo.tipo === 'whatsapp'
         ? nodo.tipo 
         : nodo.tipo === 'condicion' 
           ? 'condicion' 
@@ -157,6 +157,7 @@ async function ejecutarNodoRecursivo(
 
     case 'email':
     case 'sms':
+    case 'whatsapp':
       // Extraer variables de deudores antes de programar acciones
       const deudoresConVarsEmailSMS = await Promise.all(
         deudoresParaSiguiente.map(async (deudor) => {
@@ -332,6 +333,16 @@ async function ejecutarNodoRecursivo(
 
       // Terminar aquí porque ya se bifurcó el flujo
       return pasoNumeroActual
+
+    default:
+      // Tipo de nodo no soportado
+      errorEjecucion = `Tipo de nodo no soportado: ${nodo.tipo}`
+      console.error(`Tipo de nodo no soportado: ${nodo.tipo} en nodo ${nodo.id}`)
+      datosSalida = {
+        error: `Tipo de nodo no soportado: ${nodo.tipo}`,
+        nodo_id: nodo.id
+      }
+      break
   }
   } catch (error) {
     errorEjecucion = error instanceof Error ? error.message : 'Error desconocido'
@@ -345,7 +356,7 @@ async function ejecutarNodoRecursivo(
       ejecucion_id,
       nodo_id: nodo.id,
       paso_numero: pasoActual,
-      tipo_accion: nodo.tipo === 'email' || nodo.tipo === 'sms' || nodo.tipo === 'llamada' 
+      tipo_accion: nodo.tipo === 'email' || nodo.tipo === 'sms' || nodo.tipo === 'llamada' || nodo.tipo === 'whatsapp'
         ? nodo.tipo 
         : nodo.tipo === 'condicion' 
           ? 'condicion' 

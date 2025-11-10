@@ -12,6 +12,7 @@ import { EmailNode } from './nodes/EmailNode'
 import { LlamadaNode } from './nodes/LlamadaNode'
 import { EsperaNode } from './nodes/EsperaNode'
 import { SMSNode } from './nodes/SMSNode'
+import { WhatsAppNode } from './nodes/WhatsAppNode'
 import { CondicionNode } from './nodes/CondicionNode'
 import { FiltroNode } from './nodes/FiltroNode'
 import { NoteNode } from './nodes/NoteNode'
@@ -50,6 +51,7 @@ function NodeWrapper({ nodeType, ...props }: { nodeType: string; [key: string]: 
     llamada: LlamadaNode,
     espera: EsperaNode,
     sms: SMSNode,
+    whatsapp: WhatsAppNode,
     condicion: CondicionNode,
     filtro: FiltroNode,
     initialPlus: InitialPlusNode
@@ -73,6 +75,8 @@ const nodeTypes = {
   espera: (props: any) => <NodeWrapper {...props} nodeType="espera" />,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sms: (props: any) => <NodeWrapper {...props} nodeType="sms" />,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  whatsapp: (props: any) => <NodeWrapper {...props} nodeType="whatsapp" />,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   condicion: (props: any) => <NodeWrapper {...props} nodeType="condicion" />,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -125,6 +129,13 @@ const availableNodeTypes = [
     description: 'Enviar mensaje de texto',
     icon: '📱',
     color: 'purple'
+  },
+  {
+    id: 'whatsapp',
+    name: 'WhatsApp',
+    description: 'Enviar mensaje de WhatsApp',
+    icon: '💬',
+    color: 'green'
   },
   {
     id: 'espera',
@@ -323,6 +334,16 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
         defaultData = {
           ...defaultData,
           plantilla: 'Nueva Plantilla SMS',
+          configuracion: {
+            plantilla_id: '',
+            configuracion_avanzada: { horario_envio: { inicio: '09:00', fin: '18:00' }, reintentos: 3 }
+          }
+        }
+        break
+      case 'whatsapp':
+        defaultData = {
+          ...defaultData,
+          texto: 'Nueva Plantilla WhatsApp',
           configuracion: {
             plantilla_id: '',
             configuracion_avanzada: { horario_envio: { inicio: '09:00', fin: '18:00' }, reintentos: 3 }

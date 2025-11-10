@@ -47,6 +47,16 @@ export async function ejecutarCampanaAutomaticamente({
     return
   }
 
+  // Validar tipos de nodos soportados
+  const tiposValidos: NodoCampana['tipo'][] = ['filtro', 'email', 'llamada', 'sms', 'whatsapp', 'espera', 'condicion']
+  const nodosInvalidos = nodosReales.filter(nodo => !tiposValidos.includes(nodo.type as NodoCampana['tipo']))
+  
+  if (nodosInvalidos.length > 0) {
+    const tiposInvalidos = nodosInvalidos.map(n => `${n.id}:${n.type}`).join(', ')
+    console.error(`Campaña contiene nodos con tipos no soportados: ${tiposInvalidos}`)
+    throw new Error(`Tipos de nodos no soportados: ${tiposInvalidos}`)
+  }
+
   // Convertir nodos al formato esperado por ejecutarCampana
   const nodosCampana: NodoCampana[] = nodosReales.map((nodo) => ({
     id: nodo.id,
@@ -158,11 +168,15 @@ export async function ejecutarCampanaAutomaticamente({
   }
 
   // Actualizar ejecutado_at en la campaña
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  await (supabase as any)
+  const { error: updateError } = await supabase
     .from('workflows_cobranza')
     .update({ ejecutado_at: new Date().toISOString() })
     .eq('id', campanaId)
+
+  if (updateError) {
+    console.error('Error actualizando ejecutado_at:', updateError)
+    // No lanzar error para no bloquear la ejecución
+  }
 
   console.log(`Campaña ${campanaId} ejecutada automáticamente: ${resultado.programaciones_creadas} programaciones creadas`)
 }

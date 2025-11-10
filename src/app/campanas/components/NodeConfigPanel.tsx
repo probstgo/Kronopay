@@ -4,6 +4,7 @@ import { EmailConfigForm } from './forms/EmailConfigForm'
 import { LlamadaConfigForm } from './forms/LlamadaConfigForm'
 import { EsperaConfigForm } from './forms/EsperaConfigForm'
 import { SMSConfigForm } from './forms/SMSConfigForm'
+import { WhatsAppConfigForm } from './forms/WhatsAppConfigForm'
 import { CondicionConfigForm } from './forms/CondicionConfigForm'
 import { FiltroConfigForm } from './forms/FiltroConfigForm'
 
@@ -37,6 +38,8 @@ export function NodeConfigPanel({ node, onClose, onSaveConfig }: NodeConfigPanel
         return node.data.duracion || 'Configuración de Espera'
       case 'sms':
         return node.data.texto || 'Configuración de SMS'
+      case 'whatsapp':
+        return node.data.texto || 'Configuración de WhatsApp'
       case 'condicion':
         return node.data.condicion || 'Configuración de Condición'
       default:
@@ -93,6 +96,10 @@ export function NodeConfigPanel({ node, onClose, onSaveConfig }: NodeConfigPanel
         
         {node.data.tipo === 'sms' && (
           <SMSConfigForm node={node} onSave={handleSaveConfig} />
+        )}
+        
+        {node.data.tipo === 'whatsapp' && (
+          <WhatsAppConfigForm node={node} onSave={handleSaveConfig} />
         )}
         
         {node.data.tipo === 'condicion' && (
