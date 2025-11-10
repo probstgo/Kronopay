@@ -581,12 +581,20 @@ async function evaluarCondiciones(
       estado: string
       fecha_vencimiento: string
       deudor_id: string
-      deudores: {
+      deudores: Array<{
         id: string
         rut: string
         nombre: string
         contactos: Array<{ id: string, tipo_contacto: string, valor: string }>
-      }
+      }>
+    }
+    
+    // Obtener el primer deudor (debería haber solo uno)
+    const deudorInfo = deudaInfo.deudores && deudaInfo.deudores.length > 0 ? deudaInfo.deudores[0] : null
+    if (!deudorInfo) {
+      // Si no hay deudor, va a "No"
+      deudoresNo.push(deudor)
+      continue
     }
 
     // Evaluar cada condición
