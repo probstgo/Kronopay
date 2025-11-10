@@ -724,6 +724,45 @@ Zod mínimo para `canvas_data`:
 
 ---
 
+### **Fase 4.2: Implementación del Nodo CONDICIÓN - ✅ COMPLETADA (Diciembre 2024)**
+
+#### **Objetivos:**
+- Implementar lógica real de evaluación de condiciones consultando la BD
+- Aplicar todos los operadores configurados (igual, mayor, menor, entre, existe, contiene, no_existe)
+- Implementar lógica AND/OR para múltiples condiciones
+- Dividir deudores según resultado (sí/no)
+
+#### **Tareas:**
+- [x] Implementar función `evaluarCondiciones()` con consulta real a BD
+- [x] Evaluar condición de estado de deuda (incluyendo 'vencida' calculada)
+- [x] Evaluar condición de monto de deuda (operadores numéricos)
+- [x] Evaluar condición de días vencidos (operadores numéricos)
+- [x] Evaluar condición de historial email (existe/no_existe)
+- [x] Evaluar condición de historial llamada (existe/no_existe)
+- [x] Implementar operadores de texto (igual, contiene, existe, no_existe)
+- [x] Implementar operadores numéricos (igual, mayor, menor, entre, existe)
+- [x] Implementar lógica AND/OR para múltiples condiciones
+- [x] Dividir deudores en dos grupos (sí/no)
+- [x] Consulta optimizada a BD (solo consulta historial si se requiere)
+- [x] Manejo robusto de errores
+
+#### **Entregables:**
+- ✅ Función `evaluarCondiciones()` completamente implementada
+- ✅ Consulta a BD con Supabase (service_role)
+- ✅ Todas las condiciones funcionando correctamente
+- ✅ Todos los operadores implementados
+- ✅ Lógica AND/OR funcionando
+- ✅ Funciones auxiliares: `evaluarCondicionTexto()`, `evaluarCondicionNumerica()`, `evaluarCondicionExistencia()`
+- ✅ Sin errores de ESLint
+
+#### **Archivos Modificados:**
+- ✅ `src/lib/ejecutarCampana.ts` - Función `evaluarCondiciones()` implementada (líneas 469-691)
+  - Actualizada llamada a `evaluarCondiciones()` con parámetros necesarios
+  - Implementada función completa con lógica real de BD
+  - Agregadas funciones auxiliares para evaluación de condiciones
+
+---
+
 ### **Fase 4: Motor de Ejecución (Semana 4)**
 
 #### **Objetivos:**
@@ -911,7 +950,7 @@ export const theme = {
 
 ### **🔄 FUTURO - Fase 4**
 1. **✅ Fase 4.1 COMPLETADA** - Implementación del Nodo FILTRO con lógica real de BD (Diciembre 2024)
-2. **🔄 Fase 4.2** - Implementación del Nodo CONDICIÓN con lógica real de BD
+2. **✅ Fase 4.2 COMPLETADA** - Implementación del Nodo CONDICIÓN con lógica real de BD (Diciembre 2024)
 3. **🔄 Fase 4.3** - Extracción de variables de deudores desde BD
 4. **🔄 Fase 4.4** - Integración completa con plantillas
 5. **🔄 Fase 4.5** - Integración completa con agentes de llamada
@@ -952,7 +991,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 ---
 
-**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO. **Próximo:** Fase 4.2 - Implementación del Nodo CONDICIÓN o Fase 4.3 - Extracción de variables de deudores.
+**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO, Fase 4.2 - Implementación del Nodo CONDICIÓN. **Próximo:** Fase 4.3 - Extracción de variables de deudores o Fase 4.4 - Integración completa con plantillas.
 
 ---
 
@@ -975,10 +1014,10 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 - **✅ Fase 3.2**: Sistema de Cargar Workflows (Diciembre 2024) - COMPLETADA
 - **✅ Fase 3.3**: Gestión de Campañas (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.1**: Implementación del Nodo FILTRO con lógica real de BD (Diciembre 2024) - COMPLETADA
+- **✅ Fase 4.2**: Implementación del Nodo CONDICIÓN con lógica real de BD (Diciembre 2024) - COMPLETADA
 
 ### **⏳ Próximas Fases:**
 - **Fase 3.4-3.5**: Persistencia y Gestión (Metadatos, Versiones) - Opcionales
-- **Fase 4.2**: Implementación del Nodo CONDICIÓN con lógica real de BD
 - **Fase 4.3**: Extracción de variables de deudores desde BD
 - **Fase 4.4**: Integración completa con plantillas
 - **Fase 4.5**: Integración completa con agentes de llamada
@@ -1682,8 +1721,97 @@ Nodo FILTRO en ejecución
   └─ Retorna deudores filtrados con variables calculadas
 ```
 
-#### Próximos Pasos (Fase 4.2 - Fase 4.8)
-- Fase 4.2: Implementación del Nodo CONDICIÓN con lógica real de BD
+#### Próximos Pasos (Fase 4.3 - Fase 4.8)
+- Fase 4.3: Extracción de variables de deudores desde BD
+- Fase 4.4: Integración completa con plantillas
+- Fase 4.5: Integración completa con agentes de llamada
+- Fase 4.6: Sistema de logs de ejecución
+- Fase 4.7: Sistema de seguimiento de ejecuciones
+- Fase 4.8: Implementación de SMS con Twilio
+
+---
+
+### **✅ FASE 4.2 COMPLETADA - Diciembre 2024 (Implementación del Nodo CONDICIÓN)**
+
+#### Cambios técnicos (backend)
+
+**1. Función `evaluarCondiciones()` (`src/lib/ejecutarCampana.ts`):**
+- Implementada función completa con consulta real a BD usando Supabase (service_role)
+- Recibe `usuario_id` y `configuracion` del nodo
+- Consulta deudas con deudores, contactos e historial (solo si se requiere)
+- Evalúa todas las condiciones configuradas según la lógica AND/OR
+- Divide deudores en dos grupos: `deudoresSi` y `deudoresNo`
+
+**2. Condiciones implementadas:**
+- Estado de deuda: incluye 'vencida' calculada según días vencidos
+- Monto de deuda: operadores numéricos (igual, mayor, menor, entre, existe)
+- Días vencidos: operadores numéricos (igual, mayor, menor, entre, existe)
+- Historial email: verifica si existe historial de email (existe/no_existe)
+- Historial llamada: verifica si existe historial de llamada (existe/no_existe)
+
+**3. Operadores implementados:**
+- Texto: igual, contiene, existe, no_existe
+- Numéricos: igual, mayor, menor, entre, existe
+- Existencia: existe, no_existe
+
+**4. Funciones auxiliares:**
+- `evaluarCondicionTexto()`: evalúa condiciones de texto
+- `evaluarCondicionNumerica()`: evalúa condiciones numéricas
+- `evaluarCondicionExistencia()`: evalúa condiciones de existencia
+
+**5. Actualización de llamada a `evaluarCondiciones()`:**
+- Modificada llamada en `ejecutarNodoRecursivo()` para pasar `usuario_id` y `nodo.configuracion`
+
+#### Funcionalidades Implementadas
+
+**Evaluación de Condiciones:**
+- ✅ Evaluar condición de estado de deuda (nueva, pendiente, vencida calculada, pagado)
+- ✅ Evaluar condición de monto de deuda (operadores numéricos)
+- ✅ Evaluar condición de días vencidos (operadores numéricos)
+- ✅ Evaluar condición de historial email (existe/no_existe)
+- ✅ Evaluar condición de historial llamada (existe/no_existe)
+
+**Operadores:**
+- ✅ Operadores de texto: igual, contiene, existe, no_existe
+- ✅ Operadores numéricos: igual, mayor, menor, entre, existe
+- ✅ Operadores de existencia: existe, no_existe
+
+**Lógica:**
+- ✅ Lógica AND: todas las condiciones deben cumplirse
+- ✅ Lógica OR: al menos una condición debe cumplirse
+
+**Optimizaciones:**
+- ✅ Consulta optimizada a BD (solo consulta historial si se requiere)
+- ✅ Manejo robusto de errores (fallback 50/50 si hay error)
+- ✅ Si no hay condiciones, todos pasan a "Sí"
+- ✅ Si no se encuentra la deuda, va a "No"
+
+#### Archivos Modificados
+
+- ✅ `src/lib/ejecutarCampana.ts` - Función `evaluarCondiciones()` implementada (líneas 469-691)
+  - Actualizada llamada a `evaluarCondiciones()` con parámetros necesarios
+  - Implementada función completa con lógica real de BD
+  - Agregadas funciones auxiliares: `evaluarCondicionTexto()`, `evaluarCondicionNumerica()`, `evaluarCondicionExistencia()`
+
+#### Flujo Completo Implementado
+
+```
+Nodo CONDICIÓN en ejecución
+  ├─ Consulta BD: deudas + deudores + contactos + historial (si se requiere)
+  ├─ Evalúa condiciones:
+  │   ├─ Estado de deuda (nueva, pendiente, vencida, pagado)
+  │   ├─ Monto de deuda (igual, mayor, menor, entre, existe)
+  │   ├─ Días vencidos (igual, mayor, menor, entre, existe)
+  │   ├─ Historial email (existe/no_existe)
+  │   └─ Historial llamada (existe/no_existe)
+  ├─ Aplica lógica AND/OR
+  ├─ Divide deudores:
+  │   ├─ deudoresSi: cumplen todas/al menos una condición
+  │   └─ deudoresNo: no cumplen condiciones
+  └─ Continúa flujo por ambas ramas (sí/no)
+```
+
+#### Próximos Pasos (Fase 4.3 - Fase 4.8)
 - Fase 4.3: Extracción de variables de deudores desde BD
 - Fase 4.4: Integración completa con plantillas
 - Fase 4.5: Integración completa con agentes de llamada

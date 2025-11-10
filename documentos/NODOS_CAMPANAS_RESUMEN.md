@@ -43,13 +43,19 @@ Los nodos actuales son básicos y no aprovechan:
 ### **3. 🔀 CONDICIÓN**
 **¿Qué hace?** Evalúa condiciones lógicas para dirigir el flujo
 **Mejoras:**
+- ✅ **Implementación completa con lógica real de BD** (Diciembre 2024)
 - ✅ Condiciones reales de BD:
-  - Estado de deuda (nueva, pendiente, pagado)
-  - Monto de deuda (mayor que, menor que, entre)
+  - Estado de deuda (nueva, pendiente, vencida calculada, pagado)
+  - Monto de deuda (mayor que, menor que, entre, igual)
   - Días vencidos (calculados automáticamente)
   - Historial (email enviado, llamada realizada)
-- ✅ Operadores: igual, mayor, menor, entre, existe
+- ✅ Operadores:
+  - Texto: igual, contiene, existe, no_existe
+  - Numéricos: igual, mayor, menor, entre, existe
+  - Existencia: existe, no_existe
 - ✅ Lógica AND/OR para múltiples condiciones
+- ✅ División automática de deudores según resultado (sí/no)
+- ✅ Consulta optimizada a BD (solo consulta historial si se requiere)
 
 ### **4. ⏰ ESPERA**
 **¿Qué hace?** Pausa la ejecución por tiempo determinado
@@ -294,6 +300,7 @@ await fetch('/api/send-sms', {
 **Fase 3:** ✅ Integración con programación automática  
 **Fase 4:** ✅ Validaciones y mejoras de UX  
 **Fase 4.1:** ✅ Implementación completa del nodo FILTRO con lógica real de BD (Diciembre 2024)  
+**Fase 4.2:** ✅ Implementación completa del nodo CONDICIÓN con lógica real de BD (Diciembre 2024)  
 **Fecha:** Diciembre 2024
 
 ---

@@ -169,7 +169,9 @@ async function ejecutarNodoRecursivo(
     case 'condicion':
       // Evaluar condiciones y bifurcar flujo
       const { deudoresSi, deudoresNo } = await evaluarCondiciones(
-        deudoresParaSiguiente
+        deudoresParaSiguiente,
+        usuario_id,
+        nodo.configuracion
       )
 
       // Continuar con ambas ramas si existen
@@ -465,20 +467,294 @@ async function aplicarFiltro(
 }
 
 /**
- * Evalúa condiciones y divide deudores en dos grupos
+ * Evalúa condiciones y divide deudores en dos grupos consultando la BD
  */
 async function evaluarCondiciones(
-  deudores: Array<{ deuda_id: string, rut: string, contacto_id?: string, vars?: Record<string, string> }>
+  deudores: Array<{ deuda_id: string, rut: string, contacto_id?: string, vars?: Record<string, string> }>,
+  usuario_id: string,
+  configuracion: Record<string, unknown>
 ): Promise<{
   deudoresSi: Array<{ deuda_id: string, rut: string, contacto_id?: string, vars?: Record<string, string> }>
   deudoresNo: Array<{ deuda_id: string, rut: string, contacto_id?: string, vars?: Record<string, string> }>
 }> {
-  // TODO: Implementar evaluación real de condiciones consultando la BD
-  // Por ahora dividimos 50/50 como placeholder
-  const mitad = Math.floor(deudores.length / 2)
+  // Crear cliente Supabase con service_role para consultar BD
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  // Obtener configuración de condiciones
+  const condiciones = (configuracion.condiciones || []) as Array<{
+    campo: string
+    operador: string
+    valor: string
+    valor2?: string
+  }>
+  const logica = (configuracion.logica || 'AND') as 'AND' | 'OR'
+
+  // Si no hay condiciones, todos pasan a "Sí"
+  if (condiciones.length === 0) {
+    return {
+      deudoresSi: deudores,
+      deudoresNo: []
+    }
+  }
+
+  // Obtener datos de deudas y contactos para los deudores
+  const deudaIds = deudores.map(d => d.deuda_id)
+  const { data: deudasData, error: deudasError } = await supabase
+    .from('deudas')
+    .select(`
+      id,
+      monto,
+      estado,
+      fecha_vencimiento,
+      deudor_id,
+      deudores (
+        id,
+        rut,
+        nombre,
+        contactos (
+          id,
+          tipo_contacto,
+          valor
+        )
+      )
+    `)
+    .in('id', deudaIds)
+    .eq('usuario_id', usuario_id)
+
+  if (deudasError) {
+    console.error('Error obteniendo deudas para condiciones:', deudasError)
+    // Si hay error, dividir 50/50 como fallback
+    const mitad = Math.floor(deudores.length / 2)
+    return {
+      deudoresSi: deudores.slice(0, mitad),
+      deudoresNo: deudores.slice(mitad)
+    }
+  }
+
+  // Obtener historial de acciones si se requiere
+  let historialData: Array<{ deuda_id: string, tipo_accion: string }> = []
+  const necesitaHistorial = condiciones.some(c => 
+    c.campo === 'historial_email' || c.campo === 'historial_llamada'
+  )
+
+  if (necesitaHistorial) {
+    const { data: historial } = await supabase
+      .from('historial')
+      .select('deuda_id, tipo_accion')
+      .eq('usuario_id', usuario_id)
+      .in('deuda_id', deudaIds)
+
+    if (historial) {
+      historialData = historial as Array<{ deuda_id: string, tipo_accion: string }>
+    }
+  }
+
+  // Evaluar condiciones para cada deudor
+  const deudoresSi: Array<{
+    deuda_id: string
+    rut: string
+    contacto_id?: string
+    vars?: Record<string, string>
+  }> = []
+  const deudoresNo: Array<{
+    deuda_id: string
+    rut: string
+    contacto_id?: string
+    vars?: Record<string, string>
+  }> = []
+
+  for (const deudor of deudores) {
+    // Buscar la deuda correspondiente
+    const deuda = (deudasData || []).find((d: { id: string }) => d.id === deudor.deuda_id)
+    if (!deuda) {
+      // Si no se encuentra la deuda, va a "No"
+      deudoresNo.push(deudor)
+      continue
+    }
+
+    const deudaInfo = deuda as {
+      id: string
+      monto: number
+      estado: string
+      fecha_vencimiento: string
+      deudor_id: string
+      deudores: {
+        id: string
+        rut: string
+        nombre: string
+        contactos: Array<{ id: string, tipo_contacto: string, valor: string }>
+      }
+    }
+
+    // Evaluar cada condición
+    const resultadosCondiciones: boolean[] = []
+
+    for (const condicion of condiciones) {
+      let resultado = false
+
+      switch (condicion.campo) {
+        case 'estado_deuda': {
+          // Calcular si está vencida (días vencidos > 0)
+          const diasVencidos = deudaInfo.fecha_vencimiento 
+            ? calcularDiasVencidos(deudaInfo.fecha_vencimiento) 
+            : 0
+          const estadoCalculado = diasVencidos > 0 ? 'vencida' : deudaInfo.estado
+          
+          resultado = evaluarCondicionTexto(
+            estadoCalculado,
+            condicion.operador,
+            condicion.valor
+          )
+          break
+        }
+
+        case 'monto_deuda': {
+          const monto = typeof deudaInfo.monto === 'number' 
+            ? deudaInfo.monto 
+            : Number(deudaInfo.monto) || 0
+          resultado = evaluarCondicionNumerica(
+            monto,
+            condicion.operador,
+            condicion.valor,
+            condicion.valor2
+          )
+          break
+        }
+
+        case 'dias_vencido': {
+          const diasVencidos = deudaInfo.fecha_vencimiento 
+            ? calcularDiasVencidos(deudaInfo.fecha_vencimiento) 
+            : 0
+          resultado = evaluarCondicionNumerica(
+            diasVencidos,
+            condicion.operador,
+            condicion.valor,
+            condicion.valor2
+          )
+          break
+        }
+
+        case 'historial_email': {
+          const tieneHistorial = historialData.some(
+            h => h.deuda_id === deudor.deuda_id && h.tipo_accion === 'email'
+          )
+          resultado = evaluarCondicionExistencia(
+            tieneHistorial,
+            condicion.operador
+          )
+          break
+        }
+
+        case 'historial_llamada': {
+          const tieneHistorial = historialData.some(
+            h => h.deuda_id === deudor.deuda_id && h.tipo_accion === 'llamada'
+          )
+          resultado = evaluarCondicionExistencia(
+            tieneHistorial,
+            condicion.operador
+          )
+          break
+        }
+
+        default:
+          // Si el campo no es reconocido, la condición es falsa
+          resultado = false
+      }
+
+      resultadosCondiciones.push(resultado)
+    }
+
+    // Aplicar lógica AND/OR
+    let cumpleCondiciones = false
+    if (logica === 'AND') {
+      // Todas las condiciones deben ser verdaderas
+      cumpleCondiciones = resultadosCondiciones.every(r => r === true)
+    } else {
+      // Al menos una condición debe ser verdadera
+      cumpleCondiciones = resultadosCondiciones.some(r => r === true)
+    }
+
+    // Agregar a la lista correspondiente
+    if (cumpleCondiciones) {
+      deudoresSi.push(deudor)
+    } else {
+      deudoresNo.push(deudor)
+    }
+  }
+
   return {
-    deudoresSi: deudores.slice(0, mitad),
-    deudoresNo: deudores.slice(mitad)
+    deudoresSi,
+    deudoresNo
+  }
+}
+
+/**
+ * Evalúa una condición de texto
+ */
+function evaluarCondicionTexto(
+  valor: string,
+  operador: string,
+  valorComparar: string
+): boolean {
+  switch (operador) {
+    case 'igual':
+      return valor.toLowerCase() === valorComparar.toLowerCase()
+    case 'contiene':
+      return valor.toLowerCase().includes(valorComparar.toLowerCase())
+    case 'existe':
+      return valor !== null && valor !== undefined && valor !== ''
+    case 'no_existe':
+      return valor === null || valor === undefined || valor === ''
+    default:
+      return false
+  }
+}
+
+/**
+ * Evalúa una condición numérica
+ */
+function evaluarCondicionNumerica(
+  valor: number,
+  operador: string,
+  valorComparar: string,
+  valorComparar2?: string
+): boolean {
+  const numValor = Number(valorComparar) || 0
+  const numValor2 = valorComparar2 ? (Number(valorComparar2) || 0) : 0
+
+  switch (operador) {
+    case 'igual':
+      return valor === numValor
+    case 'mayor':
+      return valor > numValor
+    case 'menor':
+      return valor < numValor
+    case 'entre':
+      return valor >= numValor && valor <= numValor2
+    case 'existe':
+      return valor !== null && valor !== undefined && !isNaN(valor)
+    default:
+      return false
+  }
+}
+
+/**
+ * Evalúa una condición de existencia
+ */
+function evaluarCondicionExistencia(
+  existe: boolean,
+  operador: string
+): boolean {
+  switch (operador) {
+    case 'existe':
+      return existe
+    case 'no_existe':
+      return !existe
+    default:
+      return false
   }
 }
 
