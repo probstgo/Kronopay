@@ -6,6 +6,8 @@ export interface Contacto {
 
 export interface Plantilla {
   contenido: string;
+  asunto?: string;
+  tipo_contenido?: 'texto' | 'html';
   tipo?: string;
 }
 
