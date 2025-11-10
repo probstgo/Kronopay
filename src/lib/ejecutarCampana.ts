@@ -1,6 +1,7 @@
 import { calcularProximaFecha, programarAccionesMultiples } from './programarAcciones'
 import { createClient } from '@supabase/supabase-js'
 import { calcularDiasVencidos } from './programarAcciones'
+import { registrarLogEjecucion } from './logsEjecucion'
 
 /**
  * Interfaz para un nodo en el flujo de campaña
@@ -36,6 +37,7 @@ export interface EjecutarCampanaParams {
     contacto_id?: string
     vars?: Record<string, string>
   }>
+  ejecucion_id?: string // ID de ejecución_workflow para asociar logs
 }
 
 /**
@@ -46,9 +48,10 @@ export async function ejecutarCampana(params: EjecutarCampanaParams): Promise<{
   fallidas: number
   programaciones_creadas: number
 }> {
-  const { usuario_id, campana_id, nodos, conexiones, deudores_iniciales = [] } = params
+  const { usuario_id, campana_id, nodos, conexiones, deudores_iniciales = [], ejecucion_id } = params
 
   const contadores = { programacionesCreadas: 0, exitosas: 0, fallidas: 0 }
+  let pasoNumero = 0 // Contador de pasos para logs
 
   // Encontrar el nodo inicial (FILTRO o el primer nodo sin entrada)
   const nodoInicial = encontrarNodoInicial(nodos, conexiones)
@@ -68,7 +71,9 @@ export async function ejecutarCampana(params: EjecutarCampanaParams): Promise<{
     fechaActual,
     usuario_id,
     campana_id,
-    contadores
+    contadores,
+    ejecucion_id,
+    pasoNumero
   )
 
   return {
@@ -94,18 +99,48 @@ async function ejecutarNodoRecursivo(
   fechaBase: Date,
   usuario_id: string,
   campana_id: string,
-  contadores: { programacionesCreadas: number, exitosas: number, fallidas: number }
-): Promise<void> {
+  contadores: { programacionesCreadas: number, exitosas: number, fallidas: number },
+  ejecucion_id?: string,
+  pasoNumero: number = 0
+): Promise<number> {
   // Si no hay deudores, terminar
   if (deudores.length === 0) {
-    return
+    return pasoNumero
   }
 
+  // Incrementar paso número para este nodo
+  const pasoActual = pasoNumero + 1
+  const inicioTiempo = Date.now()
   let fechaEjecucion = new Date(fechaBase)
   let deudoresParaSiguiente = deudores
+  let errorEjecucion: string | undefined
+  let datosSalida: Record<string, unknown> = {}
 
-  // Ejecutar el nodo según su tipo
-  switch (nodo.tipo) {
+  // Registrar log de inicio si hay ejecucion_id
+  if (ejecucion_id) {
+    await registrarLogEjecucion({
+      ejecucion_id,
+      nodo_id: nodo.id,
+      paso_numero: pasoActual,
+      tipo_accion: nodo.tipo === 'email' || nodo.tipo === 'sms' || nodo.tipo === 'llamada' 
+        ? nodo.tipo 
+        : nodo.tipo === 'condicion' 
+          ? 'condicion' 
+          : nodo.tipo === 'espera' 
+            ? 'espera' 
+            : 'filtro',
+      estado: 'iniciado',
+      datos_entrada: {
+        cantidad_deudores: deudores.length,
+        configuracion: nodo.configuracion,
+        fecha_base: fechaBase.toISOString()
+      }
+    })
+  }
+
+  try {
+    // Ejecutar el nodo según su tipo
+    switch (nodo.tipo) {
     case 'filtro':
       // Filtrar deudores según configuración del filtro
       deudoresParaSiguiente = await aplicarFiltro(
@@ -113,6 +148,11 @@ async function ejecutarNodoRecursivo(
         usuario_id,
         nodo.configuracion
       )
+      datosSalida = {
+        cantidad_deudores_entrada: deudores.length,
+        cantidad_deudores_salida: deudoresParaSiguiente.length,
+        deudores_filtrados: deudoresParaSiguiente.length
+      }
       break
 
     case 'email':
@@ -146,6 +186,13 @@ async function ejecutarNodoRecursivo(
       contadores.programacionesCreadas += resultadoEmailSMS.exitosas
       contadores.exitosas += resultadoEmailSMS.exitosas
       contadores.fallidas += resultadoEmailSMS.fallidas
+      datosSalida = {
+        cantidad_deudores: deudoresConVarsEmailSMS.length,
+        programaciones_creadas: resultadoEmailSMS.exitosas,
+        exitosas: resultadoEmailSMS.exitosas,
+        fallidas: resultadoEmailSMS.fallidas,
+        plantilla_id: nodo.configuracion.plantilla_id
+      }
       break
 
     case 'llamada':
@@ -178,6 +225,13 @@ async function ejecutarNodoRecursivo(
       contadores.programacionesCreadas += resultadoLlamada.exitosas
       contadores.exitosas += resultadoLlamada.exitosas
       contadores.fallidas += resultadoLlamada.fallidas
+      datosSalida = {
+        cantidad_deudores: deudoresConVarsLlamada.length,
+        programaciones_creadas: resultadoLlamada.exitosas,
+        exitosas: resultadoLlamada.exitosas,
+        fallidas: resultadoLlamada.fallidas,
+        agente_id: nodo.configuracion.agente_id
+      }
       break
 
     case 'espera':
@@ -192,6 +246,11 @@ async function ejecutarNodoRecursivo(
           horario_trabajo?: { inicio: string, fin: string }
         }
       )
+      datosSalida = {
+        fecha_base: fechaBase.toISOString(),
+        fecha_calculada: fechaEjecucion.toISOString(),
+        duracion: nodo.configuracion.duracion
+      }
       break
 
     case 'condicion':
@@ -202,14 +261,23 @@ async function ejecutarNodoRecursivo(
         nodo.configuracion
       )
 
+      datosSalida = {
+        cantidad_deudores_entrada: deudoresParaSiguiente.length,
+        cantidad_deudores_si: deudoresSi.length,
+        cantidad_deudores_no: deudoresNo.length,
+        condiciones: nodo.configuracion.condiciones
+      }
+
       // Continuar con ambas ramas si existen
       const conexionesSi = conexiones.filter(c => c.source === nodo.id && c.sourceHandle === 'si')
       const conexionesNo = conexiones.filter(c => c.source === nodo.id && c.sourceHandle === 'no')
 
+      let pasoNumeroActual = pasoActual
+
       if (conexionesSi.length > 0 && deudoresSi.length > 0) {
         const siguienteNodoSi = todosNodos.find(n => n.id === conexionesSi[0].target)
         if (siguienteNodoSi) {
-          await ejecutarNodoRecursivo(
+          pasoNumeroActual = await ejecutarNodoRecursivo(
             siguienteNodoSi,
             todosNodos,
             conexiones,
@@ -217,7 +285,9 @@ async function ejecutarNodoRecursivo(
             fechaEjecucion,
             usuario_id,
             campana_id,
-            contadores
+            contadores,
+            ejecucion_id,
+            pasoNumeroActual
           )
         }
       }
@@ -225,7 +295,7 @@ async function ejecutarNodoRecursivo(
       if (conexionesNo.length > 0 && deudoresNo.length > 0) {
         const siguienteNodoNo = todosNodos.find(n => n.id === conexionesNo[0].target)
         if (siguienteNodoNo) {
-          await ejecutarNodoRecursivo(
+          pasoNumeroActual = await ejecutarNodoRecursivo(
             siguienteNodoNo,
             todosNodos,
             conexiones,
@@ -233,13 +303,65 @@ async function ejecutarNodoRecursivo(
             fechaEjecucion,
             usuario_id,
             campana_id,
-            contadores
+            contadores,
+            ejecucion_id,
+            pasoNumeroActual
           )
         }
       }
 
+      // Registrar log de finalización para condición
+      const duracionCondicion = Date.now() - inicioTiempo
+      if (ejecucion_id) {
+        await registrarLogEjecucion({
+          ejecucion_id,
+          nodo_id: nodo.id,
+          paso_numero: pasoActual,
+          tipo_accion: 'condicion',
+          estado: errorEjecucion ? 'fallido' : 'completado',
+          datos_entrada: {
+            cantidad_deudores: deudores.length,
+            configuracion: nodo.configuracion,
+            fecha_base: fechaBase.toISOString()
+          },
+          datos_salida,
+          error_message: errorEjecucion,
+          duracion_ms: duracionCondicion
+        })
+      }
+
       // Terminar aquí porque ya se bifurcó el flujo
-      return
+      return pasoNumeroActual
+  }
+  } catch (error) {
+    errorEjecucion = error instanceof Error ? error.message : 'Error desconocido'
+    console.error(`Error ejecutando nodo ${nodo.id}:`, error)
+  }
+
+  // Registrar log de finalización
+  const duracion = Date.now() - inicioTiempo
+  if (ejecucion_id) {
+    await registrarLogEjecucion({
+      ejecucion_id,
+      nodo_id: nodo.id,
+      paso_numero: pasoActual,
+      tipo_accion: nodo.tipo === 'email' || nodo.tipo === 'sms' || nodo.tipo === 'llamada' 
+        ? nodo.tipo 
+        : nodo.tipo === 'condicion' 
+          ? 'condicion' 
+          : nodo.tipo === 'espera' 
+            ? 'espera' 
+            : 'filtro',
+      estado: errorEjecucion ? 'fallido' : 'completado',
+      datos_entrada: {
+        cantidad_deudores: deudores.length,
+        configuracion: nodo.configuracion,
+        fecha_base: fechaBase.toISOString()
+      },
+      datos_salida,
+      error_message: errorEjecucion,
+      duracion_ms: duracion
+    })
   }
 
   // Continuar con el siguiente nodo
@@ -247,7 +369,7 @@ async function ejecutarNodoRecursivo(
   if (conexionesSiguientes.length > 0) {
     const siguienteNodo = todosNodos.find(n => n.id === conexionesSiguientes[0].target)
     if (siguienteNodo) {
-      await ejecutarNodoRecursivo(
+      return await ejecutarNodoRecursivo(
         siguienteNodo,
         todosNodos,
         conexiones,
@@ -255,10 +377,14 @@ async function ejecutarNodoRecursivo(
         fechaEjecucion,
         usuario_id,
         campana_id,
-        contadores
+        contadores,
+        ejecucion_id,
+        pasoActual
       )
     }
   }
+
+  return pasoActual
 }
 
 /**

@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { ProgramaEjecucion } from '../../../../types/programa'
+import { registrarLogEjecucion, crearEjecucionWorkflow, actualizarEjecucionWorkflow } from '../../../../lib/logsEjecucion'
 
 // Tipos para las respuestas de ElevenLabs
 interface ElevenLabsCallResult {
@@ -57,6 +58,9 @@ export async function GET(request: Request) {
 
     // 2. Procesar cada programación
     for (const prog of programaciones || []) {
+      let ejecucionId: string | null = null
+      const inicioTiempo = Date.now()
+
       try {
         // Marcar como procesando para evitar duplicados
         const { error: lockError } = await supabase
@@ -66,6 +70,62 @@ export async function GET(request: Request) {
           .eq('estado', 'pendiente') // Solo si aún está pendiente
 
         if (lockError) continue // Ya fue tomada por otro proceso
+
+        // Buscar o crear ejecución_workflow para registrar logs
+        if (prog.campana_id && prog.deuda_id) {
+          // Obtener deudor_id desde deuda_id
+          const { data: deudaData } = await supabase
+            .from('deudas')
+            .select('deudor_id')
+            .eq('id', prog.deuda_id)
+            .single()
+
+          if (deudaData?.deudor_id) {
+            // Buscar ejecución existente para esta campaña y deudor (cualquier estado reciente)
+            const { data: ejecucionExistente } = await supabase
+              .from('ejecuciones_workflow')
+              .select('id')
+              .eq('workflow_id', prog.campana_id)
+              .eq('deudor_id', deudaData.deudor_id)
+              .order('iniciado_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+
+            if (ejecucionExistente?.id) {
+              ejecucionId = ejecucionExistente.id
+            } else {
+              // Crear nueva ejecución
+              ejecucionId = await crearEjecucionWorkflow({
+                workflow_id: prog.campana_id,
+                deudor_id: deudaData.deudor_id,
+                usuario_id: prog.usuario_id,
+                contexto_datos: {
+                  programacion_id: prog.id,
+                  tipo_accion: prog.tipo_accion
+                }
+              })
+            }
+          }
+        }
+
+        // Registrar log de inicio si hay ejecucion_id
+        if (ejecucionId) {
+          await registrarLogEjecucion({
+            ejecucion_id: ejecucionId,
+            nodo_id: `programacion_${prog.id}`,
+            paso_numero: 1,
+            tipo_accion: prog.tipo_accion as 'email' | 'llamada' | 'sms' | 'whatsapp',
+            estado: 'iniciado',
+            datos_entrada: {
+              programacion_id: prog.id,
+              deuda_id: prog.deuda_id,
+              contacto_id: prog.contacto_id,
+              plantilla_id: prog.plantilla_id,
+              agente_id: prog.agente_id,
+              vars: prog.vars
+            }
+          })
+        }
 
         // 3. Ejecutar acción según tipo
         let resultado: ResultadoEjecucion = { exito: false, error: 'Tipo de acción no válido' }
@@ -82,6 +142,43 @@ export async function GET(request: Request) {
           case 'whatsapp':
             resultado = await enviarWhatsApp(prog as ProgramaEjecucion)
             break
+        }
+
+        // Registrar log de finalización
+        const duracion = Date.now() - inicioTiempo
+        if (ejecucionId) {
+          await registrarLogEjecucion({
+            ejecucion_id: ejecucionId,
+            nodo_id: `programacion_${prog.id}`,
+            paso_numero: 1,
+            tipo_accion: prog.tipo_accion as 'email' | 'llamada' | 'sms' | 'whatsapp',
+            estado: resultado.exito ? 'completado' : 'fallido',
+            datos_entrada: {
+              programacion_id: prog.id,
+              deuda_id: prog.deuda_id,
+              contacto_id: prog.contacto_id,
+              plantilla_id: prog.plantilla_id,
+              agente_id: prog.agente_id,
+              vars: prog.vars
+            },
+            datos_salida: {
+              exito: resultado.exito,
+              external_id: resultado.external_id,
+              detalles: resultado.detalles
+            },
+            error_message: resultado.error,
+            duracion_ms: duracion
+          })
+
+          // Actualizar ejecución de workflow
+          await actualizarEjecucionWorkflow(ejecucionId, {
+            estado: resultado.exito ? 'completado' : 'fallido',
+            resultado_final: {
+              programacion_id: prog.id,
+              exito: resultado.exito,
+              external_id: resultado.external_id
+            }
+          })
         }
 
         // 4. Registrar en historial

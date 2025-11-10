@@ -954,7 +954,7 @@ export const theme = {
 3. **✅ Fase 4.3 COMPLETADA** - Extracción de variables de deudores desde BD (Diciembre 2024)
 4. **✅ Fase 4.4 COMPLETADA** - Integración completa con plantillas (Diciembre 2024)
 5. **✅ Fase 4.5 COMPLETADA** - Integración completa con agentes de llamada (Diciembre 2024)
-6. **🔄 Fase 4.6** - Sistema de logs de ejecución
+6. **✅ Fase 4.6 COMPLETADA** - Sistema de logs de ejecución (Diciembre 2024)
 7. **🔄 Fase 4.7** - Sistema de seguimiento de ejecuciones
 8. **🔄 Fase 4.8** - Implementación de SMS con Twilio
 
@@ -991,7 +991,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 ---
 
-**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO, Fase 4.2 - Implementación del Nodo CONDICIÓN, Fase 4.3 - Extracción de variables de deudores, Fase 4.4 - Integración completa con plantillas, Fase 4.5 - Integración completa con agentes de llamada. **Próximo:** Fase 4.8 - Implementación de SMS con Twilio o Fase 4.6 - Sistema de logs de ejecución.
+**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO, Fase 4.2 - Implementación del Nodo CONDICIÓN, Fase 4.3 - Extracción de variables de deudores, Fase 4.4 - Integración completa con plantillas, Fase 4.5 - Integración completa con agentes de llamada, Fase 4.6 - Sistema de logs de ejecución. **Próximo:** Fase 4.8 - Implementación de SMS con Twilio o Fase 4.7 - Sistema de seguimiento de ejecuciones.
 
 ---
 
@@ -1018,10 +1018,10 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 - **✅ Fase 4.3**: Extracción de variables de deudores desde BD (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.4**: Integración completa con plantillas (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.5**: Integración completa con agentes de llamada (Diciembre 2024) - COMPLETADA
+- **✅ Fase 4.6**: Sistema de logs de ejecución (Diciembre 2024) - COMPLETADA
 
 ### **⏳ Próximas Fases:**
 - **Fase 3.4-3.5**: Persistencia y Gestión (Metadatos, Versiones) - Opcionales
-- **Fase 4.6**: Sistema de logs de ejecución
 - **Fase 4.7**: Sistema de seguimiento de ejecuciones
 - **Fase 4.8**: Implementación de SMS con Twilio
 
@@ -1721,8 +1721,7 @@ Nodo FILTRO en ejecución
   └─ Retorna deudores filtrados con variables calculadas
 ```
 
-#### Próximos Pasos (Fase 4.6 - Fase 4.8)
-- Fase 4.6: Sistema de logs de ejecución
+#### Próximos Pasos (Fase 4.7 - Fase 4.8)
 - Fase 4.7: Sistema de seguimiento de ejecuciones
 - Fase 4.8: Implementación de SMS con Twilio
 
@@ -1808,8 +1807,7 @@ Nodo CONDICIÓN en ejecución
   └─ Continúa flujo por ambas ramas (sí/no)
 ```
 
-#### Próximos Pasos (Fase 4.6 - Fase 4.8)
-- Fase 4.6: Sistema de logs de ejecución
+#### Próximos Pasos (Fase 4.7 - Fase 4.8)
 - Fase 4.7: Sistema de seguimiento de ejecuciones
 - Fase 4.8: Implementación de SMS con Twilio
 
@@ -1987,6 +1985,122 @@ Ejecución de LLAMADA
   │   └─ Pasar variables dinámicas al agente
   └─ Retornar resultado (éxito o error)
 ```
+
+---
+
+### **✅ FASE 4.6 COMPLETADA - Diciembre 2024 (Sistema de logs de ejecución)**
+
+#### Cambios técnicos (backend)
+
+**1. Helper de logs (`src/lib/logsEjecucion.ts`):**
+- Creado archivo con funciones helper para registrar logs
+- `registrarLogEjecucion()`: registra logs en `logs_ejecucion` con todos los detalles
+- `crearEjecucionWorkflow()`: crea ejecuciones en `ejecuciones_workflow`
+- `actualizarEjecucionWorkflow()`: actualiza el estado de ejecuciones
+- Manejo robusto de errores: si falla el registro de logs, no bloquea la ejecución
+
+**2. Integración en `ejecutarCampana.ts`:**
+- Agregado parámetro `ejecucion_id` opcional a `EjecutarCampanaParams`
+- Agregado parámetro `ejecucion_id` y `pasoNumero` a `ejecutarNodoRecursivo()`
+- Registro de log "iniciado" antes de ejecutar cada nodo
+- Registro de log "completado" o "fallido" después de ejecutar cada nodo
+- Medición de duración con `Date.now()`
+- Datos de entrada/salida específicos por tipo de nodo:
+  - **FILTRO**: cantidad deudores entrada/salida
+  - **EMAIL/SMS**: programaciones creadas, exitosas/fallidas, plantilla_id
+  - **LLAMADA**: programaciones creadas, exitosas/fallidas, agente_id
+  - **ESPERA**: fecha base, fecha calculada, duración configurada
+  - **CONDICIÓN**: cantidad deudores entrada, cantidad "Sí"/"No", condiciones evaluadas
+- Contador de pasos (`pasoNumero`) para numerar secuencialmente cada nodo ejecutado
+
+**3. Integración en `ejecutor-programado/route.ts`:**
+- Búsqueda o creación de `ejecuciones_workflow` para cada programación
+- Registro de log "iniciado" antes de ejecutar cada acción programada
+- Registro de log "completado" o "fallido" después de ejecutar
+- Medición de duración con `Date.now()`
+- Datos de entrada: programación_id, deuda_id, contacto_id, plantilla_id, agente_id, vars
+- Datos de salida: exito, external_id, detalles
+- Actualización del estado de ejecución al finalizar
+
+**4. Integración en `ejecutarCampanaAutomatica.ts`:**
+- Creación de `ejecuciones_workflow` al iniciar la campaña
+- Paso de `ejecucion_id` a `ejecutarCampana()` para asociar todos los logs
+- Actualización del estado de ejecución con resultado final (programaciones creadas, exitosas, fallidas)
+
+#### Funcionalidades Implementadas
+
+**Registro de Logs:**
+- ✅ Logs "iniciado" antes de ejecutar cada nodo/acción
+- ✅ Logs "completado" o "fallido" después de ejecutar
+- ✅ Medición de duración en milisegundos
+- ✅ Datos de entrada guardados (configuración, deudores, variables)
+- ✅ Datos de salida guardados (resultados, programaciones creadas)
+- ✅ Mensajes de error guardados cuando falla
+
+**Gestión de Ejecuciones:**
+- ✅ Creación de `ejecuciones_workflow` al iniciar campaña
+- ✅ Búsqueda o creación de ejecuciones para acciones programadas
+- ✅ Actualización de estado de ejecución (pendiente → ejecutando → completado/fallido)
+- ✅ Guardado de resultado final en `resultado_final`
+
+**Trazabilidad:**
+- ✅ Cada nodo ejecutado queda registrado con su paso número
+- ✅ Cada acción programada queda registrada con sus detalles
+- ✅ Historial completo de ejecuciones disponible en `logs_ejecucion`
+- ✅ Asociación de logs con ejecuciones mediante `ejecucion_id`
+
+**Optimizaciones:**
+- ✅ Logs no bloquean la ejecución: si falla el registro, continúa normalmente
+- ✅ Consultas optimizadas: solo busca ejecuciones cuando es necesario
+- ✅ Manejo robusto de errores: logs de errores no afectan funcionalidad
+
+#### Archivos Creados
+
+- ✅ `src/lib/logsEjecucion.ts` - Funciones helper para registrar logs y gestionar ejecuciones
+
+#### Archivos Modificados
+
+- ✅ `src/lib/ejecutarCampana.ts`:
+  - Agregado import de `registrarLogEjecucion`
+  - Agregado parámetro `ejecucion_id` a `EjecutarCampanaParams`
+  - Agregado parámetro `ejecucion_id` y `pasoNumero` a `ejecutarNodoRecursivo()`
+  - Registro de logs antes y después de ejecutar cada nodo
+  - Medición de duración y guardado de datos entrada/salida
+
+- ✅ `src/lib/ejecutarCampanaAutomatica.ts`:
+  - Agregado import de `crearEjecucionWorkflow` y `actualizarEjecucionWorkflow`
+  - Creación de `ejecuciones_workflow` al iniciar campaña
+  - Paso de `ejecucion_id` a `ejecutarCampana()`
+  - Actualización de estado de ejecución con resultado final
+
+- ✅ `src/app/api/cron/ejecutor-programado/route.ts`:
+  - Agregado import de funciones de logs
+  - Búsqueda o creación de `ejecuciones_workflow` para cada programación
+  - Registro de logs antes y después de ejecutar cada acción
+  - Actualización de estado de ejecución al finalizar
+
+#### Flujo Completo Implementado
+
+```
+Ejecución de Campaña
+  ├─ Crear ejecuciones_workflow
+  │   └─ workflow_id, deudor_id, usuario_id, contexto_datos
+  ├─ Ejecutar nodos del flujo:
+  │   ├─ Nodo 1: Log "iniciado" → Ejecutar → Log "completado/fallido"
+  │   ├─ Nodo 2: Log "iniciado" → Ejecutar → Log "completado/fallido"
+  │   └─ ... (cada nodo registrado con paso_numero)
+  ├─ Actualizar ejecuciones_workflow:
+  │   └─ estado: 'completado', resultado_final: { programaciones, exitosas, fallidas }
+  │
+  └─ Ejecución de Acciones Programadas (cron)
+      ├─ Buscar o crear ejecuciones_workflow
+      ├─ Log "iniciado" → Ejecutar acción → Log "completado/fallido"
+      └─ Actualizar estado de ejecución
+```
+
+#### Próximos Pasos (Fase 4.7 - Fase 4.8)
+- Fase 4.7: Sistema de seguimiento de ejecuciones
+- Fase 4.8: Implementación de SMS con Twilio
 
 ---
 

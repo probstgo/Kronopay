@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { ejecutarCampana, NodoCampana, ConexionCampana } from './ejecutarCampana'
+import { crearEjecucionWorkflow, actualizarEjecucionWorkflow } from './logsEjecucion'
 
 interface EjecutarCampanaAutomaticaParams {
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
@@ -111,14 +112,50 @@ export async function ejecutarCampanaAutomaticamente({
     }
   }
 
+  // Crear ejecución de workflow para registrar logs
+  // Usamos el primer deudor como referencia (la ejecución es para toda la campaña)
+  let ejecucionId: string | null = null
+  if (deudoresIniciales.length > 0) {
+    const { data: deudaData } = await supabase
+      .from('deudas')
+      .select('deudor_id')
+      .eq('id', deudoresIniciales[0].deuda_id)
+      .single()
+
+    if (deudaData?.deudor_id) {
+      ejecucionId = await crearEjecucionWorkflow({
+        workflow_id: campanaId,
+        deudor_id: deudaData.deudor_id,
+        usuario_id: usuarioId,
+        contexto_datos: {
+          cantidad_deudores: deudoresIniciales.length,
+          fecha_inicio: new Date().toISOString()
+        }
+      })
+    }
+  }
+
   // Ejecutar la campaña
   const resultado = await ejecutarCampana({
     usuario_id: usuarioId,
     campana_id: campanaId,
     nodos: nodosCampana,
     conexiones: conexionesCampana,
-    deudores_iniciales: deudoresIniciales
+    deudores_iniciales: deudoresIniciales,
+    ejecucion_id: ejecucionId || undefined
   })
+
+  // Actualizar ejecución de workflow con resultado final
+  if (ejecucionId) {
+    await actualizarEjecucionWorkflow(ejecucionId, {
+      estado: 'completado',
+      resultado_final: {
+        programaciones_creadas: resultado.programaciones_creadas,
+        exitosas: resultado.exitosas,
+        fallidas: resultado.fallidas
+      }
+    })
+  }
 
   // Actualizar ejecutado_at en la campaña
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
