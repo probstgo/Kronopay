@@ -1,8 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { ejecutarCampana, NodoCampana, ConexionCampana } from './ejecutarCampana'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface EjecutarCampanaAutomaticaParams {
-  supabase: SupabaseClient<Record<string, unknown>>
+  supabase: SupabaseClient<any>
   campanaId: string
   usuarioId: string
   canvasData: {
@@ -94,8 +95,8 @@ export async function ejecutarCampanaAutomaticamente({
       .limit(1)
 
     if (deudas && deudas.length > 0) {
-      const deuda = deudas[0]
-      const contacto = contactos && contactos.length > 0 ? contactos[0] : null
+      const deuda = deudas[0] as { id: string; monto: number | null; fecha_vencimiento: string | null }
+      const contacto = (contactos && contactos.length > 0) ? (contactos[0] as { id: string; valor: string; tipo_contacto: string }) : null
 
       deudoresIniciales.push({
         deuda_id: deuda.id,
@@ -120,7 +121,8 @@ export async function ejecutarCampanaAutomaticamente({
   })
 
   // Actualizar ejecutado_at en la campaña
-  await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await (supabase as any)
     .from('workflows_cobranza')
     .update({ ejecutado_at: new Date().toISOString() })
     .eq('id', campanaId)
