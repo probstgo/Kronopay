@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { ejecutarCampana, NodoCampana, ConexionCampana } from './ejecutarCampana'
 
 interface EjecutarCampanaAutomaticaParams {
-  supabase: SupabaseClient<any>
+  supabase: SupabaseClient<Record<string, unknown>>
   campanaId: string
   usuarioId: string
   canvasData: {
