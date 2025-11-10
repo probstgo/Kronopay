@@ -1,8 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { ejecutarCampana, NodoCampana, ConexionCampana } from './ejecutarCampana'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface EjecutarCampanaAutomaticaParams {
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   supabase: SupabaseClient<any>
   campanaId: string
   usuarioId: string
