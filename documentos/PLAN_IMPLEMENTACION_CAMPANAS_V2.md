@@ -37,7 +37,7 @@ Crear un sistema de campañas con **Journey Builder visual** usando **React Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│ [←] Campaña de Cobranza                    [🔍] [📊] [⚙️] [💡] [▶️ Ejecutar] │
+│ [←] Campaña de Cobranza                    [🔍] [📊] [⚙️] [💡] [💾 Guardar] │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │  ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    │
@@ -74,6 +74,7 @@ Crear un sistema de campañas con **Journey Builder visual** usando **React Flow
 **¿Cómo funciona?** La programación se maneja automáticamente con el cron job existente.
 
 **Sistema de ejecución:**
+- ✅ **Ejecución automática**: Cuando una campaña se guarda o se activa con estado "activo", se ejecuta automáticamente
 - ✅ **Cron job diario** ejecuta todas las acciones programadas (configurado en `vercel.json`)
 - ✅ **Cada nodo programa su acción** en la tabla `programaciones`:
   - **EMAIL/LLAMADA/SMS**: Programa envío inmediato o con horario específico
@@ -82,6 +83,7 @@ Crear un sistema de campañas con **Journey Builder visual** usando **React Flow
   - **FILTRO**: Filtra deudores antes de continuar
 - ✅ **Cron job procesa** todas las programaciones pendientes todos los días
 - ✅ **No se necesita nodo de programación** - la programación es automática
+- ✅ **No hay botón "Ejecutar"** - la ejecución es automática cuando la campaña está activa
 
 **Ejemplo de flujo:**
 ```
@@ -335,7 +337,7 @@ export function TopToolbar({ onAddNode, availableNodeTypes = [] }: TopToolbarPro
 - ✅ Panel lateral de Analytics con métricas simuladas
 - ✅ Modal de Configuración con formulario editable
 - ✅ Modal de Ayuda con guía de uso
-- ✅ Dialog de confirmación para ejecutar campaña
+- ✅ Dialog de confirmación para guardar campaña
 - ✅ Botón de retroceso desactivado
 - ✅ Accesibilidad mejorada (aria-labels)
 
@@ -1093,12 +1095,13 @@ function NodeWrapper({ nodeType, ...props }: any) {
 **4. Modal de Ayuda:**
 - Guía rápida sobre cómo crear campañas
 - Información sobre tipos de nodos disponibles
-- Instrucciones para ejecutar campañas
+- Instrucciones para guardar campañas
 
-**5. Dialog de Ejecución:**
-- Confirmación antes de ejecutar
+**5. Dialog de Guardado:**
+- Confirmación antes de guardar
 - Muestra el nombre de la campaña en el mensaje
 - Botones de cancelar y confirmar
+- Nota: Las campañas activas se ejecutan automáticamente
 
 #### **Mejoras Técnicas Implementadas:**
 - ✅ **Props Interface**: `TopToolbarProps` con `onAddNode` y `availableNodeTypes`
@@ -1126,7 +1129,7 @@ const handleAddNodeFromToolbar = useCallback((nodeType: string) => {
 #### **Componentes UI Utilizados:**
 - ✅ `Dialog` - Para modales de configuración, ayuda y selector de nodos
 - ✅ `Sheet` - Para panel lateral de analytics
-- ✅ `AlertDialog` - Para confirmación de ejecución
+- ✅ `AlertDialog` - Para confirmación de guardado
 - ✅ `Tooltip` - Para tooltips informativos
 - ✅ `Button` - Componente consistente del sistema de diseño
 - ✅ `Input`, `Label`, `Textarea` - Para formularios
@@ -1256,6 +1259,7 @@ El payload está estructurado según la tabla `workflows_cobranza`:
 - Valida payload con Zod usando `saveCampanaSchema`.
 - Inserta nueva campaña en `workflows_cobranza`.
 - Asigna `usuario_id` automáticamente desde sesión.
+- **Ejecución automática**: Si el estado es "activo", ejecuta la campaña automáticamente.
 - Retorna ID de la campaña creada.
 - Manejo completo de errores con mensajes descriptivos.
 
@@ -1271,6 +1275,7 @@ El payload está estructurado según la tabla `workflows_cobranza`:
 - Valida payload con Zod usando `updateCanvasSchema`.
 - Verifica que la campaña existe y pertenece al usuario (RLS).
 - Actualiza `canvas_data` y `actualizado_at` automáticamente.
+- **Ejecución automática**: Si el estado es "activo", ejecuta la campaña automáticamente.
 - Retorna éxito con timestamp de actualización.
 - Manejo completo de errores.
 
@@ -1318,6 +1323,7 @@ El payload está estructurado según la tabla `workflows_cobranza`:
 - ✅ `src/lib/validations/campanaSchema.ts` - Schemas de validación con Zod
 - ✅ `src/app/api/campanas/route.ts` - Endpoint POST para crear campañas
 - ✅ `src/app/api/campanas/[id]/canvas/route.ts` - Endpoints GET y PUT para canvas
+- ✅ `src/lib/ejecutarCampanaAutomatica.ts` - Función helper para ejecutar campañas automáticamente
 
 #### Archivos Modificados
 
@@ -1487,6 +1493,7 @@ Sidebar "Campañas"
 - Valida estado con Zod (borrador, activo, pausado, archivado).
 - Actualiza `actualizado_at` automáticamente.
 - Verifica que la campaña pertenece al usuario (RLS).
+- **Ejecución automática**: Si el estado cambia a "activo", ejecuta la campaña automáticamente.
 
 **3. Página de Lista (`src/app/campanas/page.tsx`):**
 - Agregado filtro por estado (selector dropdown).

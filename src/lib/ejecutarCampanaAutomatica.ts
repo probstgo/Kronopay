@@ -80,7 +80,7 @@ export async function ejecutarCampanaAutomaticamente({
   }> = []
 
   // Obtener deudas y contactos para cada deudor
-  for (const deudor of deudoresData || []) {
+  for (const deudor of (deudoresData || []) as Array<{ id: string; rut: string | null; nombre: string | null }>) {
     const { data: deudas } = await supabase
       .from('deudas')
       .select('id, monto, fecha_vencimiento')

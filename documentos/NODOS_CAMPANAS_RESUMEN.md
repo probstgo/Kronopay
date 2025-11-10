@@ -93,6 +93,7 @@ Los nodos actuales son básicos y no aprovechan:
 **¿Cómo funciona?** La programación se maneja automáticamente con el cron job existente.
 
 **Sistema de ejecución:**
+- ✅ **Ejecución automática**: Cuando una campaña se guarda o se activa con estado "activo", se ejecuta automáticamente
 - ✅ **Cron job diario** ejecuta todas las acciones programadas (configurado en `vercel.json`)
 - ✅ **Cada nodo programa su acción** en la tabla `programaciones`:
   - **EMAIL/LLAMADA/SMS**: Programa envío inmediato o con horario específico
@@ -100,6 +101,7 @@ Los nodos actuales son básicos y no aprovechan:
   - **CONDICIÓN**: Programa acciones según resultado (sí/no)
 - ✅ **Cron job procesa** todas las programaciones pendientes todos los días
 - ✅ **No se necesita nodo de programación** - la programación es automática
+- ✅ **No hay botón "Ejecutar"** - la ejecución es automática cuando la campaña está activa
 
 **Ejemplo de flujo:**
 ```
