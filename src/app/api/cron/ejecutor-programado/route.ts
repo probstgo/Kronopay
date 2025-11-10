@@ -170,15 +170,15 @@ async function enviarEmail(prog: ProgramaEjecucion): Promise<ResultadoEjecucion>
 
     // Obtener email remitente desde variables de entorno
     const { fromEmail } = await import('../../../../lib/resend')
-    const resend = new Resend(process.env.RESEND_API_KEY)
-
+  const resend = new Resend(process.env.RESEND_API_KEY)
+  
     // Enviar email usando Resend
-    const { data, error } = await resend.emails.send({
+  const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: contacto.valor,
       subject: asuntoResuelto,
       html: htmlContent
-    })
+  })
 
     if (error) {
       console.error('Error enviando email:', error)
@@ -189,9 +189,9 @@ async function enviarEmail(prog: ProgramaEjecucion): Promise<ResultadoEjecucion>
       }
     }
 
-    return {
+  return {
       exito: true,
-      external_id: data?.id,
+    external_id: data?.id,
       detalles: data
     }
   } catch (error) {
@@ -205,29 +205,81 @@ async function enviarEmail(prog: ProgramaEjecucion): Promise<ResultadoEjecucion>
 }
 
 async function ejecutarLlamada(prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
-  // Implementar con ElevenLabs (ya configurado)
-  const { startOutboundCall } = await import('../../../../lib/elevenlabs')
-  
-  // Preparar variables dinámicas del deudor
-  const dynamicVariables = {
-    nombre_deudor: prog.vars.nombre || 'Cliente',
-    monto: prog.vars.monto || '$0',
-    fecha_vencimiento: prog.vars.fecha_vencimiento || 'No especificada',
-    empresa: prog.vars.empresa || 'Nuestra empresa',
-    telefono: prog.contactos[0].valor,
-    email: prog.vars.email || ''
-  };
-  
-  const resultado = await startOutboundCall({
-    agentId: prog.agente_id,
-    toNumber: prog.contactos[0].valor,
-    dynamicVariables
-  }) as unknown as ElevenLabsCallResult
+  try {
+    // Validar que existe agente y contacto
+    if (!prog.agente_id) {
+      return { exito: false, error: 'No se especificó un agente para la llamada' }
+    }
+    if (!prog.contactos || prog.contactos.length === 0) {
+      return { exito: false, error: 'No se encontró el contacto del deudor' }
+    }
 
-  return {
-    exito: resultado.success,
-    external_id: resultado.callId,
-    detalles: resultado
+    // Validar que el contacto es un teléfono
+    const contacto = prog.contactos[0]
+    if (contacto.tipo_contacto !== 'telefono') {
+      return { exito: false, error: 'El contacto no es un teléfono válido' }
+    }
+
+    // Validar que el agente esté activo en la BD
+    const { data: agenteData, error: agenteError } = await supabase
+      .from('llamada_agente')
+      .select('id, agent_id, nombre, activo')
+      .eq('agent_id', prog.agente_id)
+      .eq('usuario_id', prog.usuario_id)
+      .single()
+
+    if (agenteError || !agenteData) {
+      console.error('Error obteniendo agente:', agenteError)
+      return { exito: false, error: 'No se encontró el agente en la base de datos' }
+    }
+
+    if (!agenteData.activo) {
+      return { exito: false, error: 'El agente no está activo' }
+    }
+
+    // Preparar variables dinámicas del deudor
+    // Mapeo de variables: nuestras variables -> variables que espera el agente
+    const vars = prog.vars || {}
+    const dynamicVariables = {
+      nombre_deudor: vars.nombre || 'Cliente',
+      monto: vars.monto || '$0',
+      fecha_vencimiento: vars.fecha_vencimiento || 'No especificada',
+      dias_vencidos: vars.dias_vencidos || '0',
+      empresa: vars.empresa || 'Nuestra empresa',
+      telefono: contacto.valor,
+      email: vars.email || ''
+    }
+
+    // Importar función de ElevenLabs
+    const { startOutboundCall } = await import('../../../../lib/elevenlabs')
+
+    // Ejecutar llamada con variables dinámicas
+    const resultado = await startOutboundCall({
+      agentId: prog.agente_id,
+      toNumber: contacto.valor,
+      dynamicVariables
+    }) as unknown as ElevenLabsCallResult
+
+    if (!resultado || !resultado.success) {
+      return {
+        exito: false,
+        error: 'Error al ejecutar la llamada en ElevenLabs',
+        detalles: resultado
+      }
+    }
+
+    return {
+      exito: true,
+      external_id: resultado.callId,
+      detalles: resultado
+    }
+  } catch (error) {
+    console.error('Error en ejecutarLlamada:', error)
+    return {
+      exito: false,
+      error: error instanceof Error ? error.message : 'Error desconocido al ejecutar llamada',
+      detalles: error
+    }
   }
 }
 
@@ -315,7 +367,7 @@ function resolverPlantilla(contenido: string, vars: Record<string, string>): str
     telefono: '',
     empresa: 'Nuestra empresa'
   }
-
+  
   let resultado = contenido
 
   // Detectar todas las variables en el contenido usando regex

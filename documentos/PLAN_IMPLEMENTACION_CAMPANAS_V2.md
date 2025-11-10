@@ -953,7 +953,7 @@ export const theme = {
 2. **✅ Fase 4.2 COMPLETADA** - Implementación del Nodo CONDICIÓN con lógica real de BD (Diciembre 2024)
 3. **✅ Fase 4.3 COMPLETADA** - Extracción de variables de deudores desde BD (Diciembre 2024)
 4. **✅ Fase 4.4 COMPLETADA** - Integración completa con plantillas (Diciembre 2024)
-5. **🔄 Fase 4.5** - Integración completa con agentes de llamada
+5. **✅ Fase 4.5 COMPLETADA** - Integración completa con agentes de llamada (Diciembre 2024)
 6. **🔄 Fase 4.6** - Sistema de logs de ejecución
 7. **🔄 Fase 4.7** - Sistema de seguimiento de ejecuciones
 8. **🔄 Fase 4.8** - Implementación de SMS con Twilio
@@ -991,7 +991,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 ---
 
-**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO, Fase 4.2 - Implementación del Nodo CONDICIÓN, Fase 4.3 - Extracción de variables de deudores, Fase 4.4 - Integración completa con plantillas. **Próximo:** Fase 4.5 - Integración completa con agentes de llamada o Fase 4.8 - Implementación de SMS con Twilio.
+**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO, Fase 4.2 - Implementación del Nodo CONDICIÓN, Fase 4.3 - Extracción de variables de deudores, Fase 4.4 - Integración completa con plantillas, Fase 4.5 - Integración completa con agentes de llamada. **Próximo:** Fase 4.8 - Implementación de SMS con Twilio o Fase 4.6 - Sistema de logs de ejecución.
 
 ---
 
@@ -1017,10 +1017,10 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 - **✅ Fase 4.2**: Implementación del Nodo CONDICIÓN con lógica real de BD (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.3**: Extracción de variables de deudores desde BD (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.4**: Integración completa con plantillas (Diciembre 2024) - COMPLETADA
+- **✅ Fase 4.5**: Integración completa con agentes de llamada (Diciembre 2024) - COMPLETADA
 
 ### **⏳ Próximas Fases:**
 - **Fase 3.4-3.5**: Persistencia y Gestión (Metadatos, Versiones) - Opcionales
-- **Fase 4.5**: Integración completa con agentes de llamada
 - **Fase 4.6**: Sistema de logs de ejecución
 - **Fase 4.7**: Sistema de seguimiento de ejecuciones
 - **Fase 4.8**: Implementación de SMS con Twilio
@@ -1721,8 +1721,7 @@ Nodo FILTRO en ejecución
   └─ Retorna deudores filtrados con variables calculadas
 ```
 
-#### Próximos Pasos (Fase 4.5 - Fase 4.8)
-- Fase 4.5: Integración completa con agentes de llamada
+#### Próximos Pasos (Fase 4.6 - Fase 4.8)
 - Fase 4.6: Sistema de logs de ejecución
 - Fase 4.7: Sistema de seguimiento de ejecuciones
 - Fase 4.8: Implementación de SMS con Twilio
@@ -1809,8 +1808,7 @@ Nodo CONDICIÓN en ejecución
   └─ Continúa flujo por ambas ramas (sí/no)
 ```
 
-#### Próximos Pasos (Fase 4.5 - Fase 4.8)
-- Fase 4.5: Integración completa con agentes de llamada
+#### Próximos Pasos (Fase 4.6 - Fase 4.8)
 - Fase 4.6: Sistema de logs de ejecución
 - Fase 4.7: Sistema de seguimiento de ejecuciones
 - Fase 4.8: Implementación de SMS con Twilio
@@ -1909,6 +1907,85 @@ Ejecución de EMAIL/SMS
       ├─ Validar que contacto sea teléfono
       ├─ Validar longitud del mensaje
       └─ Enviar (simulado por ahora, Twilio en Fase 4.8)
+```
+
+---
+
+### **✅ FASE 4.5 COMPLETADA - Diciembre 2024 (Integración completa con agentes de llamada)**
+
+#### Cambios técnicos (backend)
+
+**1. Función `ejecutarLlamada()` mejorada (`src/app/api/cron/ejecutor-programado/route.ts`):**
+- Validación completa de agente y contacto antes de ejecutar
+- Validación de que el agente esté activo en la BD
+- Consulta a la tabla `llamada_agente` para verificar estado del agente
+- Validación de tipo de contacto (debe ser teléfono)
+- Manejo completo de errores
+
+**2. Variables dinámicas mejoradas:**
+- Mapeo correcto de variables: nuestras variables → variables que espera el agente
+- Variables incluidas:
+  - `nombre_deudor`: nombre del deudor
+  - `monto`: monto de la deuda
+  - `fecha_vencimiento`: fecha de vencimiento
+  - `dias_vencidos`: días vencidos
+  - `empresa`: nombre de la empresa
+  - `telefono`: teléfono del deudor
+  - `email`: email del deudor
+- Valores por defecto si faltan variables
+
+**3. Validaciones implementadas:**
+- Validación de agente antes de ejecutar (debe existir y estar activo)
+- Validación de contacto y tipo de contacto
+- Validación de resultado de ElevenLabs
+- Manejo robusto de errores con mensajes descriptivos
+
+#### Funcionalidades Implementadas
+
+**Validación de Agente:**
+- ✅ Consulta a BD para verificar que el agente existe
+- ✅ Validación de que el agente esté activo antes de ejecutar
+- ✅ Validación de que el agente pertenece al usuario
+- ✅ Manejo de errores si el agente no existe o no está activo
+
+**Variables Dinámicas:**
+- ✅ Mapeo correcto de variables a formato que espera ElevenLabs
+- ✅ Todas las variables necesarias incluidas
+- ✅ Valores por defecto si faltan variables
+- ✅ Integración completa con ElevenLabs
+
+**Validaciones:**
+- ✅ Validación de agente y contacto antes de ejecutar
+- ✅ Validación de tipo de contacto (debe ser teléfono)
+- ✅ Validación de resultado de ElevenLabs
+- ✅ Manejo robusto de errores
+
+#### Archivos Modificados
+
+- ✅ `src/app/api/cron/ejecutor-programado/route.ts`:
+  - Líneas 207-284: Función `ejecutarLlamada()` mejorada con validaciones
+
+#### Flujo Completo Implementado
+
+```
+Ejecución de LLAMADA
+  ├─ Validar que existe agente_id
+  ├─ Validar que existe contacto
+  ├─ Validar que contacto es teléfono
+  ├─ Consultar BD: verificar agente activo
+  │   ├─ Si no existe → Error
+  │   └─ Si no está activo → Error
+  ├─ Preparar variables dinámicas:
+  │   ├─ nombre_deudor: nombre del deudor
+  │   ├─ monto: monto de la deuda
+  │   ├─ fecha_vencimiento: fecha de vencimiento
+  │   ├─ dias_vencidos: días vencidos
+  │   ├─ empresa: nombre de la empresa
+  │   ├─ telefono: teléfono del deudor
+  │   └─ email: email del deudor
+  ├─ Ejecutar llamada con ElevenLabs
+  │   └─ Pasar variables dinámicas al agente
+  └─ Retornar resultado (éxito o error)
 ```
 
 ---
