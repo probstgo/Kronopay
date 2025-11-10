@@ -955,7 +955,7 @@ export const theme = {
 4. **✅ Fase 4.4 COMPLETADA** - Integración completa con plantillas (Diciembre 2024)
 5. **✅ Fase 4.5 COMPLETADA** - Integración completa con agentes de llamada (Diciembre 2024)
 6. **✅ Fase 4.6 COMPLETADA** - Sistema de logs de ejecución (Diciembre 2024)
-7. **🔄 Fase 4.7** - Sistema de seguimiento de ejecuciones
+7. **✅ Fase 4.7 COMPLETADA** - Sistema de seguimiento de ejecuciones (Diciembre 2024)
 8. **🔄 Fase 4.8** - Implementación de SMS con Twilio
 
 ---
@@ -991,7 +991,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 ---
 
-**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO, Fase 4.2 - Implementación del Nodo CONDICIÓN, Fase 4.3 - Extracción de variables de deudores, Fase 4.4 - Integración completa con plantillas, Fase 4.5 - Integración completa con agentes de llamada, Fase 4.6 - Sistema de logs de ejecución. **Próximo:** Fase 4.8 - Implementación de SMS con Twilio o Fase 4.7 - Sistema de seguimiento de ejecuciones.
+**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO, Fase 4.2 - Implementación del Nodo CONDICIÓN, Fase 4.3 - Extracción de variables de deudores, Fase 4.4 - Integración completa con plantillas, Fase 4.5 - Integración completa con agentes de llamada, Fase 4.6 - Sistema de logs de ejecución, Fase 4.7 - Sistema de seguimiento de ejecuciones. **Próximo:** Fase 4.8 - Implementación de SMS con Twilio.
 
 ---
 
@@ -1019,10 +1019,10 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 - **✅ Fase 4.4**: Integración completa con plantillas (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.5**: Integración completa con agentes de llamada (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.6**: Sistema de logs de ejecución (Diciembre 2024) - COMPLETADA
+- **✅ Fase 4.7**: Sistema de seguimiento de ejecuciones (Diciembre 2024) - COMPLETADA
 
 ### **⏳ Próximas Fases:**
 - **Fase 3.4-3.5**: Persistencia y Gestión (Metadatos, Versiones) - Opcionales
-- **Fase 4.7**: Sistema de seguimiento de ejecuciones
 - **Fase 4.8**: Implementación de SMS con Twilio
 
 ---
@@ -1721,8 +1721,7 @@ Nodo FILTRO en ejecución
   └─ Retorna deudores filtrados con variables calculadas
 ```
 
-#### Próximos Pasos (Fase 4.7 - Fase 4.8)
-- Fase 4.7: Sistema de seguimiento de ejecuciones
+#### Próximos Pasos (Fase 4.8)
 - Fase 4.8: Implementación de SMS con Twilio
 
 ---
@@ -1807,8 +1806,7 @@ Nodo CONDICIÓN en ejecución
   └─ Continúa flujo por ambas ramas (sí/no)
 ```
 
-#### Próximos Pasos (Fase 4.7 - Fase 4.8)
-- Fase 4.7: Sistema de seguimiento de ejecuciones
+#### Próximos Pasos (Fase 4.8)
 - Fase 4.8: Implementación de SMS con Twilio
 
 ---
@@ -2098,8 +2096,119 @@ Ejecución de Campaña
       └─ Actualizar estado de ejecución
 ```
 
-#### Próximos Pasos (Fase 4.7 - Fase 4.8)
-- Fase 4.7: Sistema de seguimiento de ejecuciones
+---
+
+### **✅ FASE 4.7 COMPLETADA - Diciembre 2024 (Sistema de seguimiento de ejecuciones)**
+
+#### Cambios UI/UX
+- **Página de Lista de Ejecuciones**: Nueva página `/campanas/[id]/ejecuciones` que muestra todas las ejecuciones de una campaña.
+- **Página de Detalle de Ejecución**: Nueva página `/campanas/[id]/ejecuciones/[ejecucionId]` que muestra el detalle completo de una ejecución con todos sus logs.
+- **Métricas de Ejecuciones**: Cards con métricas globales (total, completadas, fallidas, tasa de éxito).
+- **Visualización de Logs**: Logs agrupados por nodo con visualización colapsable.
+- **Estados Visuales**: Badges con colores según estado (pendiente, ejecutando, completado, fallido, pausado).
+- **Información de Deudores**: Muestra nombre y RUT del deudor asociado a cada ejecución.
+- **Navegación Integrada**: Botón "Ver ejecuciones" en la página de lista de campañas.
+
+#### Cambios técnicos (backend y frontend)
+
+**1. Endpoint GET /api/campanas/[id]/ejecuciones (`src/app/api/campanas/[id]/ejecuciones/route.ts`):**
+- Lista todas las ejecuciones de una campaña específica.
+- Retorna ejecuciones con información del deudor (nombre, RUT).
+- Calcula métricas básicas: total, completadas, fallidas, ejecutando, tasa de éxito.
+- Verifica que la campaña pertenece al usuario (RLS).
+- Ordena ejecuciones por fecha de inicio descendente (más recientes primero).
+- Límite de 100 ejecuciones por consulta.
+
+**2. Endpoint GET /api/campanas/[id]/ejecuciones/[ejecucionId] (`src/app/api/campanas/[id]/ejecuciones/[ejecucionId]/route.ts`):**
+- Obtiene el detalle completo de una ejecución específica.
+- Retorna ejecución con información del deudor y nombre de la campaña.
+- Obtiene todos los logs de la ejecución ordenados por paso_numero.
+- Agrupa logs por nodo para facilitar visualización.
+- Calcula métricas de la ejecución: total logs, completados, fallidos, duración total, tasa de éxito.
+- Verifica que la campaña y ejecución pertenecen al usuario (RLS).
+
+**3. Página de Lista de Ejecuciones (`src/app/campanas/[id]/ejecuciones/page.tsx`):**
+- Muestra todas las ejecuciones de una campaña en formato de cards.
+- Cards con información: estado, deudor, fecha de inicio/completado, duración, paso actual.
+- Métricas globales en cards superiores (total, completadas, fallidas, tasa de éxito).
+- Navegación a detalle de ejecución al hacer clic en una card.
+- Formateo de fechas relativas usando `date-fns`.
+- Estados visuales con badges y iconos según estado.
+
+**4. Página de Detalle de Ejecución (`src/app/campanas/[id]/ejecuciones/[ejecucionId]/page.tsx`):**
+- Muestra información completa de la ejecución: estado, fechas, paso actual, resultado final.
+- Métricas de la ejecución: total logs, completados, fallidos, duración total.
+- Visualización de logs agrupados por nodo con componente colapsable.
+- Cada log muestra: tipo de acción, estado, duración, datos de entrada/salida, errores.
+- Iconos específicos por tipo de acción (email, llamada, SMS, espera, condición, filtro).
+- Formateo de JSON para datos de entrada/salida.
+- Formateo de duraciones en formato legible (ms, segundos, minutos).
+
+**5. Componente Collapsible (`src/components/ui/collapsible.tsx`):**
+- Creado componente Collapsible basado en Radix UI.
+- Permite expandir/colapsar secciones de logs por nodo.
+- Integrado con el sistema de diseño existente.
+
+**6. Integración en Página de Campañas (`src/app/campanas/page.tsx`):**
+- Agregado botón "Ver ejecuciones" (icono BarChart3) en cada card de campaña.
+- Botón navega a la página de lista de ejecuciones de la campaña.
+
+#### Funcionalidades Implementadas
+
+**Visualización de Ejecuciones:**
+- ✅ Lista todas las ejecuciones de una campaña.
+- ✅ Muestra información del deudor asociado.
+- ✅ Estados visuales con badges y colores.
+- ✅ Métricas globales (total, completadas, fallidas, tasa de éxito).
+- ✅ Formateo de fechas relativas y duraciones.
+
+**Visualización de Logs:**
+- ✅ Logs agrupados por nodo con visualización colapsable.
+- ✅ Información detallada de cada log: tipo, estado, duración, datos entrada/salida.
+- ✅ Iconos específicos por tipo de acción.
+- ✅ Formateo de JSON para datos estructurados.
+- ✅ Visualización de errores con destacado rojo.
+
+**Métricas de Rendimiento:**
+- ✅ Métricas globales de todas las ejecuciones.
+- ✅ Métricas específicas de cada ejecución.
+- ✅ Cálculo de tasa de éxito.
+- ✅ Duración total de ejecuciones.
+
+**Navegación:**
+- ✅ Navegación entre lista y detalle de ejecuciones.
+- ✅ Botón de retroceso para volver a lista.
+- ✅ Integración con página de campañas.
+
+#### Archivos Creados
+
+- ✅ `src/app/api/campanas/[id]/ejecuciones/route.ts` - Endpoint para listar ejecuciones
+- ✅ `src/app/api/campanas/[id]/ejecuciones/[ejecucionId]/route.ts` - Endpoint para detalle de ejecución
+- ✅ `src/app/campanas/[id]/ejecuciones/page.tsx` - Página de lista de ejecuciones
+- ✅ `src/app/campanas/[id]/ejecuciones/[ejecucionId]/page.tsx` - Página de detalle de ejecución
+- ✅ `src/components/ui/collapsible.tsx` - Componente Collapsible
+
+#### Archivos Modificados
+
+- ✅ `src/app/campanas/page.tsx` - Agregado botón para ver ejecuciones
+
+#### Flujo Completo Implementado
+
+```
+Página de Campañas
+  └─ Botón "Ver ejecuciones" → /campanas/[id]/ejecuciones
+      ├─ Lista de ejecuciones con métricas globales
+      ├─ Cards con información de cada ejecución
+      └─ Click en ejecución → /campanas/[id]/ejecuciones/[ejecucionId]
+          ├─ Información completa de la ejecución
+          ├─ Métricas específicas de la ejecución
+          └─ Logs agrupados por nodo (colapsables)
+              ├─ Log "iniciado" con datos de entrada
+              ├─ Log "completado/fallido" con datos de salida
+              └─ Errores destacados si existen
+```
+
+#### Próximos Pasos (Fase 4.8)
 - Fase 4.8: Implementación de SMS con Twilio
 
 ---

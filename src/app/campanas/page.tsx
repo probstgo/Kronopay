@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Plus, Search, Megaphone, Edit, Trash2, Copy, Calendar, MoreVertical, Play, Pause, Archive } from 'lucide-react'
+import { Plus, Search, Megaphone, Edit, Trash2, Copy, Calendar, MoreVertical, Play, Pause, Archive, BarChart3 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
 import Link from 'next/link'
@@ -251,6 +251,11 @@ export default function CampanasPage() {
                         <Button variant="default" size="sm" className="w-full">
                           <Edit className="h-4 w-4 mr-2" />
                           Editar
+                        </Button>
+                      </Link>
+                      <Link href={`/campanas/${campana.id}/ejecuciones`}>
+                        <Button variant="outline" size="sm" title="Ver ejecuciones">
+                          <BarChart3 className="h-4 w-4" />
                         </Button>
                       </Link>
                       <DropdownMenu>
