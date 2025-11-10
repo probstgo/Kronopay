@@ -51,7 +51,7 @@ export async function ejecutarCampana(params: EjecutarCampanaParams): Promise<{
   const { usuario_id, campana_id, nodos, conexiones, deudores_iniciales = [], ejecucion_id } = params
 
   const contadores = { programacionesCreadas: 0, exitosas: 0, fallidas: 0 }
-  let pasoNumero = 0 // Contador de pasos para logs
+  const pasoNumero = 0 // Contador de pasos para logs
 
   // Encontrar el nodo inicial (FILTRO o el primer nodo sin entrada)
   const nodoInicial = encontrarNodoInicial(nodos, conexiones)
