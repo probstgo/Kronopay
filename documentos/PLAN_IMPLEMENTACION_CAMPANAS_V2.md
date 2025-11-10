@@ -691,6 +691,39 @@ Zod mínimo para `canvas_data`:
 
 ---
 
+### **Fase 4.1: Implementación del Nodo FILTRO - ✅ COMPLETADA (Diciembre 2024)**
+
+#### **Objetivos:**
+- Implementar lógica real de filtrado consultando la BD
+- Aplicar todos los filtros configurados (estado, monto, días vencidos, contacto, historial)
+- Implementar ordenamiento y límite de resultados
+- Optimizar consultas y cálculos
+
+#### **Tareas:**
+- [x] Implementar función `aplicarFiltro()` con consulta real a BD
+- [x] Filtrar por estado de deuda (incluyendo 'vencida' calculada)
+- [x] Filtrar por rango de monto (mínimo y máximo)
+- [x] Filtrar por días vencidos (mínimo y máximo)
+- [x] Filtrar por tipo de contacto (email, teléfono) con selección inteligente
+- [x] Filtrar por historial de acciones (email, llamada, SMS)
+- [x] Implementar ordenamiento (monto, fecha, días vencidos)
+- [x] Aplicar límite de resultados
+- [x] Optimizar cálculos (días vencidos una sola vez)
+- [x] Manejo robusto de errores
+
+#### **Entregables:**
+- ✅ Función `aplicarFiltro()` completamente implementada
+- ✅ Consulta a BD con Supabase (service_role)
+- ✅ Todos los filtros funcionando correctamente
+- ✅ Ordenamiento y límite de resultados implementados
+- ✅ Optimizaciones aplicadas
+- ✅ Sin errores de ESLint
+
+#### **Archivos Modificados:**
+- ✅ `src/lib/ejecutarCampana.ts` - Función `aplicarFiltro()` implementada (líneas 247-461)
+
+---
+
 ### **Fase 4: Motor de Ejecución (Semana 4)**
 
 #### **Objetivos:**
@@ -877,7 +910,14 @@ export const theme = {
 6. **🔄 Fase 3.5** - Sistema de versiones básico (opcional)
 
 ### **🔄 FUTURO - Fase 4**
-1. **Fase 4**: Motor de ejecución
+1. **✅ Fase 4.1 COMPLETADA** - Implementación del Nodo FILTRO con lógica real de BD (Diciembre 2024)
+2. **🔄 Fase 4.2** - Implementación del Nodo CONDICIÓN con lógica real de BD
+3. **🔄 Fase 4.3** - Extracción de variables de deudores desde BD
+4. **🔄 Fase 4.4** - Integración completa con plantillas
+5. **🔄 Fase 4.5** - Integración completa con agentes de llamada
+6. **🔄 Fase 4.6** - Sistema de logs de ejecución
+7. **🔄 Fase 4.7** - Sistema de seguimiento de ejecuciones
+8. **🔄 Fase 4.8** - Implementación de SMS con Twilio
 
 ---
 
@@ -912,7 +952,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 ---
 
-**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas. **Próximo:** Fase 3.4 - Metadatos de Campañas (opcional) o Fase 4 - Motor de Ejecución.
+**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO. **Próximo:** Fase 4.2 - Implementación del Nodo CONDICIÓN o Fase 4.3 - Extracción de variables de deudores.
 
 ---
 
@@ -934,10 +974,17 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 - **✅ Fase 3.1**: Endpoints de API (Diciembre 2024) - COMPLETADA
 - **✅ Fase 3.2**: Sistema de Cargar Workflows (Diciembre 2024) - COMPLETADA
 - **✅ Fase 3.3**: Gestión de Campañas (Diciembre 2024) - COMPLETADA
+- **✅ Fase 4.1**: Implementación del Nodo FILTRO con lógica real de BD (Diciembre 2024) - COMPLETADA
 
 ### **⏳ Próximas Fases:**
 - **Fase 3.4-3.5**: Persistencia y Gestión (Metadatos, Versiones) - Opcionales
-- **Fase 4**: Motor de Ejecución (Semana 4)
+- **Fase 4.2**: Implementación del Nodo CONDICIÓN con lógica real de BD
+- **Fase 4.3**: Extracción de variables de deudores desde BD
+- **Fase 4.4**: Integración completa con plantillas
+- **Fase 4.5**: Integración completa con agentes de llamada
+- **Fase 4.6**: Sistema de logs de ejecución
+- **Fase 4.7**: Sistema de seguimiento de ejecuciones
+- **Fase 4.8**: Implementación de SMS con Twilio
 
 ---
 
@@ -1567,6 +1614,82 @@ Lista de Campañas
 - Metadatos de campañas (fecha creación, última modificación, etc.).
 - Sistema de versiones básico.
 - Historial de cambios.
+
+---
+
+### **✅ FASE 4.1 COMPLETADA - Diciembre 2024 (Implementación del Nodo FILTRO)**
+
+#### Cambios técnicos (backend)
+
+**1. Función `aplicarFiltro()` (`src/lib/ejecutarCampana.ts`):**
+- Implementada función completa con consulta real a BD usando Supabase (service_role)
+- Recibe `usuario_id` y `configuracion` del nodo
+- Consulta deudores con deudas, contactos e historial
+- Aplica todos los filtros configurados:
+  - Estado de deuda (incluyendo 'vencida' calculada según días vencidos)
+  - Rango de monto (mínimo y máximo)
+  - Días vencidos (mínimo y máximo)
+  - Tipo de contacto (email, teléfono) con selección inteligente (preferido primero)
+  - Historial de acciones (email, llamada, SMS)
+- Implementa ordenamiento por monto, fecha o días vencidos (ascendente/descendente)
+- Aplica límite de resultados opcional
+- Optimizaciones: cálculo de días vencidos una sola vez
+- Manejo robusto de errores: retorna deudores originales si hay error en BD
+
+**2. Actualización de llamada a `aplicarFiltro()`:**
+- Modificada llamada en `ejecutarNodoRecursivo()` para pasar `usuario_id` y `nodo.configuracion`
+- Agregados imports: `createClient` y `calcularDiasVencidos`
+
+#### Funcionalidades Implementadas
+
+**Filtrado:**
+- ✅ Filtrar por estado de deuda (nueva, pendiente, vencida calculada, pagada)
+- ✅ Filtrar por rango de monto (mínimo y máximo)
+- ✅ Filtrar por días vencidos (mínimo y máximo)
+- ✅ Filtrar por tipo de contacto (email, teléfono) con selección inteligente
+- ✅ Filtrar por historial de acciones (email enviado, llamada realizada, SMS enviado)
+
+**Ordenamiento:**
+- ✅ Ordenar por monto (ascendente/descendente)
+- ✅ Ordenar por fecha de vencimiento (ascendente/descendente)
+- ✅ Ordenar por días vencidos (ascendente/descendente)
+
+**Optimizaciones:**
+- ✅ Cálculo de días vencidos una sola vez por deuda
+- ✅ Selección inteligente de contactos (preferido primero)
+- ✅ Manejo robusto de errores
+
+#### Archivos Modificados
+
+- ✅ `src/lib/ejecutarCampana.ts` - Función `aplicarFiltro()` implementada (líneas 247-461)
+  - Agregados imports: `createClient` y `calcularDiasVencidos`
+  - Actualizada llamada a `aplicarFiltro()` con parámetros necesarios
+  - Implementada función completa con lógica real de BD
+
+#### Flujo Completo Implementado
+
+```
+Nodo FILTRO en ejecución
+  ├─ Consulta BD: deudores + deudas + contactos + historial
+  ├─ Aplica filtros:
+  │   ├─ Estado de deuda (nueva, pendiente, vencida, pagada)
+  │   ├─ Rango de monto (min, max)
+  │   ├─ Días vencidos (min, max)
+  │   ├─ Tipo de contacto (email, teléfono)
+  │   └─ Historial de acciones (email, llamada, SMS)
+  ├─ Ordena resultados (monto, fecha, días vencidos)
+  ├─ Aplica límite de resultados (opcional)
+  └─ Retorna deudores filtrados con variables calculadas
+```
+
+#### Próximos Pasos (Fase 4.2 - Fase 4.8)
+- Fase 4.2: Implementación del Nodo CONDICIÓN con lógica real de BD
+- Fase 4.3: Extracción de variables de deudores desde BD
+- Fase 4.4: Integración completa con plantillas
+- Fase 4.5: Integración completa con agentes de llamada
+- Fase 4.6: Sistema de logs de ejecución
+- Fase 4.7: Sistema de seguimiento de ejecuciones
+- Fase 4.8: Implementación de SMS con Twilio
 
 ---
 

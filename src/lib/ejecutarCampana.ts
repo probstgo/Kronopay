@@ -1,4 +1,6 @@
 import { calcularProximaFecha, programarAccionesMultiples } from './programarAcciones'
+import { createClient } from '@supabase/supabase-js'
+import { calcularDiasVencidos } from './programarAcciones'
 
 /**
  * Interfaz para un nodo en el flujo de campaña
@@ -106,7 +108,11 @@ async function ejecutarNodoRecursivo(
   switch (nodo.tipo) {
     case 'filtro':
       // Filtrar deudores según configuración del filtro
-      deudoresParaSiguiente = await aplicarFiltro(deudores)
+      deudoresParaSiguiente = await aplicarFiltro(
+        deudores,
+        usuario_id,
+        nodo.configuracion
+      )
       break
 
     case 'email':
@@ -239,15 +245,223 @@ function encontrarNodoInicial(nodos: NodoCampana[], conexiones: ConexionCampana[
 }
 
 /**
- * Aplica filtros a una lista de deudores
+ * Aplica filtros a una lista de deudores consultando la BD
  */
 async function aplicarFiltro(
-  deudores: Array<{ deuda_id: string, rut: string, contacto_id?: string, vars?: Record<string, string> }>
+  deudores: Array<{ deuda_id: string, rut: string, contacto_id?: string, vars?: Record<string, string> }>,
+  usuario_id: string,
+  configuracion: Record<string, unknown>
 ): Promise<Array<{ deuda_id: string, rut: string, contacto_id?: string, vars?: Record<string, string> }>> {
-  // TODO: Implementar filtrado real consultando la BD
-  // Por ahora retornamos todos los deudores
-  // En la implementación real, esto consultaría la BD con los filtros aplicados
-  return deudores
+  // Crear cliente Supabase con service_role para consultar BD
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  // Obtener configuración de filtros
+  const filtros = (configuracion.filtros || {}) as {
+    estado_deuda?: string[]
+    rango_monto?: { min: number | null, max: number | null }
+    dias_vencidos?: { min: number | null, max: number | null }
+    tipo_contacto?: string[]
+    historial_acciones?: string[]
+  }
+  const ordenamiento = (configuracion.ordenamiento || { campo: 'monto', direccion: 'desc' }) as {
+    campo: 'monto' | 'fecha' | 'dias_vencidos'
+    direccion: 'asc' | 'desc'
+  }
+  const limite_resultados = configuracion.limite_resultados as number | null | undefined
+
+  // Si no hay filtros configurados, retornar todos los deudores
+  const tieneFiltros = 
+    (filtros.estado_deuda && filtros.estado_deuda.length > 0) ||
+    (filtros.rango_monto && (filtros.rango_monto.min !== null || filtros.rango_monto.max !== null)) ||
+    (filtros.dias_vencidos && (filtros.dias_vencidos.min !== null || filtros.dias_vencidos.max !== null)) ||
+    (filtros.tipo_contacto && filtros.tipo_contacto.length > 0) ||
+    (filtros.historial_acciones && filtros.historial_acciones.length > 0)
+
+  if (!tieneFiltros && !limite_resultados) {
+    return deudores
+  }
+
+  // Obtener todos los deudores del usuario con sus deudas, contactos e historial
+  const { data: deudoresData, error: deudoresError } = await supabase
+    .from('deudores')
+    .select(`
+      id,
+      rut,
+      nombre,
+      deudas (
+        id,
+        monto,
+        estado,
+        fecha_vencimiento
+      ),
+      contactos (
+        id,
+        tipo_contacto,
+        valor,
+        preferido
+      )
+    `)
+    .eq('usuario_id', usuario_id)
+
+  if (deudoresError) {
+    console.error('Error obteniendo deudores para filtro:', deudoresError)
+    return deudores // Retornar deudores originales si hay error
+  }
+
+  // Obtener historial de acciones si se requiere
+  let historialData: Array<{ deuda_id: string, tipo_accion: string }> = []
+  if (filtros.historial_acciones && filtros.historial_acciones.length > 0) {
+    const { data: historial } = await supabase
+      .from('historial')
+      .select('deuda_id, tipo_accion')
+      .eq('usuario_id', usuario_id)
+      .in('tipo_accion', filtros.historial_acciones.map((accion: string) => {
+        // Mapear nombres de acciones a valores de BD
+        if (accion === 'email_enviado') return 'email'
+        if (accion === 'llamada_realizada') return 'llamada'
+        if (accion === 'sms_enviado') return 'sms'
+        return accion
+      }))
+
+    if (historial) {
+      historialData = historial as Array<{ deuda_id: string, tipo_accion: string }>
+    }
+  }
+
+  // Aplicar filtros
+  const deudoresFiltrados: Array<{
+    deuda_id: string
+    rut: string
+    contacto_id?: string
+    vars?: Record<string, string>
+  }> = []
+
+  for (const deudor of (deudoresData || [])) {
+    const deudas = (deudor.deudas || []) as Array<{
+      id: string
+      monto: number
+      estado: string
+      fecha_vencimiento: string
+    }>
+    const contactos = (deudor.contactos || []) as Array<{
+      id: string
+      tipo_contacto: string
+      valor: string
+      preferido: boolean
+    }>
+
+    // Si no hay deudas, saltar este deudor
+    if (deudas.length === 0) continue
+
+    // Para cada deuda, verificar si pasa los filtros
+    for (const deuda of deudas) {
+      // Calcular días vencidos una sola vez (se usa para estado y filtro)
+      const diasVencidos = deuda.fecha_vencimiento ? calcularDiasVencidos(deuda.fecha_vencimiento) : 0
+      const monto = typeof deuda.monto === 'number' ? deuda.monto : Number(deuda.monto) || 0
+
+      // Filtrar por estado de deuda
+      if (filtros.estado_deuda && filtros.estado_deuda.length > 0) {
+        // Calcular estado: 'vencida' si días vencidos > 0, sino usar estado de BD
+        const estadoCalculado = diasVencidos > 0 ? 'vencida' : deuda.estado
+        
+        // Verificar si el estado calculado está en los filtros
+        if (!filtros.estado_deuda.includes(estadoCalculado) && !filtros.estado_deuda.includes(deuda.estado)) {
+          continue // Saltar esta deuda
+        }
+      }
+
+      // Filtrar por rango de monto
+      if (filtros.rango_monto?.min !== null && filtros.rango_monto?.min !== undefined) {
+        if (monto < filtros.rango_monto.min) continue
+      }
+      if (filtros.rango_monto?.max !== null && filtros.rango_monto?.max !== undefined) {
+        if (monto > filtros.rango_monto.max) continue
+      }
+
+      // Filtrar por días vencidos
+      if (filtros.dias_vencidos?.min !== null && filtros.dias_vencidos?.min !== undefined) {
+        if (diasVencidos < filtros.dias_vencidos.min) continue
+      }
+      if (filtros.dias_vencidos?.max !== null && filtros.dias_vencidos?.max !== undefined) {
+        if (diasVencidos > filtros.dias_vencidos.max) continue
+      }
+
+      // Filtrar por tipo de contacto
+      let contactoValido: { id: string, tipo_contacto: string, valor: string } | null = null
+      if (filtros.tipo_contacto && filtros.tipo_contacto.length > 0) {
+        // Buscar contacto preferido primero, luego cualquier contacto del tipo requerido
+        const contactoPreferido = contactos.find(c => 
+          c.preferido && filtros.tipo_contacto!.includes(c.tipo_contacto)
+        )
+        if (contactoPreferido) {
+          contactoValido = contactoPreferido
+        } else {
+          const contactoCualquiera = contactos.find(c => 
+            filtros.tipo_contacto!.includes(c.tipo_contacto)
+          )
+          if (contactoCualquiera) {
+            contactoValido = contactoCualquiera
+          }
+        }
+        if (!contactoValido) continue // No tiene contacto del tipo requerido
+      } else {
+        // Si no se especifica tipo de contacto, usar el preferido o el primero
+        const contactoPreferido = contactos.find(c => c.preferido)
+        contactoValido = contactoPreferido || (contactos.length > 0 ? contactos[0] : null)
+      }
+
+      // Filtrar por historial de acciones
+      if (filtros.historial_acciones && filtros.historial_acciones.length > 0) {
+        const tieneHistorial = historialData.some(h => h.deuda_id === deuda.id)
+        if (!tieneHistorial) continue // No tiene historial de las acciones requeridas
+      }
+
+      // Si pasa todos los filtros, agregar a la lista
+      deudoresFiltrados.push({
+        deuda_id: deuda.id,
+        rut: deudor.rut || '',
+        contacto_id: contactoValido?.id,
+        vars: {
+          nombre: deudor.nombre || 'Deudor',
+          monto: `$${monto}`,
+          fecha_vencimiento: deuda.fecha_vencimiento || new Date().toISOString().split('T')[0],
+          dias_vencidos: String(diasVencidos)
+        }
+      })
+    }
+  }
+
+  // Aplicar ordenamiento
+  let deudoresOrdenados = [...deudoresFiltrados]
+  if (ordenamiento.campo === 'monto') {
+    deudoresOrdenados.sort((a, b) => {
+      const montoA = parseFloat(a.vars?.monto?.replace('$', '') || '0')
+      const montoB = parseFloat(b.vars?.monto?.replace('$', '') || '0')
+      return ordenamiento.direccion === 'desc' ? montoB - montoA : montoA - montoB
+    })
+  } else if (ordenamiento.campo === 'fecha') {
+    deudoresOrdenados.sort((a, b) => {
+      const fechaA = new Date(a.vars?.fecha_vencimiento || '1970-01-01').getTime()
+      const fechaB = new Date(b.vars?.fecha_vencimiento || '1970-01-01').getTime()
+      return ordenamiento.direccion === 'desc' ? fechaB - fechaA : fechaA - fechaB
+    })
+  } else if (ordenamiento.campo === 'dias_vencidos') {
+    deudoresOrdenados.sort((a, b) => {
+      const diasA = parseInt(a.vars?.dias_vencidos || '0')
+      const diasB = parseInt(b.vars?.dias_vencidos || '0')
+      return ordenamiento.direccion === 'desc' ? diasB - diasA : diasA - diasB
+    })
+  }
+
+  // Aplicar límite de resultados
+  if (limite_resultados && limite_resultados > 0) {
+    deudoresOrdenados = deudoresOrdenados.slice(0, limite_resultados)
+  }
+
+  return deudoresOrdenados
 }
 
 /**

@@ -75,16 +75,18 @@ Los nodos actuales son básicos y no aprovechan:
 **¿Qué hace?** Filtra y segmenta deudores antes de continuar
 **Mejoras:**
 - ✅ **Nodo dedicado para filtrado**: Este nodo centraliza todo el filtrado de deudores para ser reutilizado en múltiples flujos
+- ✅ **Implementación completa con lógica real de BD** (Diciembre 2024)
 - ✅ Filtros por:
-  - Estado de deuda (nueva, pendiente, vencida, pagada)
+  - Estado de deuda (nueva, pendiente, vencida calculada, pagada)
   - Rango de monto (mínimo y máximo)
   - Días vencidos (mínimo y máximo)
-  - Tipo de contacto (email, teléfono)
+  - Tipo de contacto (email, teléfono) - selección inteligente (preferido primero)
   - Historial de acciones (email enviado, llamada realizada, SMS enviado)
 - ✅ Ordenamiento por monto, fecha, días vencidos (ascendente/descendente)
 - ✅ Límite de resultados (opcional)
 - ✅ **Contador dinámico de deudores**: Muestra en tiempo real cuántos deudores pasarán el filtro
-- ✅ **Integración con BD**: Consulta real a la base de datos para calcular el contador
+- ✅ **Integración con BD**: Consulta real a la base de datos para calcular el contador y aplicar filtros
+- ✅ **Optimizaciones**: Cálculo de días vencidos una sola vez, manejo de errores robusto
 
 ---
 
@@ -291,6 +293,7 @@ await fetch('/api/send-sms', {
 **Fase 2:** ✅ Nodo Filtro implementado  
 **Fase 3:** ✅ Integración con programación automática  
 **Fase 4:** ✅ Validaciones y mejoras de UX  
+**Fase 4.1:** ✅ Implementación completa del nodo FILTRO con lógica real de BD (Diciembre 2024)  
 **Fecha:** Diciembre 2024
 
 ---
