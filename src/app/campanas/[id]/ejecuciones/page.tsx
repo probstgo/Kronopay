@@ -233,17 +233,17 @@ export default function EjecucionesPage() {
                           {ejecucion.resultado_final && (
                             <div className="mt-2 text-sm text-gray-600">
                               <span className="font-medium">Resultado:</span>{' '}
-                              {ejecucion.resultado_final.programaciones_creadas && (
+                              {typeof ejecucion.resultado_final.programaciones_creadas === 'number' && ejecucion.resultado_final.programaciones_creadas > 0 && (
                                 <span>
                                   {ejecucion.resultado_final.programaciones_creadas} programaciones creadas
                                 </span>
                               )}
-                              {ejecucion.resultado_final.exitosas !== undefined && (
+                              {typeof ejecucion.resultado_final.exitosas === 'number' && (
                                 <span className="ml-2 text-green-600">
                                   {ejecucion.resultado_final.exitosas} exitosas
                                 </span>
                               )}
-                              {ejecucion.resultado_final.fallidas !== undefined && (
+                              {typeof ejecucion.resultado_final.fallidas === 'number' && (
                                 <span className="ml-2 text-red-600">
                                   {ejecucion.resultado_final.fallidas} fallidas
                                 </span>
