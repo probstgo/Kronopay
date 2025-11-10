@@ -117,16 +117,30 @@ async function ejecutarNodoRecursivo(
 
     case 'email':
     case 'sms':
+      // Extraer variables de deudores antes de programar acciones
+      const deudoresConVarsEmailSMS = await Promise.all(
+        deudoresParaSiguiente.map(async (deudor) => {
+          // Si ya tiene variables, usarlas; si no, extraerlas desde BD
+          if (deudor.vars) {
+            return deudor
+          }
+          const vars = await extraerVariablesDeudores(
+            deudor.deuda_id,
+            deudor.rut,
+            usuario_id
+          )
+          return { ...deudor, vars }
+        })
+      )
       // Programar envío de email/SMS
       const resultadoEmailSMS = await programarAccionesMultiples(
-        deudoresParaSiguiente,
+        deudoresConVarsEmailSMS,
         {
           usuario_id,
           campana_id,
           tipo_accion: nodo.tipo,
           fecha_programada: fechaEjecucion.toISOString(),
-          plantilla_id: nodo.configuracion.plantilla_id as string,
-          vars: extraerVariablesDeudores()
+          plantilla_id: nodo.configuracion.plantilla_id as string
         }
       )
       contadores.programacionesCreadas += resultadoEmailSMS.exitosas
@@ -135,16 +149,30 @@ async function ejecutarNodoRecursivo(
       break
 
     case 'llamada':
+      // Extraer variables de deudores antes de programar acciones
+      const deudoresConVarsLlamada = await Promise.all(
+        deudoresParaSiguiente.map(async (deudor) => {
+          // Si ya tiene variables, usarlas; si no, extraerlas desde BD
+          if (deudor.vars) {
+            return deudor
+          }
+          const vars = await extraerVariablesDeudores(
+            deudor.deuda_id,
+            deudor.rut,
+            usuario_id
+          )
+          return { ...deudor, vars }
+        })
+      )
       // Programar llamada
       const resultadoLlamada = await programarAccionesMultiples(
-        deudoresParaSiguiente,
+        deudoresConVarsLlamada,
         {
           usuario_id,
           campana_id,
           tipo_accion: 'llamada',
           fecha_programada: fechaEjecucion.toISOString(),
-          agente_id: nodo.configuracion.agente_id as string,
-          vars: extraerVariablesDeudores()
+          agente_id: nodo.configuracion.agente_id as string
         }
       )
       contadores.programacionesCreadas += resultadoLlamada.exitosas
@@ -767,15 +795,155 @@ function evaluarCondicionExistencia(
 }
 
 /**
- * Extrae variables de deudores para usar en plantillas
+ * Extrae variables de deudores para usar en plantillas consultando la BD
  */
-function extraerVariablesDeudores(): Record<string, string> {
-  // Retornar variables genéricas
-  // En la implementación real, esto consultaría la BD para obtener datos reales
-  return {
-    nombre: 'Deudor',
-    monto: '$0',
-    fecha_vencimiento: new Date().toISOString().split('T')[0]
+async function extraerVariablesDeudores(
+  deuda_id: string,
+  rut: string,
+  usuario_id: string
+): Promise<Record<string, string>> {
+  // Crear cliente Supabase con service_role para consultar BD
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  try {
+    // Obtener deuda con deudor y contactos
+    const { data: deudaData, error: deudaError } = await supabase
+      .from('deudas')
+      .select(`
+        id,
+        monto,
+        estado,
+        fecha_vencimiento,
+        deudor_id,
+        deudores (
+          id,
+          rut,
+          nombre,
+          contactos (
+            id,
+            tipo_contacto,
+            valor,
+            preferido
+          )
+        )
+      `)
+      .eq('id', deuda_id)
+      .eq('usuario_id', usuario_id)
+      .single()
+
+    if (deudaError || !deudaData) {
+      console.error('Error obteniendo deuda para extraer variables:', deudaError)
+      // Retornar variables genéricas si hay error
+      return {
+        nombre: 'Deudor',
+        monto: '$0',
+        fecha_vencimiento: new Date().toISOString().split('T')[0],
+        dias_vencidos: '0',
+        email: '',
+        telefono: ''
+      }
+    }
+
+    const deuda = deudaData as {
+      id: string
+      monto: number
+      estado: string
+      fecha_vencimiento: string
+      deudor_id: string
+      deudores: Array<{
+        id: string
+        rut: string
+        nombre: string
+        contactos: Array<{
+          id: string
+          tipo_contacto: string
+          valor: string
+          preferido: boolean
+        }>
+      }>
+    }
+
+    // Obtener el primer deudor (debería haber solo uno)
+    const deudor = deuda.deudores && deuda.deudores.length > 0 ? deuda.deudores[0] : null
+    if (!deudor) {
+      console.error('No se encontró deudor para la deuda:', deuda_id)
+      return {
+        nombre: 'Deudor',
+        monto: '$0',
+        fecha_vencimiento: new Date().toISOString().split('T')[0],
+        dias_vencidos: '0',
+        email: '',
+        telefono: ''
+      }
+    }
+
+    // Obtener nombre de empresa del usuario
+    const { data: usuarioData } = await supabase
+      .from('usuarios')
+      .select('nombre_empresa')
+      .eq('id', usuario_id)
+      .single()
+
+    const nombreEmpresa = usuarioData?.nombre_empresa || 'Nuestra empresa'
+
+    // Calcular días vencidos
+    const diasVencidos = deuda.fecha_vencimiento
+      ? calcularDiasVencidos(deuda.fecha_vencimiento)
+      : 0
+
+    // Formatear monto
+    const monto = typeof deuda.monto === 'number' ? deuda.monto : Number(deuda.monto) || 0
+    const montoFormateado = `$${monto.toLocaleString('es-CL')}`
+
+    // Extraer contactos
+    const contactos = deudor.contactos || []
+    const contactoEmail = contactos.find(c => c.tipo_contacto === 'email' && c.preferido) ||
+                          contactos.find(c => c.tipo_contacto === 'email') ||
+                          null
+    const contactoTelefono = contactos.find(c => c.tipo_contacto === 'telefono' && c.preferido) ||
+                             contactos.find(c => c.tipo_contacto === 'telefono') ||
+                             null
+
+    // Formatear fecha de vencimiento
+    let fechaVencimientoFormateada = deuda.fecha_vencimiento || new Date().toISOString().split('T')[0]
+    if (fechaVencimientoFormateada) {
+      try {
+        const fecha = new Date(fechaVencimientoFormateada)
+        fechaVencimientoFormateada = fecha.toLocaleDateString('es-CL', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })
+      } catch {
+        // Si hay error al formatear, usar la fecha original
+      }
+    }
+
+    // Retornar todas las variables
+    return {
+      nombre: deudor.nombre || 'Deudor',
+      monto: montoFormateado,
+      fecha_vencimiento: fechaVencimientoFormateada,
+      dias_vencidos: String(diasVencidos),
+      email: contactoEmail?.valor || '',
+      telefono: contactoTelefono?.valor || '',
+      empresa: nombreEmpresa
+    }
+  } catch (error) {
+    console.error('Error extrayendo variables de deudor:', error)
+    // Retornar variables genéricas si hay error
+    return {
+      nombre: 'Deudor',
+      monto: '$0',
+      fecha_vencimiento: new Date().toISOString().split('T')[0],
+      dias_vencidos: '0',
+      email: '',
+      telefono: '',
+      empresa: 'Nuestra empresa'
+    }
   }
 }
 

@@ -951,7 +951,7 @@ export const theme = {
 ### **🔄 FUTURO - Fase 4**
 1. **✅ Fase 4.1 COMPLETADA** - Implementación del Nodo FILTRO con lógica real de BD (Diciembre 2024)
 2. **✅ Fase 4.2 COMPLETADA** - Implementación del Nodo CONDICIÓN con lógica real de BD (Diciembre 2024)
-3. **🔄 Fase 4.3** - Extracción de variables de deudores desde BD
+3. **✅ Fase 4.3 COMPLETADA** - Extracción de variables de deudores desde BD (Diciembre 2024)
 4. **🔄 Fase 4.4** - Integración completa con plantillas
 5. **🔄 Fase 4.5** - Integración completa con agentes de llamada
 6. **🔄 Fase 4.6** - Sistema de logs de ejecución
@@ -991,7 +991,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 ---
 
-**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO, Fase 4.2 - Implementación del Nodo CONDICIÓN. **Próximo:** Fase 4.3 - Extracción de variables de deudores o Fase 4.4 - Integración completa con plantillas.
+**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO, Fase 4.2 - Implementación del Nodo CONDICIÓN, Fase 4.3 - Extracción de variables de deudores. **Próximo:** Fase 4.4 - Integración completa con plantillas o Fase 4.5 - Integración completa con agentes de llamada.
 
 ---
 
@@ -1015,10 +1015,10 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 - **✅ Fase 3.3**: Gestión de Campañas (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.1**: Implementación del Nodo FILTRO con lógica real de BD (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.2**: Implementación del Nodo CONDICIÓN con lógica real de BD (Diciembre 2024) - COMPLETADA
+- **✅ Fase 4.3**: Extracción de variables de deudores desde BD (Diciembre 2024) - COMPLETADA
 
 ### **⏳ Próximas Fases:**
 - **Fase 3.4-3.5**: Persistencia y Gestión (Metadatos, Versiones) - Opcionales
-- **Fase 4.3**: Extracción de variables de deudores desde BD
 - **Fase 4.4**: Integración completa con plantillas
 - **Fase 4.5**: Integración completa con agentes de llamada
 - **Fase 4.6**: Sistema de logs de ejecución
@@ -1721,8 +1721,7 @@ Nodo FILTRO en ejecución
   └─ Retorna deudores filtrados con variables calculadas
 ```
 
-#### Próximos Pasos (Fase 4.3 - Fase 4.8)
-- Fase 4.3: Extracción de variables de deudores desde BD
+#### Próximos Pasos (Fase 4.4 - Fase 4.8)
 - Fase 4.4: Integración completa con plantillas
 - Fase 4.5: Integración completa con agentes de llamada
 - Fase 4.6: Sistema de logs de ejecución
@@ -1811,8 +1810,7 @@ Nodo CONDICIÓN en ejecución
   └─ Continúa flujo por ambas ramas (sí/no)
 ```
 
-#### Próximos Pasos (Fase 4.3 - Fase 4.8)
-- Fase 4.3: Extracción de variables de deudores desde BD
+#### Próximos Pasos (Fase 4.4 - Fase 4.8)
 - Fase 4.4: Integración completa con plantillas
 - Fase 4.5: Integración completa con agentes de llamada
 - Fase 4.6: Sistema de logs de ejecución

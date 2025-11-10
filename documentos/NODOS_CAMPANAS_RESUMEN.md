@@ -301,6 +301,7 @@ await fetch('/api/send-sms', {
 **Fase 4:** ✅ Validaciones y mejoras de UX  
 **Fase 4.1:** ✅ Implementación completa del nodo FILTRO con lógica real de BD (Diciembre 2024)  
 **Fase 4.2:** ✅ Implementación completa del nodo CONDICIÓN con lógica real de BD (Diciembre 2024)  
+**Fase 4.3:** ✅ Extracción de variables de deudores desde BD (Diciembre 2024)  
 **Fecha:** Diciembre 2024
 
 ---
@@ -354,3 +355,21 @@ await fetch('/api/send-sms', {
   - Muestra número grande y claro
   - Indica si se aplicó el límite de resultados
   - Mensaje cuando no hay filtros configurados
+
+### **Extracción de Variables de Deudores**
+- ✅ **Extracción automática desde BD** (Fase 4.3 - Diciembre 2024):
+  - Consulta real a la base de datos para obtener datos del deudor
+  - Variables extraídas: nombre, monto, fecha_vencimiento, dias_vencidos, email, telefono, empresa
+  - Formateo automático: monto con separadores chilenos, fecha en español
+  - Cálculo automático de días vencidos
+  - Extracción inteligente de contactos (preferido primero)
+  - Obtención del nombre de empresa del usuario
+- ✅ **Optimizaciones:**
+  - Reutiliza variables si el deudor ya las tiene (por ejemplo, después de `aplicarFiltro()`)
+  - Solo consulta la BD si faltan variables
+  - Consulta optimizada con joins para obtener todos los datos en una sola query
+  - Manejo robusto de errores con valores por defecto
+- ✅ **Integración:**
+  - Se extraen variables automáticamente antes de programar acciones (email, SMS, llamada)
+  - Las variables se pasan automáticamente a `programarAccionesMultiples`
+  - Compatible con el sistema existente de variables
