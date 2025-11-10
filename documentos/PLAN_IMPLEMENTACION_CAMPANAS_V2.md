@@ -22,7 +22,7 @@ Crear un sistema de campañas con **Journey Builder visual** usando **React Flow
 
 ### 🆕 **Nuevo Diseño Inspirado en Make.com**
 - **Canvas infinito** con pan/zoom suave
-- **Nodos especializados** para cobranza (Email, Llamada, SMS, Espera, Condición, Filtro)
+- **Nodos especializados** para cobranza (Email, Llamada, SMS, WhatsApp, Espera, Condición, Filtro)
 - **Conexiones visuales** con diferentes tipos (éxito, error, timeout)
 - **Panel lateral** para configuración de nodos
 - **Barra superior** con acciones principales
@@ -77,7 +77,7 @@ Crear un sistema de campañas con **Journey Builder visual** usando **React Flow
 - ✅ **Ejecución automática**: Cuando una campaña se guarda o se activa con estado "activo", se ejecuta automáticamente
 - ✅ **Cron job diario** ejecuta todas las acciones programadas (configurado en `vercel.json`)
 - ✅ **Cada nodo programa su acción** en la tabla `programaciones`:
-  - **EMAIL/LLAMADA/SMS**: Programa envío inmediato o con horario específico
+  - **EMAIL/LLAMADA/SMS/WHATSAPP**: Programa envío inmediato o con horario específico
   - **ESPERA**: Calcula próxima fecha y programa siguiente acción
   - **CONDICIÓN**: Programa acciones según resultado (sí/no)
   - **FILTRO**: Filtra deudores antes de continuar
@@ -277,6 +277,7 @@ export function NodeConfigPanel({ nodeId, onClose }: Props) {
       {node.type === 'llamada' && <LlamadaConfigForm node={node} />}
       {node.type === 'espera' && <EsperaConfigForm node={node} />}
       {node.type === 'sms' && <SMSConfigForm node={node} />}
+      {node.type === 'whatsapp' && <WhatsAppConfigForm node={node} />}
       {node.type === 'condicion' && <CondicionConfigForm node={node} />}
       {node.type === 'filtro' && <FiltroConfigForm node={node} />}
     </div>
@@ -350,7 +351,7 @@ export function TopToolbar({ onAddNode, availableNodeTypes = [] }: TopToolbarPro
 // Tipos base
 export interface BaseNodeData {
   id: string
-  tipo: 'email' | 'llamada' | 'espera' | 'sms' | 'condicion'
+  tipo: 'email' | 'llamada' | 'espera' | 'sms' | 'whatsapp' | 'condicion'
   configuracion: Record<string, any>
 }
 
@@ -417,6 +418,18 @@ export interface SMSNodeData extends BaseNodeData {
       nombre: boolean
       monto: boolean
     }
+    configuracion_avanzada: {
+      horario_envio: { inicio: string, fin: string }
+      reintentos: number
+    }
+  }
+}
+
+// Nodo WhatsApp
+export interface WhatsAppNodeData extends BaseNodeData {
+  tipo: 'whatsapp'
+  configuracion: {
+    plantilla_id: string
     configuracion_avanzada: {
       horario_envio: { inicio: string, fin: string }
       reintentos: number
@@ -800,6 +813,7 @@ src/
 │   │   │   ├── LlamadaNode.tsx         # Nodo de llamada
 │   │   │   ├── EsperaNode.tsx          # Nodo de espera
 │   │   │   ├── SMSNode.tsx             # Nodo de SMS
+│   │   │   ├── WhatsAppNode.tsx        # Nodo de WhatsApp
 │   │   │   ├── CondicionNode.tsx       # Nodo de condición
 │   │   │   └── FiltroNode.tsx          # Nodo de filtro
 │   │   ├── forms/
@@ -807,6 +821,7 @@ src/
 │   │   │   ├── LlamadaConfigForm.tsx   # Formulario de llamada
 │   │   │   ├── EsperaConfigForm.tsx     # Formulario de espera
 │   │   │   ├── SMSConfigForm.tsx       # Formulario de SMS
+│   │   │   ├── WhatsAppConfigForm.tsx  # Formulario de WhatsApp
 │   │   │   ├── CondicionConfigForm.tsx  # Formulario de condición
 │   │   │   └── FiltroConfigForm.tsx    # Formulario de filtro
 │   │   └── types/
@@ -851,6 +866,7 @@ const nodeTypes = {
   llamada: LlamadaNode,
   espera: EsperaNode,
   sms: SMSNode,
+  whatsapp: WhatsAppNode,
   condicion: CondicionNode
 }
 
@@ -911,7 +927,7 @@ export const theme = {
 - **Performance**: < 100ms para operaciones básicas
 
 ### **Funcionalidad**
-- **Nodos implementados**: 6 tipos (Email, Llamada, SMS, Espera, Condición, Filtro)
+- **Nodos implementados**: 7 tipos (Email, Llamada, SMS, WhatsApp, Espera, Condición, Filtro)
 - **Conexiones**: 4 tipos diferentes
 - **Persistencia**: 100% funcional
 - **Ejecución**: Sistema paso a paso con programación automática (cron job)
@@ -956,7 +972,8 @@ export const theme = {
 5. **✅ Fase 4.5 COMPLETADA** - Integración completa con agentes de llamada (Diciembre 2024)
 6. **✅ Fase 4.6 COMPLETADA** - Sistema de logs de ejecución (Diciembre 2024)
 7. **✅ Fase 4.7 COMPLETADA** - Sistema de seguimiento de ejecuciones (Diciembre 2024)
-8. **🔄 Fase 4.8** - Implementación de SMS con Twilio
+8. **✅ Fase 4.9 COMPLETADA** - Implementación completa del nodo WHATSAPP (Diciembre 2024)
+9. **🔄 Fase 4.8** - Implementación de SMS con Twilio
 
 ---
 
@@ -991,7 +1008,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 ---
 
-**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO, Fase 4.2 - Implementación del Nodo CONDICIÓN, Fase 4.3 - Extracción de variables de deudores, Fase 4.4 - Integración completa con plantillas, Fase 4.5 - Integración completa con agentes de llamada, Fase 4.6 - Sistema de logs de ejecución, Fase 4.7 - Sistema de seguimiento de ejecuciones. **Próximo:** Fase 4.8 - Implementación de SMS con Twilio.
+**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO, Fase 4.2 - Implementación del Nodo CONDICIÓN, Fase 4.3 - Extracción de variables de deudores, Fase 4.4 - Integración completa con plantillas, Fase 4.5 - Integración completa con agentes de llamada, Fase 4.6 - Sistema de logs de ejecución, Fase 4.7 - Sistema de seguimiento de ejecuciones, Fase 4.9 - Implementación completa del nodo WHATSAPP. **Próximo:** Fase 4.8 - Implementación de SMS con Twilio.
 
 ---
 
@@ -1020,6 +1037,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 - **✅ Fase 4.5**: Integración completa con agentes de llamada (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.6**: Sistema de logs de ejecución (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.7**: Sistema de seguimiento de ejecuciones (Diciembre 2024) - COMPLETADA
+- **✅ Fase 4.9**: Implementación completa del nodo WHATSAPP (Diciembre 2024) - COMPLETADA
 
 ### **⏳ Próximas Fases:**
 - **Fase 3.4-3.5**: Persistencia y Gestión (Metadatos, Versiones) - Opcionales
@@ -1065,11 +1083,13 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 #### **Archivos Creados:**
 - ✅ `src/app/campanas/components/nodes/SMSNode.tsx` - Nodo de SMS
+- ✅ `src/app/campanas/components/nodes/WhatsAppNode.tsx` - Nodo de WhatsApp
 - ✅ `src/app/campanas/components/nodes/CondicionNode.tsx` - Nodo de condición
 - ✅ `src/app/campanas/components/forms/EmailConfigForm.tsx` - Formulario de email
 - ✅ `src/app/campanas/components/forms/LlamadaConfigForm.tsx` - Formulario de llamada
 - ✅ `src/app/campanas/components/forms/EsperaConfigForm.tsx` - Formulario de espera
 - ✅ `src/app/campanas/components/forms/SMSConfigForm.tsx` - Formulario de SMS
+- ✅ `src/app/campanas/components/forms/WhatsAppConfigForm.tsx` - Formulario de WhatsApp
 - ✅ `src/app/campanas/components/forms/CondicionConfigForm.tsx` - Formulario de condición
 
 #### **Modificaciones:**
@@ -1079,8 +1099,9 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 #### **Funcionalidades Implementadas:**
 - ✅ Sistema Make.com completo (círculo "+" inicial + handles "+" en nodos)
-- ✅ 5 tipos de nodos completamente funcionales
-- ✅ 5 formularios de configuración específicos
+- ✅ 6 tipos de nodos completamente funcionales (Email, Llamada, SMS, Espera, Condición)
+- ✅ 6 formularios de configuración específicos
+- ✅ **Nota:** WhatsApp fue agregado posteriormente en Fase 4.9
 - ✅ Panel de configuración integrado y funcional
 - ✅ Handles "+" completamente integrados en React Flow
 - ✅ Menú de selección de nodos con diseño profesional
@@ -2206,6 +2227,127 @@ Página de Campañas
               ├─ Log "iniciado" con datos de entrada
               ├─ Log "completado/fallido" con datos de salida
               └─ Errores destacados si existen
+```
+
+---
+
+### **✅ FASE 4.9 COMPLETADA - Diciembre 2024 (Implementación completa del nodo WHATSAPP)**
+
+#### Cambios UI/UX
+- **Nodo WhatsApp en Interfaz**: Nuevo nodo WhatsApp disponible en el menú lateral de la sección de campañas
+- **Componente Visual**: Nodo WhatsApp con color verde distintivo e icono 💬
+- **Formulario de Configuración**: Formulario completo para configurar nodos WhatsApp con plantillas
+- **Preview de Plantillas**: Botón "Ver Preview" para ver cómo se verá el mensaje de WhatsApp con variables reemplazadas
+
+#### Cambios técnicos (frontend y backend)
+
+**1. Backend - Soporte para WhatsApp (`src/lib/ejecutarCampana.ts`):**
+- Agregado `'whatsapp'` al tipo `NodoCampana`
+- Agregado `case 'whatsapp'` en el switch de ejecución junto con `email` y `sms`
+- Actualizadas las condiciones de logs para incluir `'whatsapp'`
+- Agregado caso `default` en el switch para manejar tipos no soportados
+- Agregada validación de tipos de nodos antes de ejecutar campaña
+
+**2. Backend - Mejoras (`src/lib/ejecutarCampanaAutomatica.ts`):**
+- Eliminado uso de `as any` para actualización de `ejecutado_at`
+- Agregado manejo de errores en actualización de `ejecutado_at`
+- Agregada validación de tipos de nodos antes de ejecutar
+
+**3. Frontend - Componente WhatsApp (`src/app/campanas/components/nodes/WhatsAppNode.tsx`):**
+- Creado componente visual del nodo WhatsApp
+- Color verde distintivo (border-green-200)
+- Icono 💬 para identificación visual
+- Botones de configuración y eliminación integrados
+
+**4. Frontend - Formulario de Configuración (`src/app/campanas/components/forms/WhatsAppConfigForm.tsx`):**
+- Creado formulario completo para configurar nodos WhatsApp
+- Carga plantillas de tipo `whatsapp` desde la BD
+- Validación de plantilla obligatoria
+- Configuración avanzada (horario de envío, reintentos)
+- Preview de plantilla integrado
+
+**5. Frontend - Integración en JourneyBuilder (`src/app/campanas/components/JourneyBuilder.tsx`):**
+- Importado `WhatsAppNode`
+- Agregado a `nodeComponents` en `NodeWrapper`
+- Agregado a `nodeTypes` para ReactFlow
+- Agregado a `availableNodeTypes` (aparece en menú lateral)
+- Agregado caso `whatsapp` en `createNode` con configuración por defecto
+
+**6. Frontend - Integración en NodeConfigPanel (`src/app/campanas/components/NodeConfigPanel.tsx`):**
+- Importado `WhatsAppConfigForm`
+- Agregado caso `whatsapp` en `getNodeTitle`
+- Agregado renderizado de `WhatsAppConfigForm` cuando el nodo es de tipo `whatsapp`
+
+**7. Backend - Validación en Endpoint (`src/app/api/campanas/ejecutar/route.ts`):**
+- Agregada validación de tipos de nodos antes de ejecutar
+- Incluye `'whatsapp'` en la lista de tipos válidos
+
+#### Funcionalidades Implementadas
+
+**Soporte Completo para WhatsApp:**
+- ✅ Nodo WhatsApp visible y utilizable en la interfaz
+- ✅ Configuración con plantillas de WhatsApp
+- ✅ Preview de plantillas antes de guardar
+- ✅ Ejecución correcta en el backend
+- ✅ Programación de acciones de WhatsApp
+- ✅ Registro de logs de ejecución
+- ✅ Validación de tipos de nodos
+
+**Mejoras Generales:**
+- ✅ Eliminado uso de `as any` en actualización de campaña
+- ✅ Agregado manejo de errores mejorado
+- ✅ Agregado caso `default` en switch para tipos no soportados
+- ✅ Validación temprana de tipos de nodos
+
+#### Archivos Creados
+
+- ✅ `src/app/campanas/components/nodes/WhatsAppNode.tsx` - Componente visual del nodo WhatsApp
+- ✅ `src/app/campanas/components/forms/WhatsAppConfigForm.tsx` - Formulario de configuración de WhatsApp
+
+#### Archivos Modificados
+
+- ✅ `src/lib/ejecutarCampana.ts`:
+  - Agregado `'whatsapp'` al tipo `NodoCampana`
+  - Agregado `case 'whatsapp'` en el switch
+  - Actualizadas condiciones de logs
+  - Agregado caso `default` en el switch
+
+- ✅ `src/lib/ejecutarCampanaAutomatica.ts`:
+  - Eliminado uso de `as any`
+  - Agregado manejo de errores
+  - Agregada validación de tipos de nodos
+
+- ✅ `src/app/api/campanas/ejecutar/route.ts`:
+  - Agregada validación de tipos de nodos
+
+- ✅ `src/app/campanas/components/JourneyBuilder.tsx`:
+  - Importado `WhatsAppNode`
+  - Agregado a `nodeComponents`, `nodeTypes` y `availableNodeTypes`
+  - Agregado caso `whatsapp` en `createNode`
+
+- ✅ `src/app/campanas/components/NodeConfigPanel.tsx`:
+  - Importado `WhatsAppConfigForm`
+  - Agregado soporte para `whatsapp` en `getNodeTitle` y renderizado
+
+#### Flujo Completo Implementado
+
+```
+Creación de Nodo WhatsApp
+  ├─ Usuario hace clic en "WhatsApp" en el menú lateral
+  ├─ Se crea nodo WhatsApp en el canvas
+  ├─ Usuario hace clic en "Configurar"
+  ├─ Se abre panel de configuración con WhatsAppConfigForm
+  ├─ Usuario selecciona plantilla de WhatsApp
+  ├─ Usuario configura horario y reintentos
+  ├─ Usuario guarda configuración
+  └─ Nodo WhatsApp listo para ejecutar
+
+Ejecución de Nodo WhatsApp
+  ├─ Campaña se ejecuta automáticamente (si está activa)
+  ├─ Nodo WhatsApp programa acción en tabla programaciones
+  ├─ Cron job ejecuta acción programada
+  ├─ Se envía mensaje de WhatsApp usando plantilla
+  └─ Se registra log de ejecución
 ```
 
 #### Próximos Pasos (Fase 4.8)

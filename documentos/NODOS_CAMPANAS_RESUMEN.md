@@ -15,7 +15,7 @@ Los nodos actuales son básicos y no aprovechan:
 
 ---
 
-## 🚀 **PROPUESTA: 6 NODOS MEJORADOS**
+## 🚀 **PROPUESTA: 7 NODOS MEJORADOS**
 
 ### **1. 📧 EMAIL**
 **¿Qué hace?** Envía emails usando plantillas existentes
@@ -77,7 +77,20 @@ Los nodos actuales son básicos y no aprovechan:
 - ✅ Horarios inteligentes (solo días laborables)
 - ✅ Usa API Twilio existente
 
-### **6. 🔍 FILTRO**
+### **6. 💬 WHATSAPP**
+**¿Qué hace?** Envía mensajes de WhatsApp usando plantillas existentes
+**Mejoras:**
+- ✅ **Solo plantillas existentes** (dropdown obligatorio)
+- ✅ **Variables automáticas desde plantilla**: Las variables `{{nombre}}`, `{{monto}}`, `{{fecha_vencimiento}}` están definidas en la plantilla y se reemplazan automáticamente
+- ✅ **Sin contenido personalizado** (solo plantillas)
+- ✅ **Sin configuración de variables en el nodo** (las variables se manejan desde la plantilla)
+- ✅ **Preview de plantilla**: Botón "Ver Preview" para ver cómo se verá el mensaje de WhatsApp con variables reemplazadas antes de guardar
+- ✅ **Filtrado mediante nodo FILTRO**: El filtrado de deudores con teléfono se realiza mediante el nodo FILTRO dedicado (ver nodo FILTRO)
+- ✅ Horarios inteligentes (solo días laborables)
+- ✅ Configuración avanzada (horario de envío, reintentos)
+- ✅ Integración completa con sistema de ejecución
+
+### **7. 🔍 FILTRO**
 **¿Qué hace?** Filtra y segmenta deudores antes de continuar
 **Mejoras:**
 - ✅ **Nodo dedicado para filtrado**: Este nodo centraliza todo el filtrado de deudores para ser reutilizado en múltiples flujos
@@ -104,7 +117,7 @@ Los nodos actuales son básicos y no aprovechan:
 - ✅ **Ejecución automática**: Cuando una campaña se guarda o se activa con estado "activo", se ejecuta automáticamente
 - ✅ **Cron job diario** ejecuta todas las acciones programadas (configurado en `vercel.json`)
 - ✅ **Cada nodo programa su acción** en la tabla `programaciones`:
-  - **EMAIL/LLAMADA/SMS**: Programa envío inmediato o con horario específico
+  - **EMAIL/LLAMADA/SMS/WHATSAPP**: Programa envío inmediato o con horario específico
   - **ESPERA**: Calcula próxima fecha y programa siguiente acción
   - **CONDICIÓN**: Programa acciones según resultado (sí/no)
 - ✅ **Cron job procesa** todas las programaciones pendientes todos los días
@@ -136,11 +149,11 @@ FILTRO → EMAIL → ESPERA(3 días) → LLAMADA
 
 ### **Flujo 2: Cobranza Inteligente**
 ```
-FILTRO → CONDICIÓN → EMAIL/SMS/LLAMADA → ESPERA(1 semana) → FILTRO
+FILTRO → CONDICIÓN → EMAIL/SMS/WHATSAPP/LLAMADA → ESPERA(1 semana) → FILTRO
 ```
 - Filtra deudores vencidos > 30 días
 - Si tiene email → Envía email con plantilla
-- Si no tiene email pero tiene teléfono → Envía SMS con plantilla
+- Si no tiene email pero tiene teléfono → Envía SMS o WhatsApp con plantilla
 - Si no tiene contacto → Realiza llamada con agente
 - Espera 1 semana (programa automáticamente con cron job)
 - Vuelve a filtrar para siguiente ciclo
@@ -275,6 +288,7 @@ await fetch('/api/send-sms', {
 - [ ] **Nodo Email** mejorado con plantillas y filtros
 - [ ] **Nodo Llamada** mejorado con agentes y scripts
 - [ ] **Nodo SMS** mejorado con plantillas y filtros
+- [ ] **Nodo WhatsApp** mejorado con plantillas y filtros
 - [ ] **Nodo Condición** con datos reales de BD
 - [ ] **Nodo Espera** con opciones inteligentes
 - [ ] **Nodo Filtro** para segmentar deudores
@@ -304,6 +318,7 @@ await fetch('/api/send-sms', {
 **Fase 4.3:** ✅ Extracción de variables de deudores desde BD (Diciembre 2024)  
 **Fase 4.4:** ✅ Integración completa con plantillas (Diciembre 2024)  
 **Fase 4.5:** ✅ Integración completa con agentes de llamada (Diciembre 2024)  
+**Fase 4.9:** ✅ Implementación completa del nodo WHATSAPP (Diciembre 2024)  
 **Fecha:** Diciembre 2024
 
 ---
@@ -317,10 +332,11 @@ await fetch('/api/send-sms', {
 - ✅ **No se necesita configurar variables en el nodo** - esto simplifica la configuración y evita redundancia
 
 ### **Preview de Plantillas**
-- ✅ Los nodos **Email** y **SMS** incluyen un botón "Ver Preview" que aparece cuando se selecciona una plantilla
+- ✅ Los nodos **Email**, **SMS** y **WhatsApp** incluyen un botón "Ver Preview" que aparece cuando se selecciona una plantilla
 - ✅ El preview muestra cómo se verá el mensaje con las variables reemplazadas usando datos de ejemplo
 - ✅ Para **Email**: Muestra asunto, remitente, destinatario y contenido completo (soporta HTML y texto)
 - ✅ Para **SMS**: Muestra destinatario y contenido con contador de caracteres
+- ✅ Para **WhatsApp**: Muestra destinatario y contenido con contador de caracteres
 - ✅ Permite verificar la plantilla antes de guardar la configuración del nodo
 
 ### **Filtrado de Deudores**
@@ -335,11 +351,12 @@ await fetch('/api/send-sms', {
   FILTRO (deudores con email) → EMAIL
   FILTRO (deudores con teléfono) → LLAMADA
   FILTRO (deudores vencidos > 30 días) → SMS → ESPERA → LLAMADA
+  FILTRO (deudores con WhatsApp) → WHATSAPP → ESPERA → LLAMADA
   ```
 
 ### **Validaciones y Mejoras de UX**
 - ✅ **Validaciones implementadas:**
-  - Email y SMS: Validan que se seleccione una plantilla antes de guardar
+  - Email, SMS y WhatsApp: Validan que se seleccione una plantilla antes de guardar
   - Llamada: Valida que se seleccione un agente antes de guardar
   - Todos los formularios validan que existan opciones disponibles
 - ✅ **Mensajes de error claros:**
