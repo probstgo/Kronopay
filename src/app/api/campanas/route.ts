@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { saveCampanaSchema } from '@/lib/validations/campanaSchema'
+import { ejecutarCampanaAutomaticamente } from '@/lib/ejecutarCampanaAutomatica'
 
 // GET: Listar todas las campañas del usuario
 export async function GET() {
@@ -135,6 +136,21 @@ export async function POST(request: NextRequest) {
         { error: 'Error al guardar la campaña', detalles: insertError.message },
         { status: 500 }
       )
+    }
+
+    // Si la campaña está activa, ejecutarla automáticamente
+    if (campana.estado === 'activo') {
+      try {
+        await ejecutarCampanaAutomaticamente({
+          supabase,
+          campanaId: campana.id,
+          usuarioId: session.user.id,
+          canvasData: campana.canvas_data
+        })
+      } catch (error) {
+        // No fallar el guardado si la ejecución falla, solo loguear
+        console.error('Error ejecutando campaña automáticamente:', error)
+      }
     }
 
     return NextResponse.json({

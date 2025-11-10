@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { updateCanvasSchema } from '@/lib/validations/campanaSchema'
+import { ejecutarCampanaAutomaticamente } from '@/lib/ejecutarCampanaAutomatica'
 
 // GET: Obtener canvas_data de una campaña
 export async function GET(
@@ -117,7 +118,7 @@ export async function PUT(
     // Verificar que la campaña existe y pertenece al usuario
     const { data: campanaExistente, error: fetchError } = await supabase
       .from('workflows_cobranza')
-      .select('id, usuario_id')
+      .select('id, usuario_id, estado')
       .eq('id', campanaId)
       .eq('usuario_id', session.user.id)
       .single()
@@ -180,6 +181,21 @@ export async function PUT(
         { error: 'Error al actualizar la campaña', detalles: updateError.message },
         { status: 500 }
       )
+    }
+
+    // Si la campaña está activa, ejecutarla automáticamente
+    if (campanaActualizada.estado === 'activo') {
+      try {
+        await ejecutarCampanaAutomaticamente({
+          supabase,
+          campanaId: campanaActualizada.id,
+          usuarioId: session.user.id,
+          canvasData: campanaActualizada.canvas_data
+        })
+      } catch (error) {
+        // No fallar la actualización si la ejecución falla, solo loguear
+        console.error('Error ejecutando campaña automáticamente:', error)
+      }
     }
 
     return NextResponse.json({

@@ -317,7 +317,7 @@ export function TopToolbar({
               <h3 className="text-sm font-semibold">Estado</h3>
               <div className="p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-900">
-                  La campaña aún no ha sido ejecutada. Ejecuta la campaña para ver estadísticas en tiempo real.
+                  La campaña se ejecutará automáticamente cuando esté activa. Las estadísticas aparecerán después de la primera ejecución.
                 </p>
               </div>
             </div>

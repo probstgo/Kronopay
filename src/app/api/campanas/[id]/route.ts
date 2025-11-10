@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { z } from 'zod'
+import { ejecutarCampanaAutomaticamente } from '@/lib/ejecutarCampanaAutomatica'
 
 // Schema para actualizar estado
 const updateEstadoSchema = z.object({
@@ -62,7 +63,7 @@ export async function PATCH(
     // Verificar que la campaña existe y pertenece al usuario
     const { data: campanaExistente, error: fetchError } = await supabase
       .from('workflows_cobranza')
-      .select('id, nombre, usuario_id')
+      .select('id, nombre, usuario_id, canvas_data')
       .eq('id', campanaId)
       .eq('usuario_id', session.user.id)
       .single()
@@ -92,6 +93,21 @@ export async function PATCH(
         { error: 'Error al actualizar el estado', detalles: updateError.message },
         { status: 500 }
       )
+    }
+
+    // Si el estado cambió a "activo", ejecutar la campaña automáticamente
+    if (estado === 'activo') {
+      try {
+        await ejecutarCampanaAutomaticamente({
+          supabase,
+          campanaId: campanaActualizada.id,
+          usuarioId: session.user.id,
+          canvasData: campanaExistente.canvas_data
+        })
+      } catch (error) {
+        // No fallar la actualización si la ejecución falla, solo loguear
+        console.error('Error ejecutando campaña automáticamente:', error)
+      }
     }
 
     return NextResponse.json({
