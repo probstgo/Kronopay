@@ -358,7 +358,7 @@ async function ejecutarNodoRecursivo(
         configuracion: nodo.configuracion,
         fecha_base: fechaBase.toISOString()
       },
-      datos_salida,
+      datos_salida: datosSalida,
       error_message: errorEjecucion,
       duracion_ms: duracion
     })
