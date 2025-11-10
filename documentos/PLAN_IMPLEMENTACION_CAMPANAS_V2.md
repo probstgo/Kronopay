@@ -952,7 +952,7 @@ export const theme = {
 1. **✅ Fase 4.1 COMPLETADA** - Implementación del Nodo FILTRO con lógica real de BD (Diciembre 2024)
 2. **✅ Fase 4.2 COMPLETADA** - Implementación del Nodo CONDICIÓN con lógica real de BD (Diciembre 2024)
 3. **✅ Fase 4.3 COMPLETADA** - Extracción de variables de deudores desde BD (Diciembre 2024)
-4. **🔄 Fase 4.4** - Integración completa con plantillas
+4. **✅ Fase 4.4 COMPLETADA** - Integración completa con plantillas (Diciembre 2024)
 5. **🔄 Fase 4.5** - Integración completa con agentes de llamada
 6. **🔄 Fase 4.6** - Sistema de logs de ejecución
 7. **🔄 Fase 4.7** - Sistema de seguimiento de ejecuciones
@@ -991,7 +991,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 ---
 
-**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO, Fase 4.2 - Implementación del Nodo CONDICIÓN, Fase 4.3 - Extracción de variables de deudores. **Próximo:** Fase 4.4 - Integración completa con plantillas o Fase 4.5 - Integración completa con agentes de llamada.
+**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO, Fase 4.2 - Implementación del Nodo CONDICIÓN, Fase 4.3 - Extracción de variables de deudores, Fase 4.4 - Integración completa con plantillas. **Próximo:** Fase 4.5 - Integración completa con agentes de llamada o Fase 4.8 - Implementación de SMS con Twilio.
 
 ---
 
@@ -1016,10 +1016,10 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 - **✅ Fase 4.1**: Implementación del Nodo FILTRO con lógica real de BD (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.2**: Implementación del Nodo CONDICIÓN con lógica real de BD (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.3**: Extracción de variables de deudores desde BD (Diciembre 2024) - COMPLETADA
+- **✅ Fase 4.4**: Integración completa con plantillas (Diciembre 2024) - COMPLETADA
 
 ### **⏳ Próximas Fases:**
 - **Fase 3.4-3.5**: Persistencia y Gestión (Metadatos, Versiones) - Opcionales
-- **Fase 4.4**: Integración completa con plantillas
 - **Fase 4.5**: Integración completa con agentes de llamada
 - **Fase 4.6**: Sistema de logs de ejecución
 - **Fase 4.7**: Sistema de seguimiento de ejecuciones
@@ -1721,8 +1721,7 @@ Nodo FILTRO en ejecución
   └─ Retorna deudores filtrados con variables calculadas
 ```
 
-#### Próximos Pasos (Fase 4.4 - Fase 4.8)
-- Fase 4.4: Integración completa con plantillas
+#### Próximos Pasos (Fase 4.5 - Fase 4.8)
 - Fase 4.5: Integración completa con agentes de llamada
 - Fase 4.6: Sistema de logs de ejecución
 - Fase 4.7: Sistema de seguimiento de ejecuciones
@@ -1810,12 +1809,107 @@ Nodo CONDICIÓN en ejecución
   └─ Continúa flujo por ambas ramas (sí/no)
 ```
 
-#### Próximos Pasos (Fase 4.4 - Fase 4.8)
-- Fase 4.4: Integración completa con plantillas
+#### Próximos Pasos (Fase 4.5 - Fase 4.8)
 - Fase 4.5: Integración completa con agentes de llamada
 - Fase 4.6: Sistema de logs de ejecución
 - Fase 4.7: Sistema de seguimiento de ejecuciones
 - Fase 4.8: Implementación de SMS con Twilio
+
+---
+
+### **✅ FASE 4.4 COMPLETADA - Diciembre 2024 (Integración completa con plantillas)**
+
+#### Cambios técnicos (backend)
+
+**1. Consulta de plantillas mejorada (`src/app/api/cron/ejecutor-programado/route.ts`):**
+- Actualizada consulta para obtener `asunto` y `tipo_contenido` de la plantilla
+- Consulta completa: `plantillas(contenido, asunto, tipo_contenido)`
+
+**2. Función `resolverPlantilla()` mejorada:**
+- Detecta todas las variables en el contenido usando regex
+- Reemplaza variables con valores reales
+- Maneja variables faltantes con valores por defecto:
+  - `nombre`: 'Cliente'
+  - `monto`: '$0'
+  - `fecha_vencimiento`: 'No especificada'
+  - `dias_vencidos`: '0'
+  - `email`: ''
+  - `telefono`: ''
+  - `empresa`: 'Nuestra empresa'
+- Limpia variables no reemplazadas
+- Maneja contenido vacío
+
+**3. Función `enviarEmail()` mejorada:**
+- Valida que exista plantilla y contacto
+- Usa el asunto de la plantilla (o 'Recordatorio de Pago' por defecto)
+- Reemplaza variables en asunto y contenido
+- Maneja HTML y texto:
+  - Si `tipo_contenido === 'html'`: usa el contenido directamente
+  - Si `tipo_contenido === 'texto'`: convierte a HTML con formato básico
+- Usa el email remitente desde variables de entorno
+- Manejo completo de errores
+
+**4. Función `enviarSMS()` implementada:**
+- Valida que exista plantilla y contacto
+- Valida que el contacto sea un teléfono
+- Reemplaza variables en el contenido
+- Valida que el contenido no esté vacío
+- Valida longitud máxima (1600 caracteres)
+- Por ahora retorna éxito simulado (implementación real en Fase 4.8 con Twilio)
+
+**5. Tipos TypeScript actualizados:**
+- `Plantilla` ahora incluye `asunto` y `tipo_contenido`
+
+#### Funcionalidades Implementadas
+
+**Reemplazo de Variables:**
+- ✅ Reemplazo completo de variables en contenido y asunto
+- ✅ Validación de variables requeridas
+- ✅ Manejo de variables faltantes con valores por defecto
+- ✅ Soporte para HTML y texto
+- ✅ Detección automática de variables en el contenido
+
+**Validaciones:**
+- ✅ Validación de plantilla y contacto antes de enviar
+- ✅ Validación de tipo de contacto para SMS
+- ✅ Validación de contenido vacío
+- ✅ Validación de longitud máxima para SMS
+
+**Integración:**
+- ✅ Integración completa con Resend para emails
+- ✅ Preparación para Twilio en SMS (Fase 4.8)
+- ✅ Manejo robusto de errores
+
+#### Archivos Modificados
+
+- ✅ `src/app/api/cron/ejecutor-programado/route.ts`:
+  - Línea 49: Consulta actualizada para obtener `asunto` y `tipo_contenido`
+  - Líneas 130-205: Función `enviarEmail()` mejorada
+  - Líneas 234-292: Función `enviarSMS()` implementada
+  - Líneas 299-350: Función `resolverPlantilla()` mejorada
+
+- ✅ `src/types/programa.ts`:
+  - Líneas 7-12: Interfaz `Plantilla` actualizada
+
+#### Flujo Completo Implementado
+
+```
+Ejecución de EMAIL/SMS
+  ├─ Obtener plantilla desde BD (contenido, asunto, tipo_contenido)
+  ├─ Obtener variables del deudor (nombre, monto, fecha_vencimiento, etc.)
+  ├─ Resolver plantilla:
+  │   ├─ Detectar todas las variables en contenido y asunto
+  │   ├─ Reemplazar variables con valores reales
+  │   └─ Usar valores por defecto si faltan variables
+  ├─ Para EMAIL:
+  │   ├─ Si tipo_contenido === 'html': usar contenido directamente
+  │   └─ Si tipo_contenido === 'texto': convertir a HTML con formato
+  │   └─ Enviar con Resend usando asunto resuelto
+  └─ Para SMS:
+      ├─ Validar que contacto sea teléfono
+      ├─ Validar longitud del mensaje
+      └─ Enviar (simulado por ahora, Twilio en Fase 4.8)
+```
 
 ---
 
