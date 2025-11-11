@@ -385,13 +385,15 @@ CREATE TABLE campanas (
 
 ```sql
 -- Tabla: programaciones
+-- NOTA IMPORTANTE: campana_id referencia workflows_cobranza (no campanas)
+-- Esta corrección se aplicó en Noviembre 2024 para alinear con la nueva implementación de workflows
 CREATE TABLE programaciones (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     usuario_id uuid REFERENCES usuarios(id) NOT NULL,
     deuda_id uuid REFERENCES deudas(id) NOT NULL,
     rut text NOT NULL,
     contacto_id uuid REFERENCES contactos(id),
-    campana_id uuid REFERENCES campanas(id),
+    campana_id uuid REFERENCES workflows_cobranza(id) ON DELETE SET NULL,
     tipo_accion text NOT NULL CHECK (tipo_accion IN ('email', 'llamada', 'sms', 'whatsapp')),
     fecha_programada timestamptz NOT NULL,
     plantilla_id uuid REFERENCES plantillas(id),
@@ -1612,6 +1614,7 @@ Notas:
 - **Triggers automáticos**: `normalize_contactos` normaliza RUT y teléfonos/emails al insertar contactos.
 - **Políticas RLS**: `suscripciones` tiene RLS con lectura global y edición solo admin.
 - **Configuraciones globales y por usuario**: La tabla `configuraciones` soporta ambos tipos: `usuario_id = NULL` para reglas globales (creadas solo desde backend con service_role) y `usuario_id = UUID` para configuraciones específicas por usuario. Los usuarios pueden leer las globales pero solo modificar las suyas.
+- **⚠️ IMPORTANTE - Foreign Key de programaciones.campana_id**: La tabla `programaciones` tiene `campana_id` que referencia `workflows_cobranza(id)`, NO `campanas(id)`. Esta corrección se aplicó en Noviembre 2024 para alinear con la nueva implementación de workflows. Si estás creando la base de datos desde cero, usa `REFERENCES workflows_cobranza(id)`. Si ya existe la tabla con la referencia antigua, ejecuta: `ALTER TABLE programaciones DROP CONSTRAINT programaciones_campana_id_fkey; ALTER TABLE programaciones ADD CONSTRAINT programaciones_campana_id_fkey FOREIGN KEY (campana_id) REFERENCES workflows_cobranza(id) ON DELETE SET NULL;`
 
 ## 15. Cambio de Enfoque: Permisión de Duplicados de RUT
 

@@ -2407,12 +2407,14 @@ CREATE TABLE ejecuciones_workflow (
 );
 
 -- Tabla para logs detallados de ejecución
+-- NOTA: tipo_accion incluye 'filtro' para registrar ejecuciones del nodo FILTRO
+-- Esta corrección se aplicó en Noviembre 2024
 CREATE TABLE logs_ejecucion (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ejecucion_id UUID REFERENCES ejecuciones_workflow(id) ON DELETE CASCADE,
   nodo_id VARCHAR(100) NOT NULL,
   paso_numero INTEGER NOT NULL,
-  tipo_accion VARCHAR(50) NOT NULL, -- email, llamada, sms, espera, condicion
+  tipo_accion VARCHAR(50) NOT NULL, -- email, llamada, sms, espera, condicion, whatsapp, filtro
   estado VARCHAR(50) NOT NULL, -- iniciado, completado, fallido, saltado
   datos_entrada JSONB,
   datos_salida JSONB,
@@ -2420,7 +2422,7 @@ CREATE TABLE logs_ejecucion (
   duracion_ms INTEGER,
   ejecutado_at TIMESTAMP DEFAULT NOW(),
   -- Validaciones
-  CHECK (tipo_accion IN ('email', 'llamada', 'sms', 'espera', 'condicion', 'whatsapp')),
+  CHECK (tipo_accion IN ('email', 'llamada', 'sms', 'espera', 'condicion', 'whatsapp', 'filtro')),
   CHECK (estado IN ('iniciado', 'completado', 'fallido', 'saltado')),
   CHECK (paso_numero >= 0),
   CHECK (duracion_ms IS NULL OR duracion_ms >= 0)
@@ -2692,3 +2694,100 @@ WHERE tablename IN (
 - [x] Ejecuté PASO 6: Prueba Rápida (5 tablas + RLS habilitado)
 
 **✅ COMPLETADO - Base de datos funcionando correctamente**
+
+---
+
+## 🔧 **CORRECCIONES APLICADAS - Noviembre 2024**
+
+### **Problema 1: Foreign Key de programaciones.campana_id**
+
+**Error encontrado:**
+- La tabla `programaciones` tenía una foreign key `campana_id` que apuntaba a `campanas.id`
+- El código actual usa `workflows_cobranza` como tabla principal de campañas
+- Esto causaba errores `23503` al intentar crear programaciones
+
+**Corrección aplicada:**
+```sql
+-- Eliminar la foreign key antigua
+ALTER TABLE programaciones
+DROP CONSTRAINT IF EXISTS programaciones_campana_id_fkey;
+
+-- Crear nueva foreign key apuntando a workflows_cobranza
+ALTER TABLE programaciones
+ADD CONSTRAINT programaciones_campana_id_fkey
+FOREIGN KEY (campana_id) REFERENCES workflows_cobranza(id) ON DELETE SET NULL;
+```
+
+**Resultado:**
+- ✅ Las programaciones ahora se crean correctamente
+- ✅ La foreign key apunta a la tabla correcta (`workflows_cobranza`)
+
+---
+
+### **Problema 2: Constraint de logs_ejecucion.tipo_accion**
+
+**Error encontrado:**
+- El constraint `logs_ejecucion_tipo_accion_check` no permitía el tipo `'filtro'`
+- Esto causaba errores `23514` al intentar registrar logs del nodo FILTRO
+
+**Corrección aplicada:**
+```sql
+-- Eliminar el constraint actual
+ALTER TABLE logs_ejecucion
+DROP CONSTRAINT IF EXISTS logs_ejecucion_tipo_accion_check;
+
+-- Crear nuevo constraint que incluya 'filtro'
+ALTER TABLE logs_ejecucion
+ADD CONSTRAINT logs_ejecucion_tipo_accion_check
+CHECK (tipo_accion IN ('email', 'llamada', 'sms', 'espera', 'condicion', 'whatsapp', 'filtro'));
+```
+
+**Resultado:**
+- ✅ Los logs del nodo FILTRO ahora se registran correctamente
+- ✅ El constraint incluye todos los tipos de nodos soportados
+
+---
+
+### **Verificación de Correcciones**
+
+Para verificar que las correcciones están aplicadas correctamente:
+
+```sql
+-- Verificar foreign key de programaciones
+SELECT
+  tc.constraint_name,
+  kcu.column_name,
+  ccu.table_name AS foreign_table_name
+FROM information_schema.table_constraints AS tc
+JOIN information_schema.key_column_usage AS kcu
+  ON tc.constraint_name = kcu.constraint_name
+LEFT JOIN information_schema.constraint_column_usage AS ccu
+  ON ccu.constraint_name = tc.constraint_name
+WHERE tc.table_name = 'programaciones'
+  AND tc.constraint_type = 'FOREIGN KEY'
+  AND kcu.column_name = 'campana_id';
+-- Debe mostrar: foreign_table_name = 'workflows_cobranza'
+
+-- Verificar constraint de logs_ejecucion
+SELECT 
+  conname AS constraint_name,
+  pg_get_constraintdef(oid) AS constraint_definition
+FROM pg_constraint
+WHERE conrelid = 'logs_ejecucion'::regclass
+  AND conname LIKE '%tipo_accion%';
+-- Debe incluir 'filtro' en la lista de valores permitidos
+```
+
+---
+
+### **Notas Importantes**
+
+1. **Migración de datos:** Si ya existían programaciones con `campana_id` apuntando a `campanas`, estas deben migrarse manualmente o eliminarse antes de aplicar la corrección.
+
+2. **Compatibilidad:** La tabla `campanas` sigue existiendo en la base de datos pero ya no se usa para las nuevas implementaciones. Se mantiene por compatibilidad con código legacy.
+
+3. **Documentación actualizada:** 
+   - `parte1_DATABASE_IMPLEMENTACION.md`: Actualizado para reflejar que `programaciones.campana_id` referencia `workflows_cobranza`
+   - `PLAN_IMPLEMENTACION_CAMPANAS_V2.md`: Actualizado el constraint de `logs_ejecucion` para incluir 'filtro'
+
+---
