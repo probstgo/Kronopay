@@ -65,6 +65,7 @@ export async function programarAccion(params: ProgramarAccionParams): Promise<{ 
 
 /**
  * Calcula la próxima fecha considerando días laborables y zona horaria
+ * Siempre usa zona horaria chilena (America/Santiago)
  */
 export function calcularProximaFecha(
   fechaBase: Date,
@@ -76,14 +77,12 @@ export function calcularProximaFecha(
     horario_trabajo?: { inicio: string, fin: string }
   }
 ): Date {
-  let fecha = new Date(fechaBase)
-
-  // Aplicar zona horaria si se especifica
-  if (configuracion.zona_horaria) {
-    // Convertir a la zona horaria especificada
-    const fechaStr = fecha.toLocaleString('en-US', { timeZone: configuracion.zona_horaria })
-    fecha = new Date(fechaStr)
-  }
+  // Zona horaria fija: siempre usar hora chilena
+  const ZONA_HORARIA_CHILE = 'America/Santiago'
+  
+  // Obtener la fecha en hora chilena como string ISO
+  const fechaChileISO = new Date(fechaBase.toLocaleString('en-US', { timeZone: ZONA_HORARIA_CHILE })).toISOString()
+  let fecha = new Date(fechaChileISO)
 
   // Calcular fecha base según duración
   switch (duracion.tipo) {
@@ -101,34 +100,55 @@ export function calcularProximaFecha(
       break
   }
 
+  // Obtener día de la semana en hora chilena
+  const fechaChileParaDia = new Date(fecha.toLocaleString('en-US', { timeZone: ZONA_HORARIA_CHILE }))
+  let diaSemanaChile = fechaChileParaDia.getDay()
+
   // Si solo días laborables, ajustar para evitar fines de semana
   if (configuracion.solo_dias_laborables || configuracion.excluir_fines_semana) {
-    while (fecha.getDay() === 0 || fecha.getDay() === 6) {
+    while (diaSemanaChile === 0 || diaSemanaChile === 6) {
       fecha.setDate(fecha.getDate() + 1)
+      const nuevaFechaChile = new Date(fecha.toLocaleString('en-US', { timeZone: ZONA_HORARIA_CHILE }))
+      diaSemanaChile = nuevaFechaChile.getDay()
     }
   }
 
   // Ajustar horario si se especifica horario de trabajo
+  // Los horarios se interpretan como hora chilena
   if (configuracion.horario_trabajo) {
     const [horaInicio, minutoInicio] = configuracion.horario_trabajo.inicio.split(':').map(Number)
     const [horaFin, minutoFin] = configuracion.horario_trabajo.fin.split(':').map(Number)
     
-    const horaActual = fecha.getHours()
-    const minutoActual = fecha.getMinutes()
+    // Obtener hora actual en hora chilena
+    const fechaChileHora = new Date(fecha.toLocaleString('en-US', { timeZone: ZONA_HORARIA_CHILE }))
+    const horaActual = fechaChileHora.getHours()
+    const minutoActual = fechaChileHora.getMinutes()
 
-    // Si está fuera del horario, mover al inicio del siguiente día laborable
+    // Si está fuera del horario, ajustar
     if (horaActual < horaInicio || (horaActual === horaInicio && minutoActual < minutoInicio)) {
-      fecha.setHours(horaInicio, minutoInicio, 0, 0)
+      // Ajustar a hora de inicio del mismo día en hora chilena
+      fechaChileHora.setHours(horaInicio, minutoInicio, 0, 0)
+      // Convertir de vuelta a UTC
+      const fechaChileStr = fechaChileHora.toLocaleString('en-US', { timeZone: ZONA_HORARIA_CHILE })
+      fecha = new Date(fechaChileStr)
     } else if (horaActual > horaFin || (horaActual === horaFin && minutoActual > minutoFin)) {
+      // Mover al siguiente día
       fecha.setDate(fecha.getDate() + 1)
-      fecha.setHours(horaInicio, minutoInicio, 0, 0)
       
       // Si cae en fin de semana, mover al lunes
       if (configuracion.solo_dias_laborables || configuracion.excluir_fines_semana) {
-        while (fecha.getDay() === 0 || fecha.getDay() === 6) {
+        let nuevaFechaChile = new Date(fecha.toLocaleString('en-US', { timeZone: ZONA_HORARIA_CHILE }))
+        while (nuevaFechaChile.getDay() === 0 || nuevaFechaChile.getDay() === 6) {
           fecha.setDate(fecha.getDate() + 1)
+          nuevaFechaChile = new Date(fecha.toLocaleString('en-US', { timeZone: ZONA_HORARIA_CHILE }))
         }
       }
+      
+      // Ajustar a hora de inicio
+      const fechaChileAjustada = new Date(fecha.toLocaleString('en-US', { timeZone: ZONA_HORARIA_CHILE }))
+      fechaChileAjustada.setHours(horaInicio, minutoInicio, 0, 0)
+      const fechaChileStr = fechaChileAjustada.toLocaleString('en-US', { timeZone: ZONA_HORARIA_CHILE })
+      fecha = new Date(fechaChileStr)
     }
   }
 

@@ -356,7 +356,7 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
           duracion: '1 día',
           configuracion: {
             duracion: { tipo: 'dias', cantidad: 1 },
-            configuracion_avanzada: { solo_dias_laborables: true, excluir_fines_semana: true, zona_horaria: 'America/Mexico_City' }
+            configuracion_avanzada: { solo_dias_laborables: true, excluir_fines_semana: true, zona_horaria: 'America/Santiago' }
           }
         }
         break

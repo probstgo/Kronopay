@@ -18,9 +18,14 @@ export function EsperaConfigForm({ node, onSave }: EsperaConfigFormProps) {
     configuracion_avanzada: {
       solo_dias_laborables: true,
       excluir_fines_semana: true,
-      zona_horaria: 'America/Mexico_City'
+      zona_horaria: 'America/Santiago'
     }
   })
+
+  // Asegurar que siempre use zona horaria chilena
+  if (config.configuracion_avanzada.zona_horaria !== 'America/Santiago') {
+    config.configuracion_avanzada.zona_horaria = 'America/Santiago'
+  }
 
   const handleSave = () => {
     onSave(config)
@@ -96,23 +101,6 @@ export function EsperaConfigForm({ node, onSave }: EsperaConfigFormProps) {
             />
             <span className="text-sm">Excluir fines de semana</span>
           </label>
-
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">Zona horaria</label>
-            <select 
-              value={config.configuracion_avanzada.zona_horaria}
-              onChange={(e) => setConfig({
-                ...config, 
-                configuracion_avanzada: {...config.configuracion_avanzada, zona_horaria: e.target.value}
-              })}
-              className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-            >
-              <option value="America/Mexico_City">México (GMT-6)</option>
-              <option value="America/New_York">Nueva York (GMT-5)</option>
-              <option value="America/Los_Angeles">Los Ángeles (GMT-8)</option>
-              <option value="Europe/Madrid">Madrid (GMT+1)</option>
-            </select>
-          </div>
         </div>
       </div>
 
