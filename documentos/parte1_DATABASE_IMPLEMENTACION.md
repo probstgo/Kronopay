@@ -397,7 +397,7 @@ CREATE TABLE programaciones (
     tipo_accion text NOT NULL CHECK (tipo_accion IN ('email', 'llamada', 'sms', 'whatsapp')),
     fecha_programada timestamptz NOT NULL,
     plantilla_id uuid REFERENCES plantillas(id),
-    estado text NOT NULL CHECK (estado IN ('pendiente', 'ejecutado', 'cancelado')),
+    estado text NOT NULL CHECK (estado IN ('pendiente', 'ejecutando', 'ejecutado', 'cancelado')),
     created_at timestamptz DEFAULT now(),
     CONSTRAINT unique_accion_por_deuda UNIQUE (deuda_id, tipo_accion, fecha_programada)
 );

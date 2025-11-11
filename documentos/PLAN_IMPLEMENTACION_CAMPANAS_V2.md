@@ -2748,6 +2748,31 @@ CHECK (tipo_accion IN ('email', 'llamada', 'sms', 'espera', 'condicion', 'whatsa
 
 ---
 
+### **Problema 3: Constraint de programaciones.estado**
+
+**Error encontrado:**
+- El constraint `programaciones_estado_check` no permitía el estado `'ejecutando'`
+- Esto causaba errores `23514` al intentar marcar programaciones como 'ejecutando' durante el procesamiento del cron job
+
+**Corrección aplicada:**
+```sql
+-- Eliminar el constraint actual
+ALTER TABLE programaciones
+DROP CONSTRAINT IF EXISTS programaciones_estado_check;
+
+-- Crear nuevo constraint que incluya 'ejecutando'
+ALTER TABLE programaciones
+ADD CONSTRAINT programaciones_estado_check
+CHECK (estado IN ('pendiente', 'ejecutando', 'ejecutado', 'cancelado'));
+```
+
+**Resultado:**
+- ✅ Las programaciones ahora pueden marcarse como 'ejecutando' durante el procesamiento
+- ✅ El constraint incluye todos los estados necesarios para el flujo de ejecución
+- ✅ El cron job puede bloquear programaciones correctamente para evitar duplicados
+
+---
+
 ### **Verificación de Correcciones**
 
 Para verificar que las correcciones están aplicadas correctamente:
@@ -2776,6 +2801,15 @@ FROM pg_constraint
 WHERE conrelid = 'logs_ejecucion'::regclass
   AND conname LIKE '%tipo_accion%';
 -- Debe incluir 'filtro' en la lista de valores permitidos
+
+-- Verificar constraint de programaciones.estado
+SELECT 
+  conname AS constraint_name,
+  pg_get_constraintdef(oid) AS constraint_definition
+FROM pg_constraint
+WHERE conrelid = 'programaciones'::regclass
+  AND conname LIKE '%estado%';
+-- Debe incluir 'ejecutando' en la lista de valores permitidos
 ```
 
 ---
@@ -2787,7 +2821,7 @@ WHERE conrelid = 'logs_ejecucion'::regclass
 2. **Compatibilidad:** La tabla `campanas` sigue existiendo en la base de datos pero ya no se usa para las nuevas implementaciones. Se mantiene por compatibilidad con código legacy.
 
 3. **Documentación actualizada:** 
-   - `parte1_DATABASE_IMPLEMENTACION.md`: Actualizado para reflejar que `programaciones.campana_id` referencia `workflows_cobranza`
-   - `PLAN_IMPLEMENTACION_CAMPANAS_V2.md`: Actualizado el constraint de `logs_ejecucion` para incluir 'filtro'
+   - `parte1_DATABASE_IMPLEMENTACION.md`: Actualizado para reflejar que `programaciones.campana_id` referencia `workflows_cobranza` y que el constraint de `estado` incluye 'ejecutando'
+   - `PLAN_IMPLEMENTACION_CAMPANAS_V2.md`: Actualizado el constraint de `logs_ejecucion` para incluir 'filtro' y el constraint de `programaciones.estado` para incluir 'ejecutando'
 
 ---
