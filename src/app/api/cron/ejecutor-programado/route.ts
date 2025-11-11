@@ -56,6 +56,19 @@ export async function GET(request: Request) {
 
     if (error) throw error
 
+    console.log('🔍 Programaciones encontradas:', programaciones?.length || 0)
+    if (programaciones && programaciones.length > 0) {
+      console.log('📋 Primera programación (estructura):', JSON.stringify({
+        id: programaciones[0].id,
+        tiene_contactos: !!programaciones[0].contactos,
+        contactos_tipo: Array.isArray(programaciones[0].contactos) ? 'array' : typeof programaciones[0].contactos,
+        tiene_plantillas: !!programaciones[0].plantillas,
+        plantillas_tipo: Array.isArray(programaciones[0].plantillas) ? 'array' : typeof programaciones[0].plantillas,
+        tiene_deudas: !!programaciones[0].deudas,
+        deudas_tipo: Array.isArray(programaciones[0].deudas) ? 'array' : typeof programaciones[0].deudas
+      }, null, 2))
+    }
+
     // 2. Procesar cada programación
     for (const prog of programaciones || []) {
       let ejecucionId: string | null = null
