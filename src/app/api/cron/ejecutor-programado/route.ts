@@ -39,6 +39,7 @@ export async function GET(request: Request) {
         id,
         usuario_id,
         deuda_id,
+        rut,
         contacto_id,
         campana_id,
         tipo_accion,
@@ -57,20 +58,26 @@ export async function GET(request: Request) {
     if (error) throw error
 
     console.log('🔍 Programaciones encontradas:', programaciones?.length || 0)
-    if (programaciones && programaciones.length > 0) {
-      console.log('📋 Primera programación (estructura):', JSON.stringify({
-        id: programaciones[0].id,
-        tiene_contactos: !!programaciones[0].contactos,
-        contactos_tipo: Array.isArray(programaciones[0].contactos) ? 'array' : typeof programaciones[0].contactos,
-        tiene_plantillas: !!programaciones[0].plantillas,
-        plantillas_tipo: Array.isArray(programaciones[0].plantillas) ? 'array' : typeof programaciones[0].plantillas,
-        tiene_deudas: !!programaciones[0].deudas,
-        deudas_tipo: Array.isArray(programaciones[0].deudas) ? 'array' : typeof programaciones[0].deudas
-      }, null, 2))
-    }
+    
+    // Normalizar relaciones: Supabase puede retornar objetos o arrays
+    const programacionesNormalizadas = (programaciones || []).map((prog: any) => {
+      // Normalizar contactos
+      if (prog.contactos && !Array.isArray(prog.contactos)) {
+        prog.contactos = [prog.contactos]
+      }
+      // Normalizar plantillas
+      if (prog.plantillas && !Array.isArray(prog.plantillas)) {
+        prog.plantillas = [prog.plantillas]
+      }
+      // Normalizar deudas
+      if (prog.deudas && !Array.isArray(prog.deudas)) {
+        prog.deudas = [prog.deudas]
+      }
+      return prog
+    })
 
     // 2. Procesar cada programación
-    for (const prog of programaciones || []) {
+    for (const prog of programacionesNormalizadas) {
       let ejecucionId: string | null = null
       const inicioTiempo = Date.now()
 
@@ -198,7 +205,7 @@ export async function GET(request: Request) {
         await supabase.from('historial').insert({
           usuario_id: prog.usuario_id,
           deuda_id: prog.deuda_id,
-          rut: (prog as ProgramaEjecucion).deudas?.[0]?.rut,
+          rut: (prog as any).rut || (Array.isArray((prog as ProgramaEjecucion).deudas) ? (prog as ProgramaEjecucion).deudas?.[0]?.rut : (prog as any).deudas?.rut) || '',
           contacto_id: prog.contacto_id,
           campana_id: prog.campana_id,
           tipo_accion: prog.tipo_accion,
