@@ -87,6 +87,20 @@ export async function GET(request: Request) {
 
     console.log('🔍 Programaciones encontradas:', programaciones?.length || 0)
     
+    if (programaciones && programaciones.length > 0) {
+      console.log('📋 Primera programación (estructura):', {
+        id: programaciones[0].id,
+        tipo_accion: programaciones[0].tipo_accion,
+        tiene_contactos: !!programaciones[0].contactos,
+        contactos_tipo: Array.isArray(programaciones[0].contactos) ? 'array' : typeof programaciones[0].contactos,
+        tiene_plantillas: !!programaciones[0].plantillas,
+        plantillas_tipo: Array.isArray(programaciones[0].plantillas) ? 'array' : typeof programaciones[0].plantillas,
+        tiene_deudas: !!programaciones[0].deudas,
+        deudas_tipo: Array.isArray(programaciones[0].deudas) ? 'array' : typeof programaciones[0].deudas,
+        rut: programaciones[0].rut
+      })
+    }
+    
     // Normalizar relaciones: Supabase puede retornar objetos o arrays
     const programacionesNormalizadas = (programaciones || []).map((prog: ProgramacionConRelaciones): ProgramaEjecucion => {
       // Normalizar contactos
@@ -132,7 +146,10 @@ export async function GET(request: Request) {
     })
 
     // 2. Procesar cada programación
+    console.log('🔄 Iniciando procesamiento de', programacionesNormalizadas.length, 'programaciones')
+    
     for (const prog of programacionesNormalizadas) {
+      console.log(`\n📌 Procesando programación ${prog.id} (${prog.tipo_accion})`)
       let ejecucionId: string | null = null
       const inicioTiempo = Date.now()
 
@@ -144,7 +161,12 @@ export async function GET(request: Request) {
           .eq('id', prog.id)
           .eq('estado', 'pendiente') // Solo si aún está pendiente
 
-        if (lockError) continue // Ya fue tomada por otro proceso
+        if (lockError) {
+          console.log(`⚠️ Error al bloquear programación ${prog.id}:`, lockError)
+          continue // Ya fue tomada por otro proceso
+        }
+        
+        console.log(`✅ Programación ${prog.id} bloqueada (ejecutando)`)
 
         // Buscar o crear ejecución_workflow para registrar logs
         if (prog.campana_id && prog.deuda_id) {
@@ -203,9 +225,11 @@ export async function GET(request: Request) {
         }
 
         // 3. Ejecutar acción según tipo
+        console.log(`🚀 Ejecutando acción: ${prog.tipo_accion}`)
         let resultado: ResultadoEjecucion = { exito: false, error: 'Tipo de acción no válido' }
         switch (prog.tipo_accion) {
           case 'email':
+            console.log(`📧 Enviando email a: ${prog.contactos?.[0]?.valor || 'N/A'}`)
             resultado = await enviarEmail(prog as ProgramaEjecucion)
             break
           case 'llamada':
@@ -218,6 +242,12 @@ export async function GET(request: Request) {
             resultado = await enviarWhatsApp(prog as ProgramaEjecucion)
             break
         }
+        
+        console.log(`📊 Resultado de ${prog.tipo_accion}:`, {
+          exito: resultado.exito,
+          error: resultado.error,
+          external_id: resultado.external_id
+        })
 
         // Registrar log de finalización
         const duracion = Date.now() - inicioTiempo
@@ -266,7 +296,8 @@ export async function GET(request: Request) {
           rutParaHistorial = prog.deudas[0].rut
         }
         
-        await supabase.from('historial').insert({
+        console.log(`📝 Registrando en historial (RUT: ${rutParaHistorial || 'N/A'})`)
+        const { error: historialError } = await supabase.from('historial').insert({
           usuario_id: prog.usuario_id,
           deuda_id: prog.deuda_id,
           rut: rutParaHistorial,
@@ -278,14 +309,28 @@ export async function GET(request: Request) {
           estado: resultado.exito ? 'iniciado' : 'fallido',
           detalles: resultado
         })
+        
+        if (historialError) {
+          console.error(`❌ Error al insertar en historial:`, historialError)
+        } else {
+          console.log(`✅ Registrado en historial`)
+        }
 
         // 5. Marcar programación como ejecutada
-        await supabase
+        const estadoFinal = resultado.exito ? 'ejecutado' : 'cancelado'
+        console.log(`🏁 Marcando programación como: ${estadoFinal}`)
+        const { error: updateError } = await supabase
           .from('programaciones')
           .update({ 
-            estado: resultado.exito ? 'ejecutado' : 'cancelado' 
+            estado: estadoFinal
           })
           .eq('id', prog.id)
+        
+        if (updateError) {
+          console.error(`❌ Error al actualizar estado de programación:`, updateError)
+        } else {
+          console.log(`✅ Programación ${prog.id} marcada como ${estadoFinal}`)
+        }
 
       } catch (err) {
         console.error(`Error procesando programación ${prog.id}:`, err)
