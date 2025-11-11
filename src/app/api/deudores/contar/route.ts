@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { calcularDiasVencidos } from '@/lib/database'
+import { calcularDiasVencidos, calcularEstadoEfectivoDeuda } from '@/lib/database'
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,8 +70,11 @@ export async function POST(request: NextRequest) {
     let deudoresFiltrados = (deudores || []).filter(deudor => {
       // Filtrar por estado de deuda
       if (filtros.estado_deuda && Array.isArray(filtros.estado_deuda) && filtros.estado_deuda.length > 0) {
-        const estadosDeudas = (deudor.deudas || []).map((d: { estado: string }) => d.estado)
-        const tieneEstado = filtros.estado_deuda.some((estado: string) => estadosDeudas.includes(estado))
+        // Calcular el estado efectivo de cada deuda usando la misma lógica que la sección de deudores
+        const tieneEstado = (deudor.deudas || []).some((d: { estado: string; fecha_vencimiento: string }) => {
+          const estadoEfectivo = calcularEstadoEfectivoDeuda(d.estado, d.fecha_vencimiento)
+          return filtros.estado_deuda.includes(estadoEfectivo)
+        })
         if (!tieneEstado) return false
       }
 

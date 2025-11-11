@@ -361,3 +361,32 @@ export function determinarEstadoAutomatico(fechaVencimiento?: string): 'nueva' |
   const diasVencidos = calcularDiasVencidos(fechaVencimiento);
   return diasVencidos > 0 ? 'vencida' : 'nueva';
 }
+
+/**
+ * Calcula el estado efectivo de una deuda considerando la fecha de vencimiento.
+ * Esta función replica la lógica usada en la sección de deudores:
+ * - Si la deuda está vencida (días vencidos > 0) y su estado es 'nueva' o 'pendiente', retorna 'vencida'
+ * - Si la deuda está pagada, siempre retorna 'pagado' (no se considera vencida aunque esté vencida)
+ * - En otros casos, retorna el estado original de la deuda
+ */
+export function calcularEstadoEfectivoDeuda(
+  estado: string,
+  fechaVencimiento?: string | null
+): string {
+  // Si no hay fecha de vencimiento, usar el estado de BD
+  if (!fechaVencimiento) return estado;
+
+  // Si la deuda está pagada, siempre retornar 'pagado'
+  if (estado === 'pagado') return 'pagado';
+
+  // Calcular días vencidos
+  const diasVencidos = calcularDiasVencidos(fechaVencimiento);
+
+  // Si está vencida y su estado es 'nueva' o 'pendiente', retornar 'vencida'
+  if (diasVencidos > 0 && (estado === 'nueva' || estado === 'pendiente')) {
+    return 'vencida';
+  }
+
+  // En otros casos, retornar el estado original
+  return estado;
+}

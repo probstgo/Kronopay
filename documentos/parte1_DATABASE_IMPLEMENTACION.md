@@ -1998,7 +1998,7 @@ FOR EACH ROW EXECUTE FUNCTION log_cambios_workflows_cobranza();
 
 DROP TRIGGER IF EXISTS trg_log_workflows_cobranza_delete ON workflows_cobranza;
 CREATE TRIGGER trg_log_workflows_cobranza_delete
-AFTER DELETE ON workflows_cobranza
+BEFORE DELETE ON workflows_cobranza
 FOR EACH ROW EXECUTE FUNCTION log_cambios_workflows_cobranza();
 ```
 

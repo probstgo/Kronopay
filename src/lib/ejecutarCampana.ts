@@ -1,6 +1,7 @@
 import { calcularProximaFecha, programarAccionesMultiples } from './programarAcciones'
 import { createClient } from '@supabase/supabase-js'
 import { calcularDiasVencidos } from './programarAcciones'
+import { calcularEstadoEfectivoDeuda } from './database'
 import { registrarLogEjecucion } from './logsEjecucion'
 
 /**
@@ -531,11 +532,11 @@ async function aplicarFiltro(
 
       // Filtrar por estado de deuda
       if (filtros.estado_deuda && filtros.estado_deuda.length > 0) {
-        // Calcular estado: 'vencida' si días vencidos > 0, sino usar estado de BD
-        const estadoCalculado = diasVencidos > 0 ? 'vencida' : deuda.estado
+        // Calcular estado efectivo usando la misma lógica que la sección de deudores
+        const estadoEfectivo = calcularEstadoEfectivoDeuda(deuda.estado, deuda.fecha_vencimiento)
         
-        // Verificar si el estado calculado está en los filtros
-        if (!filtros.estado_deuda.includes(estadoCalculado) && !filtros.estado_deuda.includes(deuda.estado)) {
+        // Verificar si el estado efectivo está en los filtros
+        if (!filtros.estado_deuda.includes(estadoEfectivo)) {
           continue // Saltar esta deuda
         }
       }
@@ -770,14 +771,14 @@ async function evaluarCondiciones(
 
       switch (condicion.campo) {
         case 'estado_deuda': {
-          // Calcular si está vencida (días vencidos > 0)
-          const diasVencidos = deudaInfo.fecha_vencimiento 
-            ? calcularDiasVencidos(deudaInfo.fecha_vencimiento) 
-            : 0
-          const estadoCalculado = diasVencidos > 0 ? 'vencida' : deudaInfo.estado
+          // Calcular estado efectivo usando la misma lógica que la sección de deudores
+          const estadoEfectivo = calcularEstadoEfectivoDeuda(
+            deudaInfo.estado,
+            deudaInfo.fecha_vencimiento
+          )
           
           resultado = evaluarCondicionTexto(
-            estadoCalculado,
+            estadoEfectivo,
             condicion.operador,
             condicion.valor
           )
