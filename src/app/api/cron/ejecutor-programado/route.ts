@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
-import { ProgramaEjecucion } from '../../../../types/programa'
+import { ProgramaEjecucion, Contacto, Plantilla } from '../../../../types/programa'
 import { registrarLogEjecucion, crearEjecucionWorkflow, actualizarEjecucionWorkflow } from '../../../../lib/logsEjecucion'
 
 // Tipos para las respuestas de ElevenLabs
@@ -16,6 +16,34 @@ interface ResultadoEjecucion {
   external_id?: string
   detalles?: unknown
   error?: string
+}
+
+// Tipo para programaciones con relaciones que pueden ser objetos o arrays
+interface ProgramacionConRelaciones {
+  id: string
+  usuario_id: string
+  deuda_id: string
+  rut?: string
+  contacto_id: string | null
+  campana_id: string | null
+  tipo_accion: string
+  plantilla_id: string | null
+  agente_id: string | null
+  vars: Record<string, string> | null
+  voz_config: Record<string, unknown> | null
+  contactos?: Contacto | Contacto[]
+  plantillas?: Plantilla | Plantilla[]
+  deudas?: Array<{
+    monto: number
+    fecha_vencimiento: string
+    deudor_id: string
+    rut?: string
+  }> | {
+    monto: number
+    fecha_vencimiento: string
+    deudor_id: string
+    rut?: string
+  }
 }
 
 // Cliente con service_role (bypass RLS)
@@ -60,20 +88,47 @@ export async function GET(request: Request) {
     console.log('🔍 Programaciones encontradas:', programaciones?.length || 0)
     
     // Normalizar relaciones: Supabase puede retornar objetos o arrays
-    const programacionesNormalizadas = (programaciones || []).map((prog: any) => {
+    const programacionesNormalizadas = (programaciones || []).map((prog: ProgramacionConRelaciones): ProgramaEjecucion => {
       // Normalizar contactos
-      if (prog.contactos && !Array.isArray(prog.contactos)) {
-        prog.contactos = [prog.contactos]
+      let contactosNormalizados: Contacto[] = []
+      if (prog.contactos) {
+        contactosNormalizados = Array.isArray(prog.contactos) ? prog.contactos : [prog.contactos]
       }
+      
       // Normalizar plantillas
-      if (prog.plantillas && !Array.isArray(prog.plantillas)) {
-        prog.plantillas = [prog.plantillas]
+      let plantillasNormalizadas: Plantilla[] = []
+      if (prog.plantillas) {
+        plantillasNormalizadas = Array.isArray(prog.plantillas) ? prog.plantillas : [prog.plantillas]
       }
+      
       // Normalizar deudas
-      if (prog.deudas && !Array.isArray(prog.deudas)) {
-        prog.deudas = [prog.deudas]
+      let deudasNormalizadas: Array<{
+        monto: number
+        fecha_vencimiento: string
+        deudor_id: string
+        rut?: string
+      }> = []
+      if (prog.deudas) {
+        deudasNormalizadas = Array.isArray(prog.deudas) ? prog.deudas : [prog.deudas]
       }
-      return prog
+      
+      return {
+        id: prog.id,
+        usuario_id: prog.usuario_id,
+        deuda_id: prog.deuda_id,
+        contacto_id: prog.contacto_id || '',
+        campana_id: prog.campana_id || '',
+        tipo_accion: prog.tipo_accion,
+        plantilla_id: prog.plantilla_id || '',
+        agente_id: prog.agente_id || '',
+        vars: prog.vars || {},
+        voz_config: prog.voz_config || {},
+        contactos: contactosNormalizados,
+        plantillas: plantillasNormalizadas,
+        deudas: deudasNormalizadas,
+        // Guardar RUT para uso posterior en historial
+        rut: prog.rut || ''
+      } as ProgramaEjecucion & { rut?: string }
     })
 
     // 2. Procesar cada programación
@@ -202,10 +257,19 @@ export async function GET(request: Request) {
         }
 
         // 4. Registrar en historial
+        // Obtener RUT: primero desde programaciones.rut, luego desde deudas[0].rut
+        const progConRut = prog as ProgramaEjecucion & { rut?: string }
+        let rutParaHistorial = ''
+        if (progConRut.rut) {
+          rutParaHistorial = progConRut.rut
+        } else if (prog.deudas && prog.deudas.length > 0 && prog.deudas[0]?.rut) {
+          rutParaHistorial = prog.deudas[0].rut
+        }
+        
         await supabase.from('historial').insert({
           usuario_id: prog.usuario_id,
           deuda_id: prog.deuda_id,
-          rut: (prog as any).rut || (Array.isArray((prog as ProgramaEjecucion).deudas) ? (prog as ProgramaEjecucion).deudas?.[0]?.rut : (prog as any).deudas?.rut) || '',
+          rut: rutParaHistorial,
           contacto_id: prog.contacto_id,
           campana_id: prog.campana_id,
           tipo_accion: prog.tipo_accion,
@@ -460,8 +524,10 @@ async function enviarSMS(prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
   }
 }
 
-async function enviarWhatsApp(_prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
+async function enviarWhatsApp(prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
   // TODO: Implementar con Twilio WhatsApp
+  // Por ahora retornamos éxito simulado
+  console.log('WhatsApp simulado para:', prog.contacto_id)
   return { exito: false, error: 'No implementado' }
 }
 
