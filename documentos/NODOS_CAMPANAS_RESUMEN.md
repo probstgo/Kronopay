@@ -433,3 +433,55 @@ await fetch('/api/send-sms', {
   - Integración completa con ElevenLabs para llamadas
   - Variables dinámicas pasadas correctamente al agente
   - El agente usa las variables en su script durante la llamada
+
+
+
+
+resumen de la mejora que se hizo para que funcionara el envio de mails desde campañas automaticas.
+
+
+# Resumen de cambios para envío de emails
+
+## Problemas encontrados y soluciones
+
+### 1. Normalización de relaciones de Supabase
+- Problema: Supabase devolvía relaciones (`contactos`, `plantillas`, `deudas`) como objetos cuando había un solo registro.
+- Solución: Normalizar siempre a arrays en el cron job.
+- Archivo: `src/app/api/cron/ejecutor-programado/route.ts`
+
+### 2. Constraint de `programaciones.estado`
+- Problema: El constraint no permitía el estado `'ejecutando'`.
+- Solución: Actualizar el constraint para incluir `'ejecutando'`.
+- SQL:
+```sql
+ALTER TABLE programaciones DROP CONSTRAINT IF EXISTS programaciones_estado_check;
+ALTER TABLE programaciones ADD CONSTRAINT programaciones_estado_check
+CHECK (estado IN ('pendiente', 'ejecutando', 'ejecutado', 'cancelado'));
+```
+
+### 3. Foreign key de `historial.campana_id`
+- Problema: `historial.campana_id` apuntaba a `campanas(id)` en lugar de `workflows_cobranza(id)`.
+- Solución: Actualizar la foreign key para apuntar a `workflows_cobranza`.
+- SQL:
+```sql
+ALTER TABLE historial DROP CONSTRAINT IF EXISTS historial_campana_id_fkey;
+ALTER TABLE historial ADD CONSTRAINT historial_campana_id_fkey
+FOREIGN KEY (campana_id) REFERENCES workflows_cobranza(id) ON DELETE SET NULL;
+```
+
+### 4. Acceso al campo `rut`
+- Problema: El campo `rut` no se obtenía correctamente desde las programaciones.
+- Solución: Incluir `rut` en el `select` y normalizar su acceso.
+- Archivo: `src/app/api/cron/ejecutor-programado/route.ts`
+
+## Resultado
+
+- Emails se envían correctamente
+- Registros se guardan en `historial`
+- Programaciones se marcan como `'ejecutado'`
+- Logs detallados para diagnóstico
+
+## Archivos modificados
+
+1. `src/app/api/cron/ejecutor-programado/route.ts` — Normalización de relaciones y acceso a `rut`
+2. Base de datos — Constraints y foreign keys actualizados
