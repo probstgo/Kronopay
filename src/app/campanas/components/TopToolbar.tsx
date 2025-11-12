@@ -49,6 +49,7 @@ interface TopToolbarProps {
   onSave?: (data: { nombre: string; descripcion: string }) => void
   onTest?: () => void
   hasNodes?: boolean
+  isTesting?: boolean
   initialName?: string
   initialDescription?: string
   onNameChange?: (name: string) => void
@@ -62,6 +63,7 @@ export function TopToolbar({
   onSave,
   onTest,
   hasNodes = false,
+  isTesting = false,
   initialName = 'Campaña de Cobranza',
   initialDescription = '',
   onNameChange,
@@ -222,17 +224,32 @@ export function TopToolbar({
               <TooltipTrigger asChild>
                 <Button
                   onClick={onTest}
-                  disabled={!hasNodes}
+                  disabled={!hasNodes || isTesting}
                   variant="outline"
                   className="flex items-center gap-2 border-green-500 text-green-600 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label="Probar campaña"
                 >
-                  <Play className="h-4 w-4" />
-                  Probar Campaña
+                  {isTesting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                      Ejecutando...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4" />
+                      Probar Campaña
+                    </>
+                  )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>{hasNodes ? 'Ejecutar prueba de la campaña' : 'Agrega nodos para probar la campaña'}</p>
+                <p>
+                  {isTesting 
+                    ? 'Ejecutando prueba...' 
+                    : hasNodes 
+                      ? 'Ejecutar prueba de la campaña' 
+                      : 'Agrega nodos para probar la campaña'}
+                </p>
               </TooltipContent>
             </Tooltip>
 

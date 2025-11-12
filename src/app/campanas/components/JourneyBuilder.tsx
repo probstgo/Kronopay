@@ -170,6 +170,19 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
   const [sourceNodeId, setSourceNodeId] = useState<string | null>(null)
   const [shouldFitView, setShouldFitView] = useState(true)
+  const [isTesting, setIsTesting] = useState(false)
+  const [testResults, setTestResults] = useState<{
+    exitosas: number
+    fallidas: number
+    detalles: Array<{
+      programacion_id: string
+      tipo_accion: string
+      destinatario: string
+      exito: boolean
+      external_id?: string
+      error?: string
+    }>
+  } | null>(null)
 
   // Cargar campaña si hay params (edición)
   useEffect(() => {
@@ -743,13 +756,13 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
 
   // Función para probar la campaña
   const handleTest = useCallback(async () => {
-    // Verificar que la campaña esté guardada
+    // Validar que la campaña esté guardada
     if (!campaignId) {
       toast.error('Debes guardar la campaña antes de probarla')
       return
     }
 
-    // Filtrar nodos: excluir el nodo inicial "+" y notas
+    // Validar que la campaña tenga nodos
     const realNodes = nodes.filter(n => n.id !== 'initial-plus' && n.type !== 'note')
     
     if (realNodes.length === 0) {
@@ -757,8 +770,14 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
       return
     }
 
+    // Activar estado de loading
+    setIsTesting(true)
+    setTestResults(null)
+
     // Mostrar loading
-    const toastId = toast.loading('Ejecutando prueba de campaña...')
+    const toastId = toast.loading('Ejecutando prueba de campaña...', {
+      description: 'Esto puede tomar unos segundos'
+    })
 
     try {
       // Preparar nodos para el endpoint (sin el nodo inicial)
@@ -792,24 +811,35 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al ejecutar la prueba')
+        throw new Error(data.error || data.detalles || 'Error al ejecutar la prueba')
       }
 
-      // Mostrar resultados
+      // Extraer resultados
       const resultado = data.resultado
       const exitosas = resultado.exitosas || 0
       const fallidas = resultado.fallidas || 0
       const detalles = resultado.detalles || []
 
+      // Guardar resultados para el modal
+      setTestResults({
+        exitosas,
+        fallidas,
+        detalles
+      })
+
       // Crear mensaje de resumen
-      let mensaje = `Prueba completada: ${exitosas} exitosas`
+      let mensaje = `Prueba completada: ${exitosas} exitosa${exitosas !== 1 ? 's' : ''}`
       if (fallidas > 0) {
-        mensaje += `, ${fallidas} fallidas`
+        mensaje += `, ${fallidas} fallida${fallidas !== 1 ? 's' : ''}`
       }
 
-      toast.success(mensaje, { id: toastId, duration: 5000 })
+      toast.success(mensaje, { 
+        id: toastId, 
+        duration: 5000,
+        description: fallidas > 0 ? 'Revisa los detalles para más información' : undefined
+      })
 
-      // Mostrar detalles en consola (luego se mostrará en modal)
+      // Mostrar detalles en consola
       console.log('📊 Resultados de la prueba:', {
         exitosas,
         fallidas,
@@ -821,7 +851,14 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
     } catch (error) {
       console.error('❌ Error al probar campaña:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-      toast.error(`Error al probar la campaña: ${errorMessage}`, { id: toastId })
+      toast.error(`Error al probar la campaña: ${errorMessage}`, { 
+        id: toastId,
+        duration: 7000
+      })
+      setTestResults(null)
+    } finally {
+      // Desactivar estado de loading
+      setIsTesting(false)
     }
   }, [nodes, edges, campaignId])
 
@@ -847,6 +884,7 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
           onSave={handleSave}
           onTest={handleTest}
           hasNodes={hasNodes}
+          isTesting={isTesting}
           initialName={campaignName}
           initialDescription={campaignDescription}
           onNameChange={setCampaignName}
