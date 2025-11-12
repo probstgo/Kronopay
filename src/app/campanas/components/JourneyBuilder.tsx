@@ -741,6 +741,93 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
     }
   }, [nodes, edges, campaignId, campaignName, campaignDescription, router])
 
+  // Función para probar la campaña
+  const handleTest = useCallback(async () => {
+    // Verificar que la campaña esté guardada
+    if (!campaignId) {
+      toast.error('Debes guardar la campaña antes de probarla')
+      return
+    }
+
+    // Filtrar nodos: excluir el nodo inicial "+" y notas
+    const realNodes = nodes.filter(n => n.id !== 'initial-plus' && n.type !== 'note')
+    
+    if (realNodes.length === 0) {
+      toast.error('Agrega al menos un nodo para probar la campaña')
+      return
+    }
+
+    // Mostrar loading
+    const toastId = toast.loading('Ejecutando prueba de campaña...')
+
+    try {
+      // Preparar nodos para el endpoint (sin el nodo inicial)
+      const canvasNodes = realNodes.map(node => ({
+        id: node.id,
+        type: node.type,
+        position: node.position,
+        data: node.data
+      }))
+
+      // Preparar conexiones
+      const canvasEdges = edges.map(edge => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        sourceHandle: edge.sourceHandle
+      }))
+
+      // Llamar al endpoint de ejecución con modo_prueba
+      const response = await fetch('/api/campanas/ejecutar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          campana_id: campaignId,
+          nodos: canvasNodes,
+          conexiones: canvasEdges,
+          modo_prueba: true
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al ejecutar la prueba')
+      }
+
+      // Mostrar resultados
+      const resultado = data.resultado
+      const exitosas = resultado.exitosas || 0
+      const fallidas = resultado.fallidas || 0
+      const detalles = resultado.detalles || []
+
+      // Crear mensaje de resumen
+      let mensaje = `Prueba completada: ${exitosas} exitosas`
+      if (fallidas > 0) {
+        mensaje += `, ${fallidas} fallidas`
+      }
+
+      toast.success(mensaje, { id: toastId, duration: 5000 })
+
+      // Mostrar detalles en consola (luego se mostrará en modal)
+      console.log('📊 Resultados de la prueba:', {
+        exitosas,
+        fallidas,
+        detalles
+      })
+
+      // TODO: Mostrar modal con detalles detallados (Paso 4)
+
+    } catch (error) {
+      console.error('❌ Error al probar campaña:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      toast.error(`Error al probar la campaña: ${errorMessage}`, { id: toastId })
+    }
+  }, [nodes, edges, campaignId])
+
+  // Calcular si hay nodos configurados (excluyendo initial-plus y notas)
+  const hasNodes = nodes.filter(n => n.id !== 'initial-plus' && n.type !== 'note').length > 0
+
   return (
     <NodeActionsContext.Provider value={{ onConfigure: handleConfigureNode, onDelete: handleDeleteNode }}>
       <div className="h-screen flex flex-col">
@@ -758,6 +845,8 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
         <TopToolbar 
           onAddNode={handleAddNodeFromToolbar}
           onSave={handleSave}
+          onTest={handleTest}
+          hasNodes={hasNodes}
           initialName={campaignName}
           initialDescription={campaignDescription}
           onNameChange={setCampaignName}

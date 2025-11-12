@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, BarChart3, Settings, Lightbulb, Save, StickyNote } from 'lucide-react'
+import { ArrowLeft, Plus, BarChart3, Settings, Lightbulb, Save, StickyNote, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
@@ -47,6 +47,8 @@ interface TopToolbarProps {
   availableNodeTypes?: NodeType[]
   onAddNote?: () => void
   onSave?: (data: { nombre: string; descripcion: string }) => void
+  onTest?: () => void
+  hasNodes?: boolean
   initialName?: string
   initialDescription?: string
   onNameChange?: (name: string) => void
@@ -58,6 +60,8 @@ export function TopToolbar({
   availableNodeTypes = [], 
   onAddNote, 
   onSave,
+  onTest,
+  hasNodes = false,
   initialName = 'Campaña de Cobranza',
   initialDescription = '',
   onNameChange,
@@ -210,6 +214,25 @@ export function TopToolbar({
               </TooltipTrigger>
               <TooltipContent>
                 <p>Ayuda y sugerencias</p>
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Botón Probar Campaña */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={onTest}
+                  disabled={!hasNodes}
+                  variant="outline"
+                  className="flex items-center gap-2 border-green-500 text-green-600 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Probar campaña"
+                >
+                  <Play className="h-4 w-4" />
+                  Probar Campaña
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{hasNodes ? 'Ejecutar prueba de la campaña' : 'Agrega nodos para probar la campaña'}</p>
               </TooltipContent>
             </Tooltip>
 
