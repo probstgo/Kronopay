@@ -107,11 +107,13 @@ function resolverPlantilla(contenido: string, vars: Record<string, string>): str
 // Funciones auxiliares para ejecutar comunicaciones
 async function enviarEmailPrueba(prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
   try {
+    // Validar que exista la plantilla (datos reales de la BD)
     if (!prog.plantillas || prog.plantillas.length === 0) {
-      return { exito: false, error: 'No se encontró la plantilla' }
+      return { exito: false, error: 'No se encontró la plantilla en la base de datos. Asegúrate de que la plantilla existe y está configurada correctamente.' }
     }
+    // Validar que exista el contacto (datos reales de la BD)
     if (!prog.contactos || prog.contactos.length === 0) {
-      return { exito: false, error: 'No se encontró el contacto del deudor' }
+      return { exito: false, error: 'No se encontró el contacto del deudor en la base de datos. Asegúrate de que el deudor tenga un contacto de tipo email registrado.' }
     }
 
     const plantilla = prog.plantillas[0] as {
@@ -121,6 +123,11 @@ async function enviarEmailPrueba(prog: ProgramaEjecucion): Promise<ResultadoEjec
     }
     const contacto = prog.contactos[0]
     const vars = prog.vars || {}
+
+    // Validar que el contacto sea de tipo email (datos reales)
+    if (contacto.tipo_contacto !== 'email') {
+      return { exito: false, error: `El contacto del deudor no es de tipo email (tipo actual: ${contacto.tipo_contacto}). Asegúrate de que el deudor tenga un contacto de tipo email registrado.` }
+    }
 
     const contenidoResuelto = resolverPlantilla(plantilla.contenido, vars)
     const asuntoResuelto = plantilla.asunto
@@ -175,18 +182,22 @@ async function enviarEmailPrueba(prog: ProgramaEjecucion): Promise<ResultadoEjec
 
 async function ejecutarLlamadaPrueba(prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
   try {
+    // Validar que se haya especificado un agente
     if (!prog.agente_id) {
-      return { exito: false, error: 'No se especificó un agente para la llamada' }
+      return { exito: false, error: 'No se especificó un agente para la llamada. Configura un agente en el nodo de llamada.' }
     }
+    // Validar que exista el contacto (datos reales de la BD)
     if (!prog.contactos || prog.contactos.length === 0) {
-      return { exito: false, error: 'No se encontró el contacto del deudor' }
+      return { exito: false, error: 'No se encontró el contacto del deudor en la base de datos. Asegúrate de que el deudor tenga un contacto de tipo teléfono registrado.' }
     }
 
     const contacto = prog.contactos[0]
+    // Validar que el contacto sea de tipo teléfono (datos reales)
     if (contacto.tipo_contacto !== 'telefono') {
-      return { exito: false, error: 'El contacto no es un teléfono válido' }
+      return { exito: false, error: `El contacto del deudor no es de tipo teléfono (tipo actual: ${contacto.tipo_contacto}). Asegúrate de que el deudor tenga un contacto de tipo teléfono registrado.` }
     }
 
+    // Validar que el agente exista en la BD (datos reales)
     const { data: agenteData, error: agenteError } = await supabaseServiceRole
       .from('llamada_agente')
       .select('id, agent_id, nombre, activo')
@@ -195,11 +206,12 @@ async function ejecutarLlamadaPrueba(prog: ProgramaEjecucion): Promise<Resultado
       .single()
 
     if (agenteError || !agenteData) {
-      return { exito: false, error: 'No se encontró el agente en la base de datos' }
+      return { exito: false, error: `No se encontró el agente en la base de datos (ID: ${prog.agente_id}). Asegúrate de que el agente existe y está configurado correctamente.` }
     }
 
+    // Validar que el agente esté activo
     if (!agenteData.activo) {
-      return { exito: false, error: 'El agente no está activo' }
+      return { exito: false, error: 'El agente no está activo. Activa el agente antes de ejecutar la llamada.' }
     }
 
     const vars = prog.vars || {}
@@ -245,19 +257,22 @@ async function ejecutarLlamadaPrueba(prog: ProgramaEjecucion): Promise<Resultado
 
 async function enviarSMSPrueba(prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
   try {
+    // Validar que exista la plantilla (datos reales de la BD)
     if (!prog.plantillas || prog.plantillas.length === 0) {
-      return { exito: false, error: 'No se encontró la plantilla' }
+      return { exito: false, error: 'No se encontró la plantilla en la base de datos. Asegúrate de que la plantilla existe y está configurada correctamente.' }
     }
+    // Validar que exista el contacto (datos reales de la BD)
     if (!prog.contactos || prog.contactos.length === 0) {
-      return { exito: false, error: 'No se encontró el contacto del deudor' }
+      return { exito: false, error: 'No se encontró el contacto del deudor en la base de datos. Asegúrate de que el deudor tenga un contacto de tipo teléfono registrado.' }
     }
 
     const plantilla = prog.plantillas[0]
     const contacto = prog.contactos[0]
     const vars = prog.vars || {}
 
+    // Validar que el contacto sea de tipo teléfono (datos reales)
     if (contacto.tipo_contacto !== 'telefono') {
-      return { exito: false, error: 'El contacto no es un teléfono válido' }
+      return { exito: false, error: `El contacto del deudor no es de tipo teléfono (tipo actual: ${contacto.tipo_contacto}). Asegúrate de que el deudor tenga un contacto de tipo teléfono registrado.` }
     }
 
     const contenidoResuelto = resolverPlantilla(plantilla.contenido, vars)
@@ -659,7 +674,7 @@ export async function POST(request: NextRequest) {
     const deudoresIniciales = deudores_iniciales || []
     
     if (deudoresIniciales.length === 0) {
-      // Obtener todos los deudores del usuario
+      // Obtener todos los deudores del usuario (datos reales de la BD)
       const { data: deudoresData, error: deudoresError } = await supabase
         .from('deudores')
         .select('id, rut, nombre')
@@ -667,37 +682,67 @@ export async function POST(request: NextRequest) {
 
       if (deudoresError) {
         console.error('Error obteniendo deudores:', deudoresError)
-      } else {
-        // Obtener deudas y contactos para cada deudor
-        for (const deudor of deudoresData || []) {
-          const { data: deudas } = await supabase
-            .from('deudas')
-            .select('id, monto, fecha_vencimiento')
-            .eq('deudor_id', deudor.id)
-            .limit(1)
+        return NextResponse.json(
+          { error: 'Error al obtener deudores de la base de datos. Asegúrate de tener deudores registrados.' },
+          { status: 500 }
+        )
+      }
 
-          const { data: contactos } = await supabase
-            .from('contactos')
-            .select('id, valor, tipo_contacto')
-            .eq('deudor_id', deudor.id)
-            .limit(1)
+      if (!deudoresData || deudoresData.length === 0) {
+        return NextResponse.json(
+          { error: 'No se encontraron deudores en la base de datos. Agrega deudores antes de probar la campaña.' },
+          { status: 400 }
+        )
+      }
 
-          if (deudas && deudas.length > 0) {
-            const deuda = deudas[0]
-            const contacto = contactos && contactos.length > 0 ? contactos[0] : null
+      // Obtener deudas y contactos para cada deudor (datos reales)
+      for (const deudor of deudoresData) {
+        const { data: deudas, error: deudasError } = await supabase
+          .from('deudas')
+          .select('id, monto, fecha_vencimiento')
+          .eq('deudor_id', deudor.id)
+          .limit(1)
 
-            deudoresIniciales.push({
-              deuda_id: deuda.id,
-              rut: deudor.rut || '',
-              contacto_id: contacto?.id,
-              vars: {
-                nombre: deudor.nombre || 'Deudor',
-                monto: `$${deuda.monto || 0}`,
-                fecha_vencimiento: deuda.fecha_vencimiento || new Date().toISOString().split('T')[0]
-              }
-            })
-          }
+        if (deudasError) {
+          console.error(`Error obteniendo deudas para deudor ${deudor.id}:`, deudasError)
+          continue
         }
+
+        const { data: contactos, error: contactosError } = await supabase
+          .from('contactos')
+          .select('id, valor, tipo_contacto')
+          .eq('deudor_id', deudor.id)
+          .limit(1)
+
+        if (contactosError) {
+          console.error(`Error obteniendo contactos para deudor ${deudor.id}:`, contactosError)
+          continue
+        }
+
+        // Solo incluir deudores que tengan deuda (requisito mínimo)
+        if (deudas && deudas.length > 0) {
+          const deuda = deudas[0]
+          const contacto = contactos && contactos.length > 0 ? contactos[0] : null
+
+          deudoresIniciales.push({
+            deuda_id: deuda.id,
+            rut: deudor.rut || '',
+            contacto_id: contacto?.id,
+            vars: {
+              nombre: deudor.nombre || 'Deudor',
+              monto: `$${deuda.monto || 0}`,
+              fecha_vencimiento: deuda.fecha_vencimiento || new Date().toISOString().split('T')[0]
+            }
+          })
+        }
+      }
+
+      // Validar que se encontraron deudores con deudas
+      if (deudoresIniciales.length === 0) {
+        return NextResponse.json(
+          { error: 'No se encontraron deudores con deudas registradas. Asegúrate de tener deudores con deudas antes de probar la campaña.' },
+          { status: 400 }
+        )
       }
     }
 
