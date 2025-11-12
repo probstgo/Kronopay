@@ -4,6 +4,16 @@ import { useState, useCallback, createContext, useContext, useEffect } from 'rea
 import { ReactFlow, Background, Controls, MiniMap, Node, Edge, addEdge, useNodesState, useEdgesState, Connection } from 'reactflow'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { CheckCircle, XCircle, Mail, Phone, MessageSquare, AlertCircle } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import 'reactflow/dist/style.css'
 
 import { TopToolbar } from './TopToolbar'
@@ -846,7 +856,10 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
         detalles
       })
 
-      // TODO: Mostrar modal con detalles detallados (Paso 4)
+      // Abrir modal con resultados
+      if (detalles.length > 0) {
+        // El modal se abrirá automáticamente cuando testResults tenga datos
+      }
 
     } catch (error) {
       console.error('❌ Error al probar campaña:', error)
@@ -1028,6 +1041,173 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
             />
           )}
         </div>
+
+        {/* Modal de Resultados de Prueba */}
+        <Dialog open={!!testResults} onOpenChange={(open) => { if (!open) setTestResults(null) }}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                Resultados de la Prueba
+                {testResults && (
+                  <div className="flex items-center gap-2 ml-auto">
+                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      {testResults.exitosas} exitosa{testResults.exitosas !== 1 ? 's' : ''}
+                    </Badge>
+                    {testResults.fallidas > 0 && (
+                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                        {testResults.fallidas} fallida{testResults.fallidas !== 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </DialogTitle>
+              <DialogDescription>
+                Detalles de cada comunicación ejecutada durante la prueba
+              </DialogDescription>
+            </DialogHeader>
+
+            {testResults && (
+              <div className="space-y-4 mt-4">
+                {/* Resumen */}
+                <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-green-600">{testResults.exitosas}</div>
+                    <div className="text-sm text-gray-600 mt-1">Exitosas</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-red-600">{testResults.fallidas}</div>
+                    <div className="text-sm text-gray-600 mt-1">Fallidas</div>
+                  </div>
+                </div>
+
+                {/* Lista detallada */}
+                {testResults.detalles.length > 0 ? (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm text-gray-700">Detalles por comunicación:</h3>
+                    <div className="space-y-2">
+                      {testResults.detalles.map((detalle, index) => {
+                        const getTipoIcon = () => {
+                          switch (detalle.tipo_accion) {
+                            case 'email':
+                              return <Mail className="h-4 w-4" />
+                            case 'llamada':
+                              return <Phone className="h-4 w-4" />
+                            case 'sms':
+                              return <MessageSquare className="h-4 w-4" />
+                            case 'whatsapp':
+                              return <MessageSquare className="h-4 w-4" />
+                            default:
+                              return <AlertCircle className="h-4 w-4" />
+                          }
+                        }
+
+                        const getTipoColor = () => {
+                          switch (detalle.tipo_accion) {
+                            case 'email':
+                              return 'bg-blue-100 text-blue-700 border-blue-200'
+                            case 'llamada':
+                              return 'bg-green-100 text-green-700 border-green-200'
+                            case 'sms':
+                              return 'bg-purple-100 text-purple-700 border-purple-200'
+                            case 'whatsapp':
+                              return 'bg-green-100 text-green-700 border-green-200'
+                            default:
+                              return 'bg-gray-100 text-gray-700 border-gray-200'
+                          }
+                        }
+
+                        return (
+                          <div
+                            key={detalle.programacion_id || index}
+                            className={`p-4 rounded-lg border-2 ${
+                              detalle.exito
+                                ? 'border-green-200 bg-green-50'
+                                : 'border-red-200 bg-red-50'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-start gap-3 flex-1">
+                                {/* Icono de estado */}
+                                {detalle.exito ? (
+                                  <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                                ) : (
+                                  <XCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                                )}
+
+                                <div className="flex-1 min-w-0">
+                                  {/* Tipo y destinatario */}
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Badge variant="outline" className={getTipoColor()}>
+                                      <span className="flex items-center gap-1">
+                                        {getTipoIcon()}
+                                        <span className="capitalize">{detalle.tipo_accion}</span>
+                                      </span>
+                                    </Badge>
+                                    <span className="text-sm text-gray-600 truncate">
+                                      {detalle.destinatario || 'N/A'}
+                                    </span>
+                                  </div>
+
+                                  {/* Estado */}
+                                  <div className="mb-2">
+                                    <Badge
+                                      variant="outline"
+                                      className={
+                                        detalle.exito
+                                          ? 'bg-green-100 text-green-800 border-green-300'
+                                          : 'bg-red-100 text-red-800 border-red-300'
+                                      }
+                                    >
+                                      {detalle.exito ? 'Exitoso' : 'Fallido'}
+                                    </Badge>
+                                  </div>
+
+                                  {/* ID externo si es exitoso */}
+                                  {detalle.exito && detalle.external_id && (
+                                    <div className="text-xs text-gray-600 mb-2">
+                                      <span className="font-medium">ID externo:</span>{' '}
+                                      <code className="bg-gray-100 px-1.5 py-0.5 rounded text-xs">
+                                        {detalle.external_id}
+                                      </code>
+                                    </div>
+                                  )}
+
+                                  {/* Error técnico si falló */}
+                                  {!detalle.exito && detalle.error && (
+                                    <div className="mt-2 p-2 bg-red-100 border border-red-200 rounded text-xs">
+                                      <div className="font-medium text-red-800 mb-1">Error técnico:</div>
+                                      <div className="text-red-700 font-mono break-all">
+                                        {detalle.error}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>No se ejecutaron comunicaciones durante la prueba</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Botón para cerrar */}
+            <div className="flex justify-end mt-6 pt-4 border-t">
+              <Button
+                onClick={() => setTestResults(null)}
+                className="bg-blue-500 text-white hover:bg-blue-600"
+              >
+                Cerrar
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </NodeActionsContext.Provider>
   )
