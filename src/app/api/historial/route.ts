@@ -81,6 +81,7 @@ export async function GET(request: NextRequest) {
     const estado = url.searchParams.get('estado')
     const campanaId = url.searchParams.get('campanaId')
     const q = url.searchParams.get('q')?.trim() || null
+    const modoPrueba = url.searchParams.get('modoPrueba') // 'solo_pruebas', 'sin_pruebas', o null
     const page = parseIntSafe(url.searchParams.get('page'), 1)
     const sizeRaw = parseIntSafe(url.searchParams.get('size'), 25)
     const size = Math.min(Math.max(sizeRaw, 1), 100)
@@ -110,6 +111,18 @@ export async function GET(request: NextRequest) {
         `detalles->>email.ilike.%${q}%,detalles->>telefono.ilike.%${q}%,detalles->>rut.ilike.%${q}%`
       )
     }
+
+    // Filtro por modo_prueba
+    if (modoPrueba === 'solo_pruebas') {
+      // Solo mostrar registros con modo_prueba: true
+      // Usar contains para verificar si el JSONB contiene la clave con valor true
+      query = query.contains('detalles', { modo_prueba: true })
+    } else if (modoPrueba === 'sin_pruebas') {
+      // Excluir registros con modo_prueba: true
+      // Verificar que modo_prueba sea null o no sea 'true' (cuando se extrae como texto)
+      query = query.or('detalles->>modo_prueba.is.null,detalles->>modo_prueba.neq.true')
+    }
+    // Si modoPrueba es null o 'todos', no se aplica filtro (muestra todo)
 
     const fromIdx = (page - 1) * size
     const toIdx = fromIdx + size - 1

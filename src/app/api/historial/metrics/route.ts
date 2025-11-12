@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Rango de fechas inválido' }, { status: 400 })
     }
 
-    // Helper para aplicar filtros
+    // Helper para aplicar filtros (excluyendo pruebas automáticamente en dashboard)
     // Totales simples por estado - construyendo consultas inline para evitar problemas de tipos
     const [enviadosRes, entregadosRes, fallidosRes] = await Promise.all([
       (() => {
@@ -76,6 +76,8 @@ export async function GET(request: NextRequest) {
         if (canal) q = q.eq('tipo_accion', canal)
         if (estado) q = q.eq('estado', estado)
         if (campanaId) q = q.eq('campana_id', campanaId)
+        // Excluir pruebas automáticamente en dashboard
+        q = q.or('detalles->>modo_prueba.is.null,detalles->>modo_prueba.neq.true')
         return q.eq('estado', 'iniciado')
       })(),
       (() => {
@@ -85,6 +87,8 @@ export async function GET(request: NextRequest) {
         if (canal) q = q.eq('tipo_accion', canal)
         if (estado) q = q.eq('estado', estado)
         if (campanaId) q = q.eq('campana_id', campanaId)
+        // Excluir pruebas automáticamente en dashboard
+        q = q.or('detalles->>modo_prueba.is.null,detalles->>modo_prueba.neq.true')
         return q.or('estado.eq.entregado,estado.eq.completado')
       })(),
       (() => {
@@ -94,6 +98,8 @@ export async function GET(request: NextRequest) {
         if (canal) q = q.eq('tipo_accion', canal)
         if (estado) q = q.eq('estado', estado)
         if (campanaId) q = q.eq('campana_id', campanaId)
+        // Excluir pruebas automáticamente en dashboard
+        q = q.or('detalles->>modo_prueba.is.null,detalles->>modo_prueba.neq.true')
         return q.eq('estado', 'fallido')
       })(),
     ])
@@ -122,6 +128,8 @@ export async function GET(request: NextRequest) {
           if (canal) q = q.eq('tipo_accion', canal)
           if (estado) q = q.eq('estado', estado)
           if (campanaId) q = q.eq('campana_id', campanaId)
+          // Excluir pruebas automáticamente en dashboard
+          q = q.or('detalles->>modo_prueba.is.null,detalles->>modo_prueba.neq.true')
           return q.eq('tipo_accion', c).eq('estado', 'iniciado')
         })(),
         (() => {
@@ -131,6 +139,8 @@ export async function GET(request: NextRequest) {
           if (canal) q = q.eq('tipo_accion', canal)
           if (estado) q = q.eq('estado', estado)
           if (campanaId) q = q.eq('campana_id', campanaId)
+          // Excluir pruebas automáticamente en dashboard
+          q = q.or('detalles->>modo_prueba.is.null,detalles->>modo_prueba.neq.true')
           return q.eq('tipo_accion', c).or('estado.eq.entregado,estado.eq.completado')
         })(),
         (() => {
@@ -140,6 +150,8 @@ export async function GET(request: NextRequest) {
           if (canal) q = q.eq('tipo_accion', canal)
           if (estado) q = q.eq('estado', estado)
           if (campanaId) q = q.eq('campana_id', campanaId)
+          // Excluir pruebas automáticamente en dashboard
+          q = q.or('detalles->>modo_prueba.is.null,detalles->>modo_prueba.neq.true')
           return q.eq('tipo_accion', c).eq('estado', 'fallido')
         })(),
       ])
@@ -160,6 +172,8 @@ export async function GET(request: NextRequest) {
     if (canal) llamadasQuery = llamadasQuery.eq('tipo_accion', canal)
     if (estado) llamadasQuery = llamadasQuery.eq('estado', estado)
     if (campanaId) llamadasQuery = llamadasQuery.eq('campana_id', campanaId)
+    // Excluir pruebas automáticamente en dashboard
+    llamadasQuery = llamadasQuery.or('detalles->>modo_prueba.is.null,detalles->>modo_prueba.neq.true')
     const { data: llamadas, error: llamadasError } = await llamadasQuery.eq('tipo_accion', 'llamada')
 
     if (llamadasError) {

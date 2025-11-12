@@ -113,6 +113,7 @@ export default function HistorialApp() {
           estado: searchParams.get('estado') || '',
           campanaId: searchParams.get('campanaId') || '',
           q: searchParams.get('q') || '',
+          modoPrueba: searchParams.get('modoPrueba') || '',
         }}
         onChange={(key, value, debounced) => {
           if (debounced) debouncedUpdateParam(key, value)

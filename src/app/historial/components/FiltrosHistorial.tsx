@@ -16,6 +16,7 @@ type Valores = {
   estado: string
   campanaId: string
   q: string
+  modoPrueba: string
 }
 
 export default function FiltrosHistorial({
@@ -41,7 +42,8 @@ export default function FiltrosHistorial({
     valores.estado !== '' ||
     valores.campanaId !== '' ||
     valores.from !== '' ||
-    valores.to !== ''
+    valores.to !== '' ||
+    valores.modoPrueba !== ''
 
   return (
     <Card>
@@ -98,6 +100,18 @@ export default function FiltrosHistorial({
                   {estados.map((e) => (
                     <SelectItem key={e} value={e} className="capitalize">{e}</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-full sm:w-48">
+              <Select value={valores.modoPrueba} onValueChange={(v) => onChange('modoPrueba', v === 'todos' ? null : v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Tipo de ejecución" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todas las ejecuciones</SelectItem>
+                  <SelectItem value="solo_pruebas">Solo pruebas</SelectItem>
+                  <SelectItem value="sin_pruebas">Ocultar pruebas</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -183,6 +197,11 @@ export default function FiltrosHistorial({
               {(valores.from || valores.to) && (
                 <span className="px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">
                   Fechas: {valores.from || '∞'} - {valores.to || '∞'}
+                </span>
+              )}
+              {valores.modoPrueba && (
+                <span className="px-2 py-1 bg-indigo-100 text-indigo-800 text-xs rounded">
+                  {valores.modoPrueba === 'solo_pruebas' ? 'Solo pruebas' : 'Ocultar pruebas'}
                 </span>
               )}
             </div>
