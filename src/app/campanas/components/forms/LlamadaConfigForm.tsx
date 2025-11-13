@@ -97,7 +97,7 @@ export function LlamadaConfigForm({ node, onSave }: LlamadaConfigFormProps) {
           >
             <option value="">Seleccionar agente</option>
             {agentes.map((agente) => (
-              <option key={agente.id} value={agente.agent_id}>
+              <option key={agente.id} value={agente.id}>
                 {agente.nombre}
               </option>
             ))}

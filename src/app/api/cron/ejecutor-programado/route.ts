@@ -492,10 +492,11 @@ async function ejecutarLlamada(prog: ProgramaEjecucion): Promise<ResultadoEjecuc
     }
 
     // Validar que el agente esté activo en la BD
+    // prog.agente_id es el UUID de la tabla llamada_agente
     const { data: agenteData, error: agenteError } = await supabase
       .from('llamada_agente')
       .select('id, agent_id, nombre, activo')
-      .eq('agent_id', prog.agente_id)
+      .eq('id', prog.agente_id)
       .eq('usuario_id', prog.usuario_id)
       .single()
 
@@ -525,8 +526,9 @@ async function ejecutarLlamada(prog: ProgramaEjecucion): Promise<ResultadoEjecuc
     const { startOutboundCall } = await import('../../../../lib/elevenlabs')
 
     // Ejecutar llamada con variables dinámicas
+    // Usar agent_id de ElevenLabs (no el UUID de la BD)
     const resultado = await startOutboundCall({
-      agentId: prog.agente_id,
+      agentId: agenteData.agent_id,
       toNumber: contacto.valor,
       dynamicVariables
     }) as unknown as ElevenLabsCallResult
