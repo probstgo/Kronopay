@@ -537,7 +537,8 @@ async function ejecutarProgramacionesInmediatamente({
           rutParaHistorial = prog.deudas[0].rut
         }
 
-        await supabaseServiceRole.from('historial').insert({
+        console.log(`📝 Registrando en historial (RUT: ${rutParaHistorial || 'N/A'}, campana_id: ${prog.campana_id || 'N/A'})`)
+        const { error: historialError } = await supabaseServiceRole.from('historial').insert({
           usuario_id: prog.usuario_id,
           deuda_id: prog.deuda_id,
           rut: rutParaHistorial,
@@ -552,6 +553,13 @@ async function ejecutarProgramacionesInmediatamente({
             modo_prueba: true
           }
         })
+        
+        if (historialError) {
+          console.error(`❌ Error al insertar en historial:`, historialError)
+          console.error(`   Detalles del error:`, JSON.stringify(historialError, null, 2))
+        } else {
+          console.log(`✅ Registrado en historial exitosamente`)
+        }
 
         // Marcar programación como ejecutada
         const estadoFinal = resultado.exito ? 'ejecutado' : 'cancelado'
