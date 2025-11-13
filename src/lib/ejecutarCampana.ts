@@ -452,18 +452,19 @@ async function aplicarFiltro(
     return deudores
   }
 
-  // Obtener todos los deudores del usuario con sus deudas, contactos e historial
+  // Obtener todos los deudores del usuario con sus deudas activas, contactos e historial
   const { data: deudoresData, error: deudoresError } = await supabase
     .from('deudores')
     .select(`
       id,
       rut,
       nombre,
-      deudas (
+      deudas!inner (
         id,
         monto,
         estado,
-        fecha_vencimiento
+        fecha_vencimiento,
+        eliminada_at
       ),
       contactos (
         id,
@@ -473,6 +474,7 @@ async function aplicarFiltro(
       )
     `)
     .eq('usuario_id', usuario_id)
+    .is('deudas.eliminada_at', null)  // Solo deudas activas (soft delete)
 
   if (deudoresError) {
     console.error('Error obteniendo deudores para filtro:', deudoresError)
@@ -513,6 +515,7 @@ async function aplicarFiltro(
       monto: number
       estado: string
       fecha_vencimiento: string
+      eliminada_at: string | null
     }>
     const contactos = (deudor.contactos || []) as Array<{
       id: string
@@ -521,11 +524,14 @@ async function aplicarFiltro(
       preferido: boolean
     }>
 
-    // Si no hay deudas, saltar este deudor
-    if (deudas.length === 0) continue
+    // Filtrar deudas eliminadas (por si acaso)
+    const deudasActivas = deudas.filter(d => d.eliminada_at === null)
 
-    // Para cada deuda, verificar si pasa los filtros
-    for (const deuda of deudas) {
+    // Si no hay deudas activas, saltar este deudor
+    if (deudasActivas.length === 0) continue
+
+    // Para cada deuda activa, verificar si pasa los filtros
+    for (const deuda of deudasActivas) {
       // Calcular días vencidos una sola vez (se usa para estado y filtro)
       const diasVencidos = deuda.fecha_vencimiento ? calcularDiasVencidos(deuda.fecha_vencimiento) : 0
       const monto = typeof deuda.monto === 'number' ? deuda.monto : Number(deuda.monto) || 0

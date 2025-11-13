@@ -60,7 +60,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 1. Obtener programaciones vencidas y pendientes
+    // 1. Obtener programaciones vencidas y pendientes (solo de deudas activas)
     const { data: programaciones, error } = await supabase
       .from('programaciones')
       .select(`
@@ -77,9 +77,10 @@ export async function GET(request: Request) {
         voz_config,
         contactos(valor, tipo_contacto),
         plantillas(contenido, asunto, tipo_contenido),
-        deudas(monto, fecha_vencimiento, deudor_id)
+        deudas!inner(monto, fecha_vencimiento, deudor_id, eliminada_at)
       `)
       .eq('estado', 'pendiente')
+      .is('deudas.eliminada_at', null)  // Solo deudas activas (soft delete)
       .lte('fecha_programada', new Date().toISOString())
       .limit(100)
 
@@ -102,7 +103,9 @@ export async function GET(request: Request) {
     }
     
     // Normalizar relaciones: Supabase puede retornar objetos o arrays
-    const programacionesNormalizadas = (programaciones || []).map((prog: ProgramacionConRelaciones): ProgramaEjecucion => {
+    const programacionesNormalizadas: ProgramaEjecucion[] = []
+    
+    for (const prog of (programaciones || [])) {
       // Normalizar contactos
       let contactosNormalizados: Contacto[] = []
       if (prog.contactos) {
@@ -115,18 +118,31 @@ export async function GET(request: Request) {
         plantillasNormalizadas = Array.isArray(prog.plantillas) ? prog.plantillas : [prog.plantillas]
       }
       
-      // Normalizar deudas
+      // Normalizar deudas (filtrar eliminadas por si acaso)
       let deudasNormalizadas: Array<{
         monto: number
         fecha_vencimiento: string
         deudor_id: string
         rut?: string
+        eliminada_at?: string | null
       }> = []
       if (prog.deudas) {
-        deudasNormalizadas = Array.isArray(prog.deudas) ? prog.deudas : [prog.deudas]
+        const deudasArray = Array.isArray(prog.deudas) ? prog.deudas : [prog.deudas]
+        // Filtrar solo deudas activas
+        deudasNormalizadas = deudasArray.filter((d: { eliminada_at?: string | null }) => !d.eliminada_at)
       }
       
-      return {
+      // Si no hay deudas activas, cancelar esta programación y saltarla
+      if (deudasNormalizadas.length === 0) {
+        console.log(`⚠️ Programación ${prog.id} tiene deuda eliminada, cancelando...`)
+        await supabase
+          .from('programaciones')
+          .update({ estado: 'cancelado' })
+          .eq('id', prog.id)
+        continue
+      }
+      
+      programacionesNormalizadas.push({
         id: prog.id,
         usuario_id: prog.usuario_id,
         deuda_id: prog.deuda_id,
@@ -142,8 +158,8 @@ export async function GET(request: Request) {
         deudas: deudasNormalizadas,
         // Guardar RUT para uso posterior en historial
         rut: prog.rut || ''
-      } as ProgramaEjecucion & { rut?: string }
-    })
+      } as ProgramaEjecucion & { rut?: string })
+    }
 
     // 2. Procesar cada programación
     console.log('🔄 Iniciando procesamiento de', programacionesNormalizadas.length, 'programaciones')
