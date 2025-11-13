@@ -199,11 +199,12 @@ async function ejecutarLlamadaPrueba(prog: ProgramaEjecucion): Promise<Resultado
 
     // Validar que el agente exista en la BD (datos reales)
     // prog.agente_id es el UUID de la tabla llamada_agente
+    // Buscar agentes del usuario o agentes globales (usuario_id IS NULL)
     const { data: agenteData, error: agenteError } = await supabaseServiceRole
       .from('llamada_agente')
       .select('id, agent_id, nombre, activo')
       .eq('id', prog.agente_id)
-      .eq('usuario_id', prog.usuario_id)
+      .or(`usuario_id.eq.${prog.usuario_id},usuario_id.is.null`)
       .single()
 
     if (agenteError || !agenteData) {
