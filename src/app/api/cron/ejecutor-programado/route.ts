@@ -170,11 +170,12 @@ export async function GET(request: Request) {
 
         // Buscar o crear ejecución_workflow para registrar logs
         if (prog.campana_id && prog.deuda_id) {
-          // Obtener deudor_id desde deuda_id
+          // Obtener deudor_id desde deuda_id (solo deudas activas)
           const { data: deudaData } = await supabase
             .from('deudas')
             .select('deudor_id')
             .eq('id', prog.deuda_id)
+            .is('eliminada_at', null)  // Solo deudas activas (soft delete)
             .single()
 
           if (deudaData?.deudor_id) {

@@ -24,6 +24,9 @@
 /database/*.md
 /database/**/*.md
 
+# database schema (contains sensitive structure info)
+documentos/DATABASE/schema.sql
+
 # IDE/Editor
 .vscode/
 !.vscode/extensions.json

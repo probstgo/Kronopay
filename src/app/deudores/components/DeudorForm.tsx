@@ -26,7 +26,11 @@ import {
   DollarSign, 
   Calendar,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  AlertTriangle,
+  Clock,
+  FileText,
+  CreditCard
 } from 'lucide-react';
 // Funciones de validación locales para evitar problemas de importación
 const validarRUT = (rut: string): boolean => {
@@ -127,6 +131,7 @@ interface DeudorFormProps {
   onClose: () => void;
   onSuccess: () => void;
   deudor?: DeudorConDatos | null;
+  deudaId?: string | null; // ID de la deuda específica a editar
 }
 
 interface FormData {
@@ -150,7 +155,7 @@ interface FormErrors {
   fecha_vencimiento?: string;
 }
 
-export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormProps) {
+export function DeudorForm({ isOpen, onClose, onSuccess, deudor, deudaId }: DeudorFormProps) {
   const [formData, setFormData] = useState<FormData>({
     nombre: '',
     rut: '',
@@ -163,24 +168,90 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Estado para actividad de la deuda
+  const [actividadDeuda, setActividadDeuda] = useState<{
+    tieneProgramacionesPendientes: boolean;
+    tieneHistorial: boolean;
+    tienePagos: boolean;
+    cantidadProgramaciones: number;
+    cantidadHistorial: number;
+    cantidadPagos: number;
+  } | null>(null);
+  const [cargandoActividad, setCargandoActividad] = useState(false);
+
+  // Función para consultar actividad de la deuda
+  const consultarActividadDeuda = async (deudaId: string) => {
+    setCargandoActividad(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Consultar programaciones pendientes
+      const { data: programaciones, count: countProgramaciones } = await supabase
+        .from('programaciones')
+        .select('id', { count: 'exact', head: true })
+        .eq('deuda_id', deudaId)
+        .eq('estado', 'pendiente');
+
+      // Consultar historial
+      const { data: historial, count: countHistorial } = await supabase
+        .from('historial')
+        .select('id', { count: 'exact', head: true })
+        .eq('deuda_id', deudaId);
+
+      // Consultar pagos
+      const { data: pagos, count: countPagos } = await supabase
+        .from('pagos')
+        .select('id', { count: 'exact', head: true })
+        .eq('deuda_id', deudaId);
+
+      setActividadDeuda({
+        tieneProgramacionesPendientes: (countProgramaciones || 0) > 0,
+        tieneHistorial: (countHistorial || 0) > 0,
+        tienePagos: (countPagos || 0) > 0,
+        cantidadProgramaciones: countProgramaciones || 0,
+        cantidadHistorial: countHistorial || 0,
+        cantidadPagos: countPagos || 0,
+      });
+    } catch (error) {
+      console.error('Error al consultar actividad de deuda:', error);
+      setActividadDeuda(null);
+    } finally {
+      setCargandoActividad(false);
+    }
+  };
 
   // Precargar datos si es modo edición
   useEffect(() => {
     if (deudor && isOpen) {
-      // Obtener datos de deuda más reciente si existe
-      const deudaMasReciente = deudor.deudas && deudor.deudas.length > 0 
-        ? deudor.deudas[0] // Asumimos que las deudas están ordenadas por fecha
-        : null;
+      // Buscar la deuda específica si se proporciona deudaId, sino usar la primera
+      let deudaAEditar: Deuda | null = null;
+      
+      if (deudaId && deudor.deudas) {
+        // Buscar la deuda específica por ID
+        deudaAEditar = deudor.deudas.find(d => d.id === deudaId) || null;
+      } else if (deudor.deudas && deudor.deudas.length > 0) {
+        // Si no se especifica, usar la primera deuda
+        deudaAEditar = deudor.deudas[0];
+      }
 
       setFormData({
         nombre: deudor.nombre || '',
         rut: deudor.rut || '',
         email: deudor.email || '',
         telefono: deudor.telefono || '',
-        monto: deudaMasReciente?.monto || deudor.monto_total || undefined,
-        fecha_vencimiento: deudaMasReciente?.fecha_vencimiento || deudor.fecha_vencimiento_mas_reciente || '',
-        estado_deuda: (deudaMasReciente?.estado || deudor.estado_general || 'nueva') as 'nueva' | 'pendiente' | 'pagado'
+        monto: deudaAEditar?.monto || deudor.monto_total || undefined,
+        fecha_vencimiento: deudaAEditar?.fecha_vencimiento || deudor.fecha_vencimiento_mas_reciente || '',
+        estado_deuda: (deudaAEditar?.estado || deudor.estado_general || 'nueva') as 'nueva' | 'pendiente' | 'pagado'
       });
+
+      // Consultar actividad si hay una deuda específica
+      if (deudaAEditar?.id) {
+        consultarActividadDeuda(deudaAEditar.id);
+      } else {
+        setActividadDeuda(null);
+      }
     } else if (isOpen) {
       // Resetear formulario para modo agregar
       setFormData({
@@ -192,9 +263,10 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
         fecha_vencimiento: '',
         estado_deuda: 'nueva'
       });
+      setActividadDeuda(null);
     }
     setErrors({});
-  }, [deudor, isOpen]);
+  }, [deudor, deudaId, isOpen]);
 
   const handleInputChange = <K extends keyof FormData>(field: K, value: FormData[K]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -352,16 +424,10 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
 
         // Actualizar deuda si se proporcionó
         if (formData.monto && formData.fecha_vencimiento) {
-          // Buscar deuda existente o crear nueva
-          const { data: deudaExistente } = await supabase
-            .from('deudas')
-            .select('id')
-            .eq('deudor_id', deudor.id)
-            .limit(1)
-            .maybeSingle();
-
-          if (deudaExistente) {
-            // Actualizar deuda existente
+          let deudaActualizadaId: string | null = null;
+          
+          // Si se especificó una deudaId, actualizar esa deuda específica
+          if (deudaId) {
             const { error: deudaError } = await supabase
               .from('deudas')
               .update({
@@ -369,23 +435,99 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
                 fecha_vencimiento: formData.fecha_vencimiento,
                 estado: formData.estado_deuda || 'nueva'
               })
-              .eq('id', deudaExistente.id);
+              .eq('id', deudaId)
+              .is('eliminada_at', null); // Solo si no está eliminada
             
             if (deudaError) throw deudaError;
+            deudaActualizadaId = deudaId;
           } else {
-            // Crear nueva deuda
-            const { error: deudaError } = await supabase
+            // Si no se especificó deudaId, buscar deuda existente activa o crear nueva
+            const { data: deudaExistente } = await supabase
               .from('deudas')
-              .insert({
-                usuario_id: user.id,
-                deudor_id: deudor.id,
-                rut: rutNormalizado,
-                monto: formData.monto,
-                fecha_vencimiento: formData.fecha_vencimiento,
-                estado: formData.estado_deuda || 'nueva'
-              });
-            
-            if (deudaError) throw deudaError;
+              .select('id')
+              .eq('deudor_id', deudor.id)
+              .is('eliminada_at', null)  // Solo deudas activas (soft delete)
+              .limit(1)
+              .maybeSingle();
+
+            if (deudaExistente) {
+              // Actualizar deuda existente
+              const { error: deudaError } = await supabase
+                .from('deudas')
+                .update({
+                  monto: formData.monto,
+                  fecha_vencimiento: formData.fecha_vencimiento,
+                  estado: formData.estado_deuda || 'nueva'
+                })
+                .eq('id', deudaExistente.id);
+              
+              if (deudaError) throw deudaError;
+              deudaActualizadaId = deudaExistente.id;
+            } else {
+              // Crear nueva deuda
+              const { error: deudaError } = await supabase
+                .from('deudas')
+                .insert({
+                  usuario_id: user.id,
+                  deudor_id: deudor.id,
+                  rut: rutNormalizado,
+                  monto: formData.monto,
+                  fecha_vencimiento: formData.fecha_vencimiento,
+                  estado: formData.estado_deuda || 'nueva'
+                });
+              
+              if (deudaError) throw deudaError;
+            }
+          }
+
+          // Actualizar programaciones pendientes si se actualizó una deuda
+          if (deudaActualizadaId) {
+            // Calcular días vencidos
+            const fechaVencimiento = new Date(formData.fecha_vencimiento);
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0);
+            fechaVencimiento.setHours(0, 0, 0, 0);
+            const diasVencidos = Math.max(0, Math.floor((hoy.getTime() - fechaVencimiento.getTime()) / (1000 * 60 * 60 * 24)));
+
+            // Obtener email y teléfono preferidos
+            const emailPreferido = formData.email || '';
+            const telefonoPreferido = formData.telefono || '';
+
+            // Calcular nuevas variables
+            const nuevasVars: Record<string, string> = {
+              nombre: formData.nombre || 'Deudor',
+              monto: `$${formData.monto.toLocaleString('es-CL')}`,
+              fecha_vencimiento: formData.fecha_vencimiento,
+              dias_vencidos: diasVencidos.toString(),
+              email: emailPreferido,
+              telefono: telefonoPreferido
+            };
+
+            // Actualizar programaciones pendientes de esta deuda
+            const { data: programacionesPendientes } = await supabase
+              .from('programaciones')
+              .select('id, vars')
+              .eq('deuda_id', deudaActualizadaId)
+              .eq('estado', 'pendiente');
+
+            if (programacionesPendientes && programacionesPendientes.length > 0) {
+              // Actualizar cada programación pendiente
+              for (const prog of programacionesPendientes) {
+                // Combinar las variables existentes con las nuevas (mantener otras variables que no sean de deuda)
+                const varsActualizadas = {
+                  ...(prog.vars || {}),
+                  ...nuevasVars
+                };
+
+                await supabase
+                  .from('programaciones')
+                  .update({
+                    rut: rutNormalizado, // Actualizar RUT si cambió
+                    vars: varsActualizadas
+                  })
+                  .eq('id', prog.id);
+              }
+            }
           }
         }
 
@@ -483,6 +625,45 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor }: DeudorFormPro
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Advertencias de actividad de deuda */}
+          {actividadDeuda && (actividadDeuda.tieneProgramacionesPendientes || actividadDeuda.tieneHistorial || actividadDeuda.tienePagos) && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2 text-yellow-800 font-semibold">
+                <AlertTriangle className="h-5 w-5" />
+                <span>Esta deuda tiene actividad registrada</span>
+              </div>
+              <div className="text-sm text-yellow-700 space-y-2">
+                {actividadDeuda.tieneProgramacionesPendientes && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    <span>
+                      <strong>{actividadDeuda.cantidadProgramaciones}</strong> programación(es) pendiente(s)
+                    </span>
+                  </div>
+                )}
+                {actividadDeuda.tieneHistorial && (
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    <span>
+                      <strong>{actividadDeuda.cantidadHistorial}</strong> registro(s) en historial de comunicaciones
+                    </span>
+                  </div>
+                )}
+                {actividadDeuda.tienePagos && (
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" />
+                    <span>
+                      <strong>{actividadDeuda.cantidadPagos}</strong> pago(s) registrado(s)
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="text-xs text-yellow-600 mt-2 pt-2 border-t border-yellow-300">
+                ⚠️ Puedes editar la deuda, pero ten en cuenta que los cambios pueden afectar las programaciones y el historial existente.
+              </div>
+            </div>
+          )}
+
           {/* Información Básica */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-900">Información Básica</h3>

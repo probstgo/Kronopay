@@ -52,7 +52,8 @@ export async function POST(request: NextRequest) {
           id,
           monto,
           estado,
-          fecha_vencimiento
+          fecha_vencimiento,
+          eliminada_at
         ),
         contactos (
           id,
@@ -66,8 +67,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Error obteniendo deudores' }, { status: 500 })
     }
 
+    // Filtrar deudas eliminadas (soft delete) en JavaScript
+    const deudoresConDeudasActivas = (deudores || []).map(deudor => ({
+      ...deudor,
+      deudas: (deudor.deudas || []).filter((d: { eliminada_at: string | null }) => d.eliminada_at === null)
+    })).filter(deudor => (deudor.deudas || []).length > 0)  // Solo deudores con al menos una deuda activa
+
     // Aplicar filtros
-    let deudoresFiltrados = (deudores || []).filter(deudor => {
+    let deudoresFiltrados = deudoresConDeudasActivas.filter(deudor => {
       // Filtrar por estado de deuda
       if (filtros.estado_deuda && Array.isArray(filtros.estado_deuda) && filtros.estado_deuda.length > 0) {
         // Calcular el estado efectivo de cada deuda usando la misma lógica que la sección de deudores

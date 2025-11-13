@@ -2052,6 +2052,89 @@ WHERE tablename IN (
 
 ---
 
+## 18. Implementación de Soft Delete para Deudas (Enero 2025)
+
+### **Motivación del cambio:**
+Para permitir la eliminación de deudas sin perder el historial, programaciones y pagos asociados, se implementó soft delete (eliminación lógica) en la tabla `deudas`. Esto resuelve el problema de restricciones de clave foránea que impedían eliminar deudas con actividad asociada.
+
+### **Cambios realizados:**
+
+#### **1. Actualización de la tabla deudas:**
+```sql
+-- Fase 1: Agregar campos de soft delete a la tabla deudas
+ALTER TABLE deudas 
+ADD COLUMN IF NOT EXISTS eliminada_at timestamptz,
+ADD COLUMN IF NOT EXISTS eliminada_por uuid REFERENCES usuarios(id),
+ADD COLUMN IF NOT EXISTS motivo_eliminacion text;
+
+-- Crear índice para optimizar consultas que filtren deudas activas
+CREATE INDEX IF NOT EXISTS idx_deudas_eliminada_at 
+ON deudas(eliminada_at) 
+WHERE eliminada_at IS NULL;
+
+-- Comentarios para documentar
+COMMENT ON COLUMN deudas.eliminada_at IS 'Timestamp de cuando fue eliminada (soft delete). NULL = activa';
+COMMENT ON COLUMN deudas.eliminada_por IS 'Usuario que eliminó la deuda';
+```
+
+#### **2. Campos agregados:**
+
+- **`eliminada_at`** (`timestamptz`): Timestamp de cuando fue eliminada la deuda. `NULL` = deuda activa, `NOT NULL` = deuda eliminada (soft delete).
+- **`eliminada_por`** (`uuid REFERENCES usuarios(id)`): Referencia al usuario que eliminó la deuda. Permite auditoría y trazabilidad.
+- **`motivo_eliminacion`** (`text`): Campo opcional para registrar el motivo de la eliminación.
+
+#### **3. Índice creado:**
+
+- **`idx_deudas_eliminada_at`**: Índice parcial que optimiza las consultas que filtran deudas activas (`WHERE eliminada_at IS NULL`). Solo indexa las filas donde `eliminada_at IS NULL`, mejorando el rendimiento de consultas frecuentes.
+
+#### **4. Beneficios:**
+
+- ✅ **Preservación de datos**: No se pierden programaciones, historial ni pagos asociados
+- ✅ **Auditoría completa**: Se registra quién y cuándo eliminó la deuda
+- ✅ **Recuperación posible**: Las deudas eliminadas pueden ser restauradas si es necesario
+- ✅ **Rendimiento optimizado**: Índice parcial para consultas de deudas activas
+- ✅ **Integridad referencial**: Las claves foráneas se mantienen intactas
+
+#### **5. Uso en consultas:**
+
+**Listar deudas activas:**
+```sql
+SELECT * FROM deudas 
+WHERE eliminada_at IS NULL;
+```
+
+**Listar deudas eliminadas (archivadas):**
+```sql
+SELECT * FROM deudas 
+WHERE eliminada_at IS NOT NULL;
+```
+
+**Eliminar deuda (soft delete):**
+```sql
+UPDATE deudas 
+SET eliminada_at = now(), 
+    eliminada_por = auth.uid(),
+    motivo_eliminacion = 'Motivo opcional'
+WHERE id = :deuda_id;
+```
+
+#### **6. Próximos pasos (Fases siguientes):**
+
+- **Fase 2**: Modificar backend para implementar soft delete en lugar de DELETE
+- **Fase 5**: Agregar filtros `WHERE eliminada_at IS NULL` en todas las consultas de deudas activas
+- **Fase 3**: Permitir edición de deudas con actividad (programaciones, historial, pagos)
+
+#### **7. Notas importantes:**
+
+- Las deudas eliminadas (soft delete) mantienen todas sus relaciones:
+  - Programaciones asociadas (pueden cancelarse si están pendientes)
+  - Historial de comunicaciones (se preserva completo)
+  - Pagos registrados (se mantienen para contabilidad)
+- El índice parcial solo indexa deudas activas, optimizando las consultas más frecuentes
+- Las políticas RLS existentes siguen aplicándose normalmente
+
+---
+
 Fin del documento.
 
 

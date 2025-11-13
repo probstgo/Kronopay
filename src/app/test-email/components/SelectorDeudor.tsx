@@ -32,7 +32,7 @@ export default function SelectorDeudor({ onDeudorSelect, selectedDeudor }: Selec
 
         const [{ data: deudoresData, error: deudoresError }, { data: deudasData, error: deudasError }, { data: contactosData, error: contactosError }] = await Promise.all([
           supabase.from('deudores').select('*').order('created_at', { ascending: false }),
-          supabase.from('deudas').select('*').order('fecha_vencimiento', { ascending: true }),
+          supabase.from('deudas').select('*').is('eliminada_at', null).order('fecha_vencimiento', { ascending: true }),  // Solo deudas activas
           supabase.from('contactos').select('*')
         ])
 

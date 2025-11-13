@@ -421,6 +421,7 @@ async function ejecutarProgramacionesInmediatamente({
             .from('deudas')
             .select('deudor_id')
             .eq('id', prog.deuda_id)
+            .is('eliminada_at', null)  // Solo deudas activas (soft delete)
             .single()
 
           if (deudaData?.deudor_id) {
@@ -695,12 +696,13 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Obtener deudas y contactos para cada deudor (datos reales)
+      // Obtener deudas activas y contactos para cada deudor (datos reales)
       for (const deudor of deudoresData) {
         const { data: deudas, error: deudasError } = await supabase
           .from('deudas')
           .select('id, monto, fecha_vencimiento')
           .eq('deudor_id', deudor.id)
+          .is('eliminada_at', null)  // Solo deudas activas (soft delete)
           .limit(1)
 
         if (deudasError) {

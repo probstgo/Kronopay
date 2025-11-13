@@ -97,6 +97,7 @@ export async function ejecutarCampanaAutomaticamente({
       .from('deudas')
       .select('id, monto, fecha_vencimiento')
       .eq('deudor_id', deudor.id)
+      .is('eliminada_at', null)  // Solo deudas activas (soft delete)
       .limit(1)
 
     const { data: contactos } = await supabase
@@ -130,6 +131,7 @@ export async function ejecutarCampanaAutomaticamente({
       .from('deudas')
       .select('deudor_id')
       .eq('id', deudoresIniciales[0].deuda_id)
+      .is('eliminada_at', null)  // Solo deudas activas (soft delete)
       .single()
 
     if (deudaData?.deudor_id) {

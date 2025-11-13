@@ -38,12 +38,13 @@ export async function GET(request: NextRequest) {
     const montoMin = url.searchParams.get('montoMin') ? Number(url.searchParams.get('montoMin')) : null
     const montoMax = url.searchParams.get('montoMax') ? Number(url.searchParams.get('montoMax')) : null
 
-    // Obtener todas las deudas pendientes (no pagadas)
+    // Obtener todas las deudas activas pendientes (no pagadas)
     // Aplicar filtro de monto si existe
     let deudasQuery = supabase
       .from('deudas')
       .select('monto, fecha_vencimiento, estado')
       .eq('usuario_id', user.id)
+      .is('eliminada_at', null)  // Solo deudas activas (soft delete)
       .neq('estado', 'pagado')
 
     if (montoMin !== null) {

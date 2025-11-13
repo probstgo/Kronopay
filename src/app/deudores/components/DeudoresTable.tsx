@@ -43,6 +43,17 @@ interface DeudorConDatos {
   estado_general?: string;
 }
 
+// Tipo para deuda con información del deudor
+interface DeudaConDeudor extends Deuda {
+  deudor: {
+    id: string;
+    nombre: string;
+    rut: string;
+    email?: string;
+    telefono?: string;
+  };
+}
+
 interface DeudoresTableProps {
   filtros: FiltrosAplicados;
   onEnviarRecordatorio?: (deudor: Deudor) => void;
@@ -57,8 +68,8 @@ export const DeudoresTable = forwardRef<{
   filtros,
   onEnviarRecordatorio,
 }, ref) => {
-  const [deudores, setDeudores] = useState<DeudorConDatos[]>([]);
-  const [filtrados, setFiltrados] = useState<DeudorConDatos[]>([]);
+  const [deudas, setDeudas] = useState<DeudaConDeudor[]>([]);
+  const [filtrados, setFiltrados] = useState<DeudaConDeudor[]>([]);
   const [paginaActual, setPaginaActual] = useState(1);
   const [elementosPorPagina] = useState(10);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,10 +77,11 @@ export const DeudoresTable = forwardRef<{
   // Estados para el modal de formulario
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [deudorEditando, setDeudorEditando] = useState<DeudorConDatos | null>(null);
+  const [deudaEditandoId, setDeudaEditandoId] = useState<string | null>(null);
   
   // Estados para el modal de eliminación
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [deudorEliminando, setDeudorEliminando] = useState<DeudorConDatos | null>(null);
+  const [deudaEliminando, setDeudaEliminando] = useState<DeudaConDeudor | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
   // Estados para el modal de importación CSV
@@ -79,7 +91,11 @@ export const DeudoresTable = forwardRef<{
   useImperativeHandle(ref, () => ({
     handleAgregarDeudor,
     handleEditarDeudor,
-    handleEliminarDeudor,
+    handleEliminarDeudor: () => {
+      // Función mantenida por compatibilidad pero no implementada
+      // La eliminación ahora se hace por deuda individual
+      console.warn('handleEliminarDeudor está deprecado. Use handleEliminarDeuda en cada fila.');
+    },
     handleImportarCSV
   }));
 
@@ -89,63 +105,64 @@ export const DeudoresTable = forwardRef<{
   }, []);
 
   // Memoizar los filtros aplicados para evitar re-renders innecesarios
-  const deudoresFiltrados = useMemo(() => {
-    let resultado = deudores;
+  const deudasFiltradas = useMemo(() => {
+    let resultado = deudas;
 
     // Filtro por búsqueda
     if (filtros.busqueda) {
-      resultado = resultado.filter(deudor =>
-        deudor.nombre.toLowerCase().includes(filtros.busqueda.toLowerCase()) ||
-        deudor.rut?.toLowerCase().includes(filtros.busqueda.toLowerCase()) ||
-        deudor.email?.toLowerCase().includes(filtros.busqueda.toLowerCase())
+      resultado = resultado.filter(deuda =>
+        deuda.deudor.nombre.toLowerCase().includes(filtros.busqueda.toLowerCase()) ||
+        deuda.deudor.rut?.toLowerCase().includes(filtros.busqueda.toLowerCase()) ||
+        deuda.deudor.email?.toLowerCase().includes(filtros.busqueda.toLowerCase())
       );
     }
 
-    // Filtro por estado
+    // Filtro por estado (de la deuda individual)
     if (filtros.estado !== 'todos') {
-      resultado = resultado.filter(deudor => deudor.estado_general === filtros.estado);
+      resultado = resultado.filter(deuda => {
+        if (filtros.estado === 'vencida') {
+          const diasVencidos = calcularDiasVencidos(deuda.fecha_vencimiento);
+          return diasVencidos > 0 && (deuda.estado === 'pendiente' || deuda.estado === 'nueva');
+        }
+        if (filtros.estado === 'pendiente') return deuda.estado === 'pendiente';
+        if (filtros.estado === 'nueva') return deuda.estado === 'nueva';
+        if (filtros.estado === 'pagada') return deuda.estado === 'pagado';
+        return false;
+      });
     }
 
-    // Filtro por rango de montos
+    // Filtro por rango de montos (monto de la deuda individual)
     if (filtros.rangoMonto.min !== null) {
-      resultado = resultado.filter(deudor => 
-        deudor.monto_total !== undefined && deudor.monto_total >= filtros.rangoMonto.min!
-      );
+      resultado = resultado.filter(deuda => deuda.monto >= filtros.rangoMonto.min!);
     }
     if (filtros.rangoMonto.max !== null) {
-      resultado = resultado.filter(deudor => 
-        deudor.monto_total !== undefined && deudor.monto_total <= filtros.rangoMonto.max!
-      );
+      resultado = resultado.filter(deuda => deuda.monto <= filtros.rangoMonto.max!);
     }
 
-    // Filtro por rango de fechas
+    // Filtro por rango de fechas (fecha de vencimiento de la deuda)
     if (filtros.rangoFechas.desde) {
-      resultado = resultado.filter(deudor => 
-        deudor.created_at >= filtros.rangoFechas.desde
-      );
+      resultado = resultado.filter(deuda => deuda.fecha_vencimiento >= filtros.rangoFechas.desde);
     }
     if (filtros.rangoFechas.hasta) {
-      resultado = resultado.filter(deudor => 
-        deudor.created_at <= filtros.rangoFechas.hasta
-      );
+      resultado = resultado.filter(deuda => deuda.fecha_vencimiento <= filtros.rangoFechas.hasta);
     }
 
     // Filtro por contacto
     if (filtros.tieneContacto !== null) {
-      resultado = resultado.filter(deudor => {
-        const tieneContacto = deudor.contactos && deudor.contactos.length > 0;
-        return filtros.tieneContacto ? tieneContacto : !tieneContacto;
+      resultado = resultado.filter(deuda => {
+        const tieneContacto = deuda.deudor.email || deuda.deudor.telefono;
+        return filtros.tieneContacto ? !!tieneContacto : !tieneContacto;
       });
     }
 
     return resultado;
-  }, [deudores, filtros]);
+  }, [deudas, filtros]);
 
-  // Actualizar filtrados cuando cambien los deudores filtrados
+  // Actualizar filtrados cuando cambien las deudas filtradas
   useEffect(() => {
-    setFiltrados(deudoresFiltrados);
+    setFiltrados(deudasFiltradas);
     setPaginaActual(1);
-  }, [deudoresFiltrados]);
+  }, [deudasFiltradas]);
 
   const cargarDeudores = async () => {
     try {
@@ -159,13 +176,14 @@ export const DeudoresTable = forwardRef<{
 
       if (deudoresError) throw deudoresError;
 
-      // Consulta 2: Obtener todas las deudas con información del deudor
+      // Consulta 2: Obtener todas las deudas activas con información del deudor
       const { data: deudasData, error: deudasError } = await supabase
         .from('deudas')
         .select(`
           *,
           deudores!inner(id, nombre, rut)
         `)
+        .is('eliminada_at', null)  // Solo deudas activas (soft delete)
         .order('fecha_vencimiento', { ascending: true });
 
       if (deudasError) throw deudasError;
@@ -180,13 +198,6 @@ export const DeudoresTable = forwardRef<{
 
       if (contactosError) throw contactosError;
 
-      // Agrupar deudas por deudor_id
-      const deudasPorDeudor = (deudasData || []).reduce((acc, deuda) => {
-        if (!acc[deuda.deudor_id]) acc[deuda.deudor_id] = [];
-        acc[deuda.deudor_id].push(deuda);
-        return acc;
-      }, {} as Record<string, Deuda[]>);
-
       // Agrupar contactos por deudor_id
       const contactosPorDeudor = (contactosData || []).reduce((acc, contacto) => {
         if (!acc[contacto.deudor_id]) acc[contacto.deudor_id] = [];
@@ -194,10 +205,10 @@ export const DeudoresTable = forwardRef<{
         return acc;
       }, {} as Record<string, Contacto[]>);
 
-      // Combinar datos para cada deudor
-      const deudoresConDatos: DeudorConDatos[] = (deudoresData || []).map((deudor) => {
-        const deudasDelDeudor = deudasPorDeudor[deudor.id] || [];
-        const contactosDelDeudor = contactosPorDeudor[deudor.id] || [];
+      // Crear array de deudas con información del deudor
+      const deudasConDeudor: DeudaConDeudor[] = (deudasData || []).map((deuda) => {
+        const deudor = deudoresData?.find(d => d.id === deuda.deudor_id);
+        const contactosDelDeudor = contactosPorDeudor[deuda.deudor_id] || [];
 
         // Encontrar email y teléfono (preferidos o cualquier disponible)
         const emailPreferido = contactosDelDeudor.find((c: Contacto) => c.tipo_contacto === 'email' && c.preferido) || 
@@ -205,45 +216,23 @@ export const DeudoresTable = forwardRef<{
         const telefonoPreferido = contactosDelDeudor.find((c: Contacto) => c.tipo_contacto === 'telefono' && c.preferido) || 
                                  contactosDelDeudor.find((c: Contacto) => c.tipo_contacto === 'telefono');
 
-        // Calcular monto total y fecha de vencimiento más reciente
-        const montoTotal = deudasDelDeudor.reduce((sum: number, deuda: Deuda) => sum + deuda.monto, 0);
-        const fechaVencimientoMasReciente = deudasDelDeudor[0]?.fecha_vencimiento;
-
-        // Determinar estado general basado en las deudas
-        let estadoGeneral = 'sin_deudas';
-        if (deudasDelDeudor.length > 0) {
-          const tieneDeudasNuevas = deudasDelDeudor.some((d: Deuda) => d.estado === 'nueva');
-          const tieneDeudasPendientes = deudasDelDeudor.some((d: Deuda) => d.estado === 'pendiente');
-          const tieneDeudasVencidas = deudasDelDeudor.some((d: Deuda) => {
-            const diasVencidos = calcularDiasVencidos(d.fecha_vencimiento);
-            return diasVencidos > 0 && (d.estado === 'pendiente' || d.estado === 'nueva');
-          });
-          const todasPagadas = deudasDelDeudor.every((d: Deuda) => d.estado === 'pagado');
-          
-          if (tieneDeudasVencidas) estadoGeneral = 'vencida';
-          else if (tieneDeudasPendientes) estadoGeneral = 'pendiente';
-          else if (tieneDeudasNuevas) estadoGeneral = 'nueva';
-          else if (todasPagadas) estadoGeneral = 'pagada';
-          else estadoGeneral = 'sin_deudas';
-        }
-
         return {
-          ...deudor,
-          deudas: deudasDelDeudor,
-          contactos: contactosDelDeudor,
-          email: emailPreferido?.valor,
-          telefono: telefonoPreferido?.valor,
-          monto_total: montoTotal,
-          fecha_vencimiento_mas_reciente: fechaVencimientoMasReciente,
-          estado_general: estadoGeneral
+          ...deuda,
+          deudor: {
+            id: deudor?.id || '',
+            nombre: deudor?.nombre || '',
+            rut: deudor?.rut || '',
+            email: emailPreferido?.valor,
+            telefono: telefonoPreferido?.valor,
+          }
         };
       });
 
-      setDeudores(deudoresConDatos);
+      setDeudas(deudasConDeudor);
     } catch (error) {
-      console.error('Error al cargar deudores:', error);
-      toast.error('Error al cargar los deudores');
-      setDeudores([]);
+      console.error('Error al cargar deudas:', error);
+      toast.error('Error al cargar las deudas');
+      setDeudas([]);
     } finally {
       setIsLoading(false);
     }
@@ -252,7 +241,7 @@ export const DeudoresTable = forwardRef<{
   const totalPaginas = Math.ceil(filtrados.length / elementosPorPagina);
   const inicio = (paginaActual - 1) * elementosPorPagina;
   const fin = inicio + elementosPorPagina;
-  const deudoresPagina = filtrados.slice(inicio, fin);
+  const deudasPagina = filtrados.slice(inicio, fin);
 
 
   const recargarDatos = () => {
@@ -262,11 +251,13 @@ export const DeudoresTable = forwardRef<{
   // Funciones para manejar el modal
   const handleAgregarDeudor = () => {
     setDeudorEditando(null);
+    setDeudaEditandoId(null);
     setIsFormOpen(true);
   };
 
-  const handleEditarDeudor = (deudor: DeudorConDatos) => {
+  const handleEditarDeudor = (deudor: DeudorConDatos, deudaId?: string) => {
     setDeudorEditando(deudor);
+    setDeudaEditandoId(deudaId || null);
     setIsFormOpen(true);
   };
 
@@ -277,46 +268,60 @@ export const DeudoresTable = forwardRef<{
   const handleFormClose = () => {
     setIsFormOpen(false);
     setDeudorEditando(null);
+    setDeudaEditandoId(null);
     // Asegurar que otros modales estén cerrados
     setIsDeleteOpen(false);
     setIsImportOpen(false);
   };
 
-  // Funciones para manejar la eliminación
-  const handleEliminarDeudor = (deudor: DeudorConDatos) => {
-    setDeudorEliminando(deudor);
+  // Funciones para manejar la eliminación de deuda individual
+  const handleEliminarDeuda = (deuda: DeudaConDeudor) => {
+    setDeudaEliminando(deuda);
     setIsDeleteOpen(true);
   };
 
   const handleConfirmarEliminacion = async () => {
-    if (!deudorEliminando) return;
+    if (!deudaEliminando) return;
 
     setIsDeleting(true);
     try {
-      // Eliminar deudas asociadas primero
-      await supabase
+      // Obtener usuario actual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('Usuario no autenticado');
+        return;
+      }
+
+      // 1. Cancelar programaciones pendientes de esta deuda específica
+      const { error: programacionesError } = await supabase
+        .from('programaciones')
+        .update({ estado: 'cancelado' })
+        .eq('deuda_id', deudaEliminando.id)
+        .eq('estado', 'pendiente');
+
+      if (programacionesError) {
+        console.error('Error al cancelar programaciones:', programacionesError);
+        // Continuar con la eliminación aunque falle la cancelación
+      }
+
+      // 2. Soft delete de la deuda específica
+      const { error: deudaError } = await supabase
         .from('deudas')
-        .delete()
-        .eq('deudor_id', deudorEliminando.id);
+        .update({
+          eliminada_at: new Date().toISOString(),
+          eliminada_por: user.id
+        })
+        .eq('id', deudaEliminando.id)
+        .is('eliminada_at', null); // Solo si no está ya eliminada
 
-      // Eliminar contactos asociados
-      await supabase
-        .from('contactos')
-        .delete()
-        .eq('deudor_id', deudorEliminando.id);
+      if (deudaError) throw deudaError;
 
-      // Eliminar el deudor
-      await supabase
-        .from('deudores')
-        .delete()
-        .eq('id', deudorEliminando.id);
-
-      toast.success(`Deudor ${deudorEliminando.nombre} eliminado exitosamente`);
+      toast.success(`Deuda de ${deudaEliminando.deudor.nombre} eliminada exitosamente`);
       recargarDatos();
       handleCerrarEliminacion();
     } catch (error) {
-      console.error('Error al eliminar deudor:', error);
-      toast.error('Error al eliminar el deudor. Inténtalo de nuevo.');
+      console.error('Error al eliminar deuda:', error);
+      toast.error('Error al eliminar la deuda. Inténtalo de nuevo.');
     } finally {
       setIsDeleting(false);
     }
@@ -324,7 +329,7 @@ export const DeudoresTable = forwardRef<{
 
   const handleCerrarEliminacion = () => {
     setIsDeleteOpen(false);
-    setDeudorEliminando(null);
+    setDeudaEliminando(null);
     setIsDeleting(false);
     // Asegurar que otros modales estén cerrados
     setIsFormOpen(false);
@@ -355,7 +360,7 @@ export const DeudoresTable = forwardRef<{
           <div className="flex items-center justify-center h-32">
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-2 text-gray-500">Cargando deudores...</p>
+              <p className="mt-2 text-gray-500">Cargando deudas...</p>
             </div>
           </div>
         </CardContent>
@@ -382,41 +387,53 @@ export const DeudoresTable = forwardRef<{
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {deudoresPagina.map((deudor) => {
-                  const diasVencidos = deudor.fecha_vencimiento_mas_reciente 
-                    ? calcularDiasVencidos(deudor.fecha_vencimiento_mas_reciente)
-                    : 0;
+                {deudasPagina.map((deuda) => {
+                  const diasVencidos = calcularDiasVencidos(deuda.fecha_vencimiento);
+                  
+                  // Crear objeto DeudorConDatos para compatibilidad con funciones existentes
+                  // Incluimos la deuda específica que se está editando
+                  const deudorParaEditar: DeudorConDatos = {
+                    id: deuda.deudor.id,
+                    usuario_id: deuda.usuario_id,
+                    rut: deuda.deudor.rut,
+                    nombre: deuda.deudor.nombre,
+                    created_at: '',
+                    deudas: [deuda], // Incluir la deuda específica
+                    contactos: [],
+                    email: deuda.deudor.email,
+                    telefono: deuda.deudor.telefono,
+                  };
 
                   return (
-                    <TableRow key={deudor.id}>
+                    <TableRow key={deuda.id}>
                       <TableCell className="font-medium">
-                        {deudor.nombre}
+                        {deuda.deudor.nombre}
                       </TableCell>
                       <TableCell>
-                        {deudor.rut ? formatearRUT(deudor.rut) : '-'}
+                        {deuda.deudor.rut ? formatearRUT(deuda.deudor.rut) : '-'}
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          {deudor.email && (
+                          {deuda.deudor.email && (
                             <div className="flex items-center gap-1 text-sm text-gray-600">
                               <Mail className="h-3 w-3" />
-                              {deudor.email}
+                              {deuda.deudor.email}
                             </div>
                           )}
-                          {deudor.telefono && (
+                          {deuda.deudor.telefono && (
                             <div className="flex items-center gap-1 text-sm text-gray-600">
                               <Phone className="h-3 w-3" />
-                              {formatearTelefono(deudor.telefono)}
+                              {formatearTelefono(deuda.deudor.telefono)}
                             </div>
                           )}
                         </div>
                       </TableCell>
                       <TableCell className="font-medium">
-                        {deudor.monto_total ? formatearMonto(deudor.monto_total) : '-'}
+                        {formatearMonto(deuda.monto)}
                       </TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div>{deudor.fecha_vencimiento_mas_reciente || '-'}</div>
+                          <div>{deuda.fecha_vencimiento || '-'}</div>
                           {diasVencidos > 0 && (
                             <Badge variant="destructive" className="text-xs">
                               {diasVencidos} días vencido
@@ -425,28 +442,28 @@ export const DeudoresTable = forwardRef<{
                         </div>
                       </TableCell>
                       <TableCell>
-                        <EstadoBadge estado={deudor.estado_general || 'sin_deudas'} />
+                        <EstadoBadge estado={deuda.estado} />
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleEditarDeudor(deudor)}
+                            onClick={() => handleEditarDeudor(deudorParaEditar, deuda.id)}
                           >
                             <Edit className="h-3 w-3" />
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => onEnviarRecordatorio?.(deudor)}
+                            onClick={() => onEnviarRecordatorio?.(deudorParaEditar)}
                           >
                             <Mail className="h-3 w-3" />
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleEliminarDeudor(deudor)}
+                            onClick={() => handleEliminarDeuda(deuda)}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -468,7 +485,7 @@ export const DeudoresTable = forwardRef<{
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
               <div className="text-sm text-gray-500">
-                Mostrando {inicio + 1} a {Math.min(fin, filtrados.length)} de {filtrados.length} deudores
+                Mostrando {inicio + 1} a {Math.min(fin, filtrados.length)} de {filtrados.length} deudas
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -502,6 +519,7 @@ export const DeudoresTable = forwardRef<{
         onClose={handleFormClose}
         onSuccess={handleFormSuccess}
         deudor={deudorEditando}
+        deudaId={deudaEditandoId}
       />
 
       {/* Modal de confirmación de eliminación */}
@@ -509,7 +527,7 @@ export const DeudoresTable = forwardRef<{
         isOpen={isDeleteOpen}
         onClose={handleCerrarEliminacion}
         onConfirm={handleConfirmarEliminacion}
-        deudor={deudorEliminando}
+        deuda={deudaEliminando}
         isLoading={isDeleting}
       />
 

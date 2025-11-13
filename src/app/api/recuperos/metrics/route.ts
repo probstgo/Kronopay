@@ -70,6 +70,7 @@ export async function GET(request: NextRequest) {
         .from('deudas')
         .select('id, monto')
         .eq('usuario_id', user.id)
+        .is('eliminada_at', null)  // Solo deudas activas (soft delete)
       
       if (montoMin !== null) {
         deudasQuery = deudasQuery.gte('monto', montoMin)
@@ -130,12 +131,13 @@ export async function GET(request: NextRequest) {
       return sum + (typeof pago.monto_pagado === 'number' ? pago.monto_pagado : Number(pago.monto_pagado) || 0)
     }, 0)
 
-    // Obtener monto asignado total (suma de todas las deudas pendientes y pagadas)
+    // Obtener monto asignado total (suma de todas las deudas activas pendientes y pagadas)
     // Aplicar filtro de monto si existe
     let deudasQuery = supabase
       .from('deudas')
       .select('monto')
       .eq('usuario_id', user.id)
+      .is('eliminada_at', null)  // Solo deudas activas (soft delete)
 
     if (montoMin !== null) {
       deudasQuery = deudasQuery.gte('monto', montoMin)

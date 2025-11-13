@@ -689,6 +689,7 @@ async function evaluarCondiciones(
     `)
     .in('id', deudaIds)
     .eq('usuario_id', usuario_id)
+    .is('eliminada_at', null)  // Solo deudas activas (soft delete)
 
   if (deudasError) {
     console.error('Error obteniendo deudas para condiciones:', deudasError)
@@ -970,6 +971,7 @@ async function extraerVariablesDeudores(
       `)
       .eq('id', deuda_id)
       .eq('usuario_id', usuario_id)
+      .is('eliminada_at', null)  // Solo deudas activas (soft delete)
       .single()
 
     if (deudaError || !deudaData) {
