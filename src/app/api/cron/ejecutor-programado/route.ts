@@ -76,7 +76,7 @@ export async function GET(request: Request) {
         vars,
         voz_config,
         contactos(valor, tipo_contacto),
-        plantillas(contenido, asunto, tipo_contenido),
+        plantillas(contenido, asunto, tipo_contenido, nombre),
         deudas!inner(monto, fecha_vencimiento, deudor_id, eliminada_at)
       `)
       .eq('estado', 'pendiente')
@@ -312,19 +312,47 @@ export async function GET(request: Request) {
         } else if (prog.deudas && prog.deudas.length > 0 && prog.deudas[0]?.rut) {
           rutParaHistorial = prog.deudas[0].rut
         }
+
+        // Preparar detalles completos para historial
+        const contacto = prog.contactos?.[0]
+        const plantilla = prog.plantillas?.[0] as { asunto?: string; nombre?: string } | undefined
+        
+        // Obtener asunto resuelto si es email
+        let asuntoResuelto: string | undefined
+        if (prog.tipo_accion === 'email' && plantilla?.asunto) {
+          asuntoResuelto = resolverPlantilla(plantilla.asunto, prog.vars || {})
+        }
+
+        // Construir detalles con toda la información necesaria
+        const detallesHistorial: Record<string, unknown> = {
+          ...resultado,
+          origen: 'cron',
+          plantilla_id: prog.plantilla_id || null,
+          plantilla_nombre: plantilla?.nombre || null
+        }
+
+        // Agregar datos específicos según el tipo de acción
+        if (prog.tipo_accion === 'email') {
+          detallesHistorial.email = contacto?.valor || null
+          if (asuntoResuelto) {
+            detallesHistorial.asunto = asuntoResuelto
+          }
+        } else if (prog.tipo_accion === 'llamada' || prog.tipo_accion === 'sms' || prog.tipo_accion === 'whatsapp') {
+          detallesHistorial.telefono = contacto?.valor || null
+        }
         
         console.log(`📝 Registrando en historial (RUT: ${rutParaHistorial || 'N/A'})`)
         const { error: historialError } = await supabase.from('historial').insert({
           usuario_id: prog.usuario_id,
           deuda_id: prog.deuda_id,
           rut: rutParaHistorial,
-          contacto_id: prog.contacto_id,
-          campana_id: prog.campana_id,
+          contacto_id: prog.contacto_id || null,
+          campana_id: prog.campana_id || null,
           tipo_accion: prog.tipo_accion,
-          agente_id: prog.agente_id,
+          agente_id: prog.agente_id || null,
           fecha: new Date().toISOString(),
           estado: resultado.exito ? 'iniciado' : 'fallido',
-          detalles: resultado
+          detalles: detallesHistorial
         })
         
         if (historialError) {

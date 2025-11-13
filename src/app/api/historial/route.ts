@@ -20,6 +20,7 @@ type HistorialItem = {
   estado: Estado
   destino: string
   campana_id: string | null
+  campana_nombre: string | null
   origen: string | null
 }
 
@@ -30,6 +31,7 @@ type QueryRow = {
   estado: Estado
   campana_id: string | null
   detalles: HistorialDetalles | null
+  workflows_cobranza: { nombre: string } | null
 }
 
 function parseIntSafe(value: string | null, fallback: number): number {
@@ -90,11 +92,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Rango de fechas inválido' }, { status: 400 })
     }
 
-    // Construcción de consulta
+    // Construcción de consulta con JOIN para obtener nombre de campaña
     let query = supabase
       .from('historial')
       .select(
-        `id, fecha, tipo_accion, estado, campana_id, detalles`,
+        `id, fecha, tipo_accion, estado, campana_id, detalles, workflows_cobranza(nombre)`,
         { count: 'exact' }
       )
       .order('fecha', { ascending: false })
@@ -156,6 +158,7 @@ export async function GET(request: NextRequest) {
         estado: row.estado,
         destino,
         campana_id: row.campana_id ?? null,
+        campana_nombre: row.workflows_cobranza?.nombre ?? null,
         origen: row.detalles?.origen ?? null,
       }
     })

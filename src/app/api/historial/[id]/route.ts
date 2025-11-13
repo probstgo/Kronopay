@@ -48,7 +48,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
 
     const { data, error } = await supabase
       .from('historial')
-      .select('id, fecha, tipo_accion, estado, destino, campana_id, detalles')
+      .select('id, fecha, tipo_accion, estado, campana_id, detalles')
       .eq('id', id)
       .single()
 
@@ -61,12 +61,23 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // Calcular destino desde detalles (igual que en el listado)
+    let destino = 'N/A'
+    if (data!.detalles) {
+      const detalles = data!.detalles as Record<string, unknown>
+      if (data!.tipo_accion === 'email' && detalles.email) {
+        destino = String(detalles.email)
+      } else if ((data!.tipo_accion === 'llamada' || data!.tipo_accion === 'sms' || data!.tipo_accion === 'whatsapp') && detalles.telefono) {
+        destino = String(detalles.telefono)
+      }
+    }
+
     const result: HistorialDetalle = {
       id: data!.id,
       fecha: data!.fecha,
       tipo_accion: data!.tipo_accion,
       estado: data!.estado,
-      destino: data!.destino,
+      destino,
       campana_id: data!.campana_id ?? null,
       detalles: data!.detalles ?? null,
     }

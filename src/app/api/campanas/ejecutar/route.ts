@@ -349,7 +349,7 @@ async function ejecutarProgramacionesInmediatamente({
         vars,
         voz_config,
         contactos(valor, tipo_contacto),
-        plantillas(contenido, asunto, tipo_contenido),
+        plantillas(contenido, asunto, tipo_contenido, nombre),
         deudas(monto, fecha_vencimiento, deudor_id)
       `)
       .eq('estado', 'pendiente')
@@ -537,6 +537,35 @@ async function ejecutarProgramacionesInmediatamente({
           rutParaHistorial = prog.deudas[0].rut
         }
 
+        // Preparar detalles completos para historial
+        const contacto = prog.contactos?.[0]
+        const plantilla = prog.plantillas?.[0] as { asunto?: string; nombre?: string } | undefined
+        
+        // Obtener asunto resuelto si es email
+        let asuntoResuelto: string | undefined
+        if (prog.tipo_accion === 'email' && plantilla?.asunto) {
+          asuntoResuelto = resolverPlantilla(plantilla.asunto, prog.vars || {})
+        }
+
+        // Construir detalles con toda la información necesaria
+        const detallesHistorial: Record<string, unknown> = {
+          ...resultado,
+          modo_prueba: true,
+          origen: 'prueba',
+          plantilla_id: prog.plantilla_id || null,
+          plantilla_nombre: plantilla?.nombre || null
+        }
+
+        // Agregar datos específicos según el tipo de acción
+        if (prog.tipo_accion === 'email') {
+          detallesHistorial.email = contacto?.valor || null
+          if (asuntoResuelto) {
+            detallesHistorial.asunto = asuntoResuelto
+          }
+        } else if (prog.tipo_accion === 'llamada' || prog.tipo_accion === 'sms' || prog.tipo_accion === 'whatsapp') {
+          detallesHistorial.telefono = contacto?.valor || null
+        }
+
         console.log(`📝 Registrando en historial (RUT: ${rutParaHistorial || 'N/A'}, campana_id: ${prog.campana_id || 'N/A'})`)
         const { error: historialError } = await supabaseServiceRole.from('historial').insert({
           usuario_id: prog.usuario_id,
@@ -548,10 +577,7 @@ async function ejecutarProgramacionesInmediatamente({
           agente_id: prog.agente_id || null,
           fecha: new Date().toISOString(),
           estado: resultado.exito ? 'iniciado' : 'fallido',
-          detalles: {
-            ...resultado,
-            modo_prueba: true
-          }
+          detalles: detallesHistorial
         })
         
         if (historialError) {

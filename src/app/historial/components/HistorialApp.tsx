@@ -20,6 +20,7 @@ type HistorialItem = {
   estado: Estado
   destino: string
   campana_id: string | null
+  campana_nombre: string | null
   origen: string | null
 }
 

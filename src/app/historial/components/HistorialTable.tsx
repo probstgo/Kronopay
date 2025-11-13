@@ -15,6 +15,7 @@ type HistorialItem = {
   estado: string
   destino: string
   campana_id: string | null
+  campana_nombre: string | null
   origen: string | null
 }
 
@@ -104,7 +105,7 @@ export default function HistorialTable({
                         {row.destino}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-sm text-muted-foreground">
-                        {row.campana_id || '-'}
+                        {row.campana_nombre || row.campana_id || '-'}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-sm text-muted-foreground">
                         {row.origen || '-'}
