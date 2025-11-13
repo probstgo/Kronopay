@@ -157,6 +157,7 @@ export function calcularProximaFecha(
 
 /**
  * Programa múltiples acciones para una lista de deudores
+ * Busca el contacto correcto según el tipo de acción (ignora contacto_id del filtro)
  */
 export async function programarAccionesMultiples(
   deudores: Array<{
@@ -172,11 +173,52 @@ export async function programarAccionesMultiples(
 
   for (const deudor of deudores) {
     try {
+      // Buscar el contacto correcto según el tipo de acción
+      let contactoIdCorrecto: string | null = null
+
+      // Obtener deudor_id desde deuda_id
+      const { data: deudaData } = await supabase
+        .from('deudas')
+        .select('deudor_id')
+        .eq('id', deudor.deuda_id)
+        .is('eliminada_at', null)
+        .single()
+
+      if (deudaData?.deudor_id) {
+        // Consultar contactos del deudor
+        const { data: contactosData } = await supabase
+          .from('contactos')
+          .select('id, tipo_contacto, preferido')
+          .eq('deudor_id', deudaData.deudor_id)
+
+        if (contactosData && contactosData.length > 0) {
+          // Seleccionar contacto según el tipo de acción
+          if (params.tipo_accion === 'email') {
+            // Para email: buscar contacto tipo email (preferido primero)
+            const contactoEmail = contactosData.find(c => c.tipo_contacto === 'email' && c.preferido) ||
+                                  contactosData.find(c => c.tipo_contacto === 'email')
+            contactoIdCorrecto = contactoEmail?.id || null
+          } else if (params.tipo_accion === 'llamada' || params.tipo_accion === 'sms' || params.tipo_accion === 'whatsapp') {
+            // Para llamada/sms/whatsapp: buscar contacto tipo telefono (preferido primero)
+            const contactoTelefono = contactosData.find(c => c.tipo_contacto === 'telefono' && c.preferido) ||
+                                     contactosData.find(c => c.tipo_contacto === 'telefono')
+            contactoIdCorrecto = contactoTelefono?.id || null
+          }
+        }
+      }
+
+      // Si no se encontró contacto correcto, saltar este deudor
+      if (!contactoIdCorrecto) {
+        console.log(`⚠️ No se encontró contacto de tipo ${params.tipo_accion === 'email' ? 'email' : 'telefono'} para deudor ${deudor.deuda_id}`)
+        fallidas++
+        continue
+      }
+
       const resultado = await programarAccion({
         ...params,
         deuda_id: deudor.deuda_id,
         rut: deudor.rut,
-        contacto_id: deudor.contacto_id,
+        contacto_id: contactoIdCorrecto, // Usar el contacto correcto según tipo de acción
         vars: { ...params.vars, ...deudor.vars }
       })
       
