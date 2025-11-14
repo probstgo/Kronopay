@@ -48,7 +48,7 @@ export async function sincronizarNumerosTwilio(): Promise<void> {
     dbMap.set(row.e164, row)
   })
 
-  const operaciones: Promise<void>[] = []
+  const operaciones: PromiseLike<void>[] = []
 
   for (const numero of twilioNumbers as TwilioPhoneNumber[]) {
     const e164 = numero.phoneNumber
