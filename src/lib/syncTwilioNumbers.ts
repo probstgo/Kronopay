@@ -64,9 +64,6 @@ export async function sincronizarNumerosTwilio(): Promise<void> {
       if (existing.estado !== estado) {
         updates.estado = estado
         updates.estado_reason = `Estado actualizado desde Twilio (${numero.status || 'activo'})`
-        if (estado === 'retirado') {
-          updates.retirado_at = new Date().toISOString()
-        }
       }
       updates.supports_sms = supportsSms
       updates.supports_whatsapp = supportsWhatsApp
