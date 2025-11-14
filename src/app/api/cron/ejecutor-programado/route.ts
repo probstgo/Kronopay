@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { ProgramaEjecucion, Contacto, Plantilla } from '../../../../types/programa'
 import { registrarLogEjecucion, crearEjecucionWorkflow, actualizarEjecucionWorkflow } from '../../../../lib/logsEjecucion'
+import { sincronizarNumerosTwilio } from '@/lib/syncTwilioNumbers'
+import { procesarColaSms } from '@/lib/smsQueueProcessor'
+import { enviarSms } from '@/lib/twilio'
 
 // Tipos para las respuestas de ElevenLabs
 interface ElevenLabsCallResult {
@@ -60,6 +63,12 @@ export async function GET(request: Request) {
   }
 
   try {
+    try {
+      await sincronizarNumerosTwilio()
+      await procesarColaSms()
+    } catch (syncError) {
+      console.error('Error sincronizando números Twilio dentro del cron:', syncError)
+    }
     // 1. Obtener programaciones vencidas y pendientes (solo de deudas activas)
     const { data: programaciones, error } = await supabase
       .from('programaciones')
@@ -589,22 +598,31 @@ async function enviarSMS(prog: ProgramaEjecucion): Promise<ResultadoEjecucion> {
       return { exito: false, error: 'El contenido del SMS es demasiado largo (máximo 1600 caracteres)' }
     }
 
-    // TODO: Implementar envío real con Twilio cuando esté configurado
-    // Por ahora, retornamos éxito simulado para que el sistema continúe funcionando
-    console.log('SMS simulado:', {
+    const resultadoTwilio = await enviarSms({
       to: contacto.valor,
-      message: contenidoResuelto,
-      length: contenidoResuelto.length
+      mensaje: contenidoResuelto
     })
+
+    if (!resultadoTwilio.exito && !resultadoTwilio.queued) {
+      return {
+        exito: false,
+        error: resultadoTwilio.error || 'Error desconocido al enviar SMS',
+        detalles: {
+          tipo_error: resultadoTwilio.error_type || 'destinatario'
+        }
+      }
+    }
 
     return {
       exito: true,
-      external_id: `sms_simulado_${Date.now()}`,
+      external_id: resultadoTwilio.sid,
       detalles: {
         to: contacto.valor,
         message: contenidoResuelto,
         length: contenidoResuelto.length,
-        note: 'SMS simulado - implementar Twilio en Fase 4.8'
+        twilio_sid: resultadoTwilio.sid || null,
+        enqueued: resultadoTwilio.queued || false,
+        tipo_error: resultadoTwilio.error_type || null
       }
     }
   } catch (error) {

@@ -6,6 +6,7 @@ import { ejecutarCampana, NodoCampana, ConexionCampana } from '@/lib/ejecutarCam
 import { Resend } from 'resend'
 import { ProgramaEjecucion, Contacto, Plantilla } from '@/types/programa'
 import { registrarLogEjecucion, crearEjecucionWorkflow, actualizarEjecucionWorkflow } from '@/lib/logsEjecucion'
+import { enviarSms } from '@/lib/twilio'
 
 // Tipos para ejecución inmediata
 interface ResultadoEjecucion {
@@ -288,21 +289,31 @@ async function enviarSMSPrueba(prog: ProgramaEjecucion): Promise<ResultadoEjecuc
       return { exito: false, error: 'El contenido del SMS es demasiado largo (máximo 1600 caracteres)' }
     }
 
-    // TODO: Implementar envío real con Twilio cuando esté configurado
-    console.log('SMS simulado:', {
+    const resultadoTwilio = await enviarSms({
       to: contacto.valor,
-      message: contenidoResuelto,
-      length: contenidoResuelto.length
+      mensaje: contenidoResuelto
     })
+
+    if (!resultadoTwilio.exito && !resultadoTwilio.queued) {
+      return {
+        exito: false,
+        error: resultadoTwilio.error || 'Error desconocido al enviar SMS',
+        detalles: {
+          tipo_error: resultadoTwilio.error_type || 'destinatario'
+        }
+      }
+    }
 
     return {
       exito: true,
-      external_id: `sms_simulado_${Date.now()}`,
+      external_id: resultadoTwilio.sid,
       detalles: {
         to: contacto.valor,
         message: contenidoResuelto,
         length: contenidoResuelto.length,
-        note: 'SMS simulado - implementar Twilio en Fase 4.8'
+        twilio_sid: resultadoTwilio.sid || null,
+        enqueued: resultadoTwilio.queued || false,
+        tipo_error: resultadoTwilio.error_type || null
       }
     }
   } catch (error) {

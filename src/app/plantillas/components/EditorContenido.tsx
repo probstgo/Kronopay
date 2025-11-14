@@ -16,6 +16,7 @@ interface EditorContenidoProps {
   onChange: (value: string) => void
   variables: Variable[]
   tipoContenido?: 'texto' | 'html'
+  maxLength?: number
 }
 
 export function EditorContenido({ value, onChange, variables, tipoContenido = 'texto' }: EditorContenidoProps) {
@@ -84,7 +85,14 @@ export function EditorContenido({ value, onChange, variables, tipoContenido = 't
         <Textarea
           id="contenido"
           value={safeValue}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            const nuevoValor = e.target.value
+            if (maxLength && nuevoValor.length > maxLength) {
+              onChange(nuevoValor.slice(0, maxLength))
+            } else {
+              onChange(nuevoValor)
+            }
+          }}
           placeholder={tipoContenido === 'html' 
             ? "Escribe el contenido HTML de tu plantilla aquí...\nEjemplo: <p>Hola {{nombre}}, tu deuda es de {{monto}}</p>"
             : "Escribe el contenido de tu plantilla aquí..."

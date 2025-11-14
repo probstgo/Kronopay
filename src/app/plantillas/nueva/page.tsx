@@ -45,6 +45,9 @@ export default function NuevaPlantillaPage() {
   const [loading, setLoading] = useState(false)
   const [mostrarPreview, setMostrarPreview] = useState(false)
   const [mostrarTestEmail, setMostrarTestEmail] = useState(false)
+  const SMS_TEMPLATE_LIMIT = 1000
+  const contenidoLength = formData.contenido.length
+  const excedeLimiteSms = formData.tipo === 'sms' && contenidoLength > SMS_TEMPLATE_LIMIT
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,6 +64,11 @@ export default function NuevaPlantillaPage() {
 
     if (!formData.contenido.trim()) {
       toast.error('El contenido es requerido')
+      return
+    }
+
+    if (excedeLimiteSms) {
+      toast.error(`Las plantillas SMS no pueden exceder los ${SMS_TEMPLATE_LIMIT} caracteres`)
       return
     }
 
@@ -227,12 +235,19 @@ export default function NuevaPlantillaPage() {
                       onChange={(contenido) => setFormData(prev => ({ ...prev, contenido }))}
                       variables={VARIABLES_DISPONIBLES}
                       tipoContenido={formData.tipo_contenido}
+                      maxLength={formData.tipo === 'sms' ? SMS_TEMPLATE_LIMIT : undefined}
                     />
+                    {formData.tipo === 'sms' && (
+                      <p className={`text-xs mt-2 ${excedeLimiteSms ? 'text-red-600' : 'text-gray-500'}`}>
+                        {contenidoLength}/{SMS_TEMPLATE_LIMIT} caracteres
+                        {excedeLimiteSms && ' — excede el límite permitido'}
+                      </p>
+                    )}
                   </div>
 
                   {/* Botones */}
                   <div className="flex gap-3">
-                    <Button type="submit" disabled={loading}>
+                    <Button type="submit" disabled={loading || excedeLimiteSms}>
                       <Save className="h-4 w-4 mr-2" />
                       {loading ? 'Guardando...' : 'Guardar Plantilla'}
                     </Button>
