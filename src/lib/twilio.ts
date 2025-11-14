@@ -41,8 +41,8 @@ function esErrorDelNumero(error: unknown): boolean {
   }
   return Boolean(
     message &&
-      (message.includes('From') && message.includes('valid phone number')) ||
-      message.includes('not a valid Messaging Credential')
+      ((message.includes('From') && message.includes('valid phone number')) ||
+        message.includes('not a valid Messaging Credential'))
   )
 }
 
