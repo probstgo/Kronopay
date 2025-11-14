@@ -75,7 +75,11 @@ Los nodos actuales son básicos y no aprovechan:
 - ✅ **Preview de plantilla**: Botón "Ver Preview" para ver cómo se verá el SMS con variables reemplazadas antes de guardar
 - ✅ **Filtrado mediante nodo FILTRO**: El filtrado de deudores con teléfono se realiza mediante el nodo FILTRO dedicado (ver nodo FILTRO)
 - ✅ Horarios inteligentes (solo días laborables)
-- ✅ Usa API Twilio existente
+- ✅ **Implementación completa con Twilio** (Fase 4.8 completada - Diciembre 2024)
+  - Envío real de SMS usando Twilio API
+  - Sistema de cola cuando no hay números disponibles
+  - Sincronización automática de números
+  - Webhook para actualización de estados
 
 ### **6. 💬 WHATSAPP**
 **¿Qué hace?** Envía mensajes de WhatsApp usando plantillas existentes

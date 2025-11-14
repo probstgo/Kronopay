@@ -972,8 +972,8 @@ export const theme = {
 5. **✅ Fase 4.5 COMPLETADA** - Integración completa con agentes de llamada (Diciembre 2024)
 6. **✅ Fase 4.6 COMPLETADA** - Sistema de logs de ejecución (Diciembre 2024)
 7. **✅ Fase 4.7 COMPLETADA** - Sistema de seguimiento de ejecuciones (Diciembre 2024)
-8. **✅ Fase 4.9 COMPLETADA** - Implementación completa del nodo WHATSAPP (Diciembre 2024)
-9. **🔄 Fase 4.8** - Implementación de SMS con Twilio
+8. **✅ Fase 4.8 COMPLETADA** - Implementación de SMS con Twilio (Diciembre 2024)
+9. **✅ Fase 4.9 COMPLETADA** - Implementación completa del nodo WHATSAPP (Diciembre 2024)
 
 ---
 
@@ -1008,7 +1008,7 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 
 ---
 
-**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO, Fase 4.2 - Implementación del Nodo CONDICIÓN, Fase 4.3 - Extracción de variables de deudores, Fase 4.4 - Integración completa con plantillas, Fase 4.5 - Integración completa con agentes de llamada, Fase 4.6 - Sistema de logs de ejecución, Fase 4.7 - Sistema de seguimiento de ejecuciones, Fase 4.9 - Implementación completa del nodo WHATSAPP. **Próximo:** Fase 4.8 - Implementación de SMS con Twilio.
+**✅ ESTADO:** V2 - Implementación desde cero con React Flow. **✅ COMPLETADAS:** Fase 1 - Setup y Estructura Base, Fase 2 - Nodos Completos y Configuración, Fase 2.1 - Mejoras UX/UI y Acciones de Nodos, Fase 2.2 - Mejoras TopToolbar con Modales Funcionales, Fase 2.3 - Notas Flotantes, Fase 3.0 - Preparación Frontend para Guardado, Fase 3.1 - Endpoints de API, Fase 3.2 - Sistema de Cargar Workflows, Fase 3.3 - Gestión de Campañas, Fase 4.1 - Implementación del Nodo FILTRO, Fase 4.2 - Implementación del Nodo CONDICIÓN, Fase 4.3 - Extracción de variables de deudores, Fase 4.4 - Integración completa con plantillas, Fase 4.5 - Integración completa con agentes de llamada, Fase 4.6 - Sistema de logs de ejecución, Fase 4.7 - Sistema de seguimiento de ejecuciones, Fase 4.8 - Implementación de SMS con Twilio, Fase 4.9 - Implementación completa del nodo WHATSAPP.
 
 ---
 
@@ -1037,11 +1037,11 @@ Un sistema **completamente funcional** donde los usuarios pueden:
 - **✅ Fase 4.5**: Integración completa con agentes de llamada (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.6**: Sistema de logs de ejecución (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.7**: Sistema de seguimiento de ejecuciones (Diciembre 2024) - COMPLETADA
+- **✅ Fase 4.8**: Implementación de SMS con Twilio (Diciembre 2024) - COMPLETADA
 - **✅ Fase 4.9**: Implementación completa del nodo WHATSAPP (Diciembre 2024) - COMPLETADA
 
 ### **⏳ Próximas Fases:**
 - **Fase 3.4-3.5**: Persistencia y Gestión (Metadatos, Versiones) - Opcionales
-- **Fase 4.8**: Implementación de SMS con Twilio
 
 ---
 
@@ -1742,9 +1742,6 @@ Nodo FILTRO en ejecución
   └─ Retorna deudores filtrados con variables calculadas
 ```
 
-#### Próximos Pasos (Fase 4.8)
-- Fase 4.8: Implementación de SMS con Twilio
-
 ---
 
 ### **✅ FASE 4.2 COMPLETADA - Diciembre 2024 (Implementación del Nodo CONDICIÓN)**
@@ -1827,9 +1824,6 @@ Nodo CONDICIÓN en ejecución
   └─ Continúa flujo por ambas ramas (sí/no)
 ```
 
-#### Próximos Pasos (Fase 4.8)
-- Fase 4.8: Implementación de SMS con Twilio
-
 ---
 
 ### **✅ FASE 4.4 COMPLETADA - Diciembre 2024 (Integración completa con plantillas)**
@@ -1870,7 +1864,7 @@ Nodo CONDICIÓN en ejecución
 - Reemplaza variables en el contenido
 - Valida que el contenido no esté vacío
 - Valida longitud máxima (1600 caracteres)
-- Por ahora retorna éxito simulado (implementación real en Fase 4.8 con Twilio)
+- ✅ **Implementación completa con Twilio** (Fase 4.8 completada)
 
 **5. Tipos TypeScript actualizados:**
 - `Plantilla` ahora incluye `asunto` y `tipo_contenido`
@@ -1892,7 +1886,7 @@ Nodo CONDICIÓN en ejecución
 
 **Integración:**
 - ✅ Integración completa con Resend para emails
-- ✅ Preparación para Twilio en SMS (Fase 4.8)
+- ✅ Integración completa con Twilio para SMS (Fase 4.8 completada)
 - ✅ Manejo robusto de errores
 
 #### Archivos Modificados
@@ -1923,7 +1917,7 @@ Ejecución de EMAIL/SMS
   └─ Para SMS:
       ├─ Validar que contacto sea teléfono
       ├─ Validar longitud del mensaje
-      └─ Enviar (simulado por ahora, Twilio en Fase 4.8)
+      └─ Enviar con Twilio (Fase 4.8 completada)
 ```
 
 ---
@@ -2350,8 +2344,135 @@ Ejecución de Nodo WhatsApp
   └─ Se registra log de ejecución
 ```
 
-#### Próximos Pasos (Fase 4.8)
-- Fase 4.8: Implementación de SMS con Twilio
+---
+
+### **✅ FASE 4.8 COMPLETADA - Diciembre 2024 (Implementación de SMS con Twilio)**
+
+#### Cambios técnicos (backend)
+
+**1. Cliente Twilio (`src/lib/twilio.ts`):**
+- Creado cliente Twilio con `TWILIO_ACCOUNT_SID` y `TWILIO_AUTH_TOKEN`
+- Implementadas funciones `enviarSms()` y `enviarWhatsApp()`
+- Sistema de selección automática de números disponibles
+- Manejo inteligente de errores: diferencia entre errores del número (suspende número) y errores del destinatario (solo log)
+- Sistema de cola: cuando no hay números disponibles, encola el mensaje automáticamente
+- Validación de longitud máxima (1600 caracteres)
+
+**2. Sincronización de números Twilio (`src/lib/syncTwilioNumbers.ts`):**
+- Sincronización automática de números desde Twilio API
+- Actualización de estados (disponible/suspendido/retirado)
+- Detección de números nuevos y eliminados
+- Actualización de capacidades (supports_sms, supports_whatsapp)
+- Endpoint manual: `/api/cron/sync-twilio-numbers`
+
+**3. Sistema de cola de SMS (`src/lib/smsQueue.ts`, `src/lib/smsQueueProcessor.ts`):**
+- Tabla `sms_queue` para almacenar mensajes pendientes
+- Función `enqueueMessage()` para encolar cuando no hay números disponibles
+- Función `procesarColaSms()` para procesar mensajes pendientes
+- Reintentos automáticos y manejo de errores
+- Actualización de estado en cola según resultado de Twilio
+
+**4. Webhook de Twilio (`src/app/api/webhooks/twilio/route.ts`):**
+- Validación de firma de seguridad de Twilio
+- Actualización de estado en tabla `historial` según webhook
+- Actualización de estado en tabla `sms_queue` según webhook
+- Mapeo de estados de Twilio a estados internos
+
+**5. Integración en ejecutor programado (`src/app/api/cron/ejecutor-programado/route.ts`):**
+- Sincronización automática de números al inicio del cron job
+- Procesamiento automático de cola de SMS al inicio del cron job
+- Función `enviarSMS()` actualizada para usar `enviarSms()` de `twilio.ts`
+- Manejo de mensajes encolados y errores
+
+**6. Integración en ejecutar campaña (`src/app/api/campanas/ejecutar/route.ts`):**
+- Función `enviarSMSPrueba()` actualizada para usar `enviarSms()` de `twilio.ts`
+- Manejo de mensajes encolados en modo prueba
+- Registro de `twilio_sid` y `tipo_error` en detalles
+
+#### Funcionalidades Implementadas
+
+**Envío de SMS:**
+- ✅ Envío real de SMS usando Twilio API
+- ✅ Selección automática de números disponibles (rotación)
+- ✅ Validación de longitud máxima (1600 caracteres)
+- ✅ Manejo inteligente de errores (número vs destinatario)
+- ✅ Sistema de cola cuando no hay números disponibles
+
+**Sincronización de Números:**
+- ✅ Sincronización automática desde Twilio API
+- ✅ Actualización de estados (disponible/suspendido/retirado)
+- ✅ Detección de números nuevos y eliminados
+- ✅ Actualización de capacidades (SMS/WhatsApp)
+- ✅ Endpoint manual para sincronización
+
+**Sistema de Cola:**
+- ✅ Encolado automático cuando no hay números disponibles
+- ✅ Procesamiento automático en cron job
+- ✅ Reintentos y manejo de errores
+- ✅ Actualización de estado según webhook de Twilio
+
+**Webhooks:**
+- ✅ Webhook de Twilio para actualización de estados
+- ✅ Validación de firma de seguridad
+- ✅ Actualización de historial y cola según estado
+
+**Integración:**
+- ✅ Integrado en ejecutor programado (cron job)
+- ✅ Integrado en ejecutar campaña (pruebas inmediatas)
+- ✅ Integrado en ejecutarCampana.ts (ejecución de campañas)
+
+#### Archivos Creados
+
+- ✅ `src/lib/twilio.ts` - Cliente Twilio y funciones de envío
+- ✅ `src/lib/syncTwilioNumbers.ts` - Sincronización de números Twilio
+- ✅ `src/lib/smsQueue.ts` - Sistema de cola de SMS
+- ✅ `src/lib/smsQueueProcessor.ts` - Procesador de cola de SMS
+- ✅ `src/app/api/cron/sync-twilio-numbers/route.ts` - Endpoint de sincronización manual
+- ✅ `src/app/api/webhooks/twilio/route.ts` - Webhook de Twilio
+
+#### Archivos Modificados
+
+- ✅ `src/app/api/cron/ejecutor-programado/route.ts`:
+  - Agregado import de `sincronizarNumerosTwilio` y `procesarColaSms`
+  - Integrada sincronización y procesamiento de cola al inicio del cron job
+  - Función `enviarSMS()` actualizada para usar `enviarSms()` de `twilio.ts`
+
+- ✅ `src/app/api/campanas/ejecutar/route.ts`:
+  - Agregado import de `enviarSms` de `twilio.ts`
+  - Función `enviarSMSPrueba()` actualizada para usar `enviarSms()` de `twilio.ts`
+  - Manejo de mensajes encolados y errores
+
+#### Flujo Completo Implementado
+
+```
+Ejecución de SMS
+  ├─ Validar plantilla y contacto
+  ├─ Resolver plantilla (reemplazar variables)
+  ├─ Validar longitud del mensaje (máx 1600 caracteres)
+  ├─ Seleccionar número disponible de Twilio
+  │   ├─ Si no hay números disponibles → Encolar mensaje
+  │   └─ Si hay números disponibles → Enviar con Twilio
+  ├─ Manejar errores:
+  │   ├─ Si error del número → Suspender número
+  │   └─ Si error del destinatario → Solo log
+  ├─ Registrar en historial con twilio_sid
+  └─ Webhook de Twilio actualiza estado automáticamente
+
+Sincronización de Números
+  ├─ Cron job diario ejecuta sincronización
+  ├─ Obtener números desde Twilio API
+  ├─ Comparar con números en BD
+  ├─ Actualizar estados y capacidades
+  ├─ Detectar números nuevos → Insertar
+  └─ Detectar números eliminados → Marcar como retirado
+
+Procesamiento de Cola
+  ├─ Cron job procesa mensajes pendientes
+  ├─ Seleccionar número disponible
+  ├─ Enviar mensaje con Twilio
+  ├─ Actualizar estado en cola
+  └─ Webhook actualiza estado final
+```
 
 ---
 

@@ -19,7 +19,7 @@ interface EditorContenidoProps {
   maxLength?: number
 }
 
-export function EditorContenido({ value, onChange, variables, tipoContenido = 'texto' }: EditorContenidoProps) {
+export function EditorContenido({ value, onChange, variables, tipoContenido = 'texto', maxLength }: EditorContenidoProps) {
   const [mostrarVariables, setMostrarVariables] = useState(false)
   
   // Asegurar que value siempre sea un string
