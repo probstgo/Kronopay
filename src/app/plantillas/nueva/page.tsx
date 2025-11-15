@@ -45,7 +45,7 @@ export default function NuevaPlantillaPage() {
   const [loading, setLoading] = useState(false)
   const [mostrarPreview, setMostrarPreview] = useState(false)
   const [mostrarTestEmail, setMostrarTestEmail] = useState(false)
-  const SMS_TEMPLATE_LIMIT = 1000
+  const SMS_TEMPLATE_LIMIT = 120
   const contenidoLength = formData.contenido.length
   const excedeLimiteSms = formData.tipo === 'sms' && contenidoLength > SMS_TEMPLATE_LIMIT
 

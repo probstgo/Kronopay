@@ -285,8 +285,8 @@ async function enviarSMSPrueba(prog: ProgramaEjecucion): Promise<ResultadoEjecuc
       return { exito: false, error: 'El contenido del SMS está vacío' }
     }
 
-    if (contenidoResuelto.length > 1600) {
-      return { exito: false, error: 'El contenido del SMS es demasiado largo (máximo 1600 caracteres)' }
+    if (contenidoResuelto.length > 160) {
+      return { exito: false, error: 'El contenido del SMS es demasiado largo (máximo 160 caracteres)' }
     }
 
     const resultadoTwilio = await enviarSms({

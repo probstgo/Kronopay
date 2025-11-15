@@ -59,7 +59,7 @@ export default function EditarPlantillaPage({ params }: { params: Promise<{ id: 
     asunto: '',
     contenido: '' as string
   })
-  const SMS_TEMPLATE_LIMIT = 1000
+  const SMS_TEMPLATE_LIMIT = 120
   const contenidoLength = formData.contenido.length
   const excedeLimiteSms = formData.tipo === 'sms' && contenidoLength > SMS_TEMPLATE_LIMIT
 

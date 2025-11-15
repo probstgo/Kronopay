@@ -88,10 +88,10 @@ async function enviarMensajeTwilio(params: {
   to: string
   body: string
 }): Promise<EnvioResultado> {
-  if (params.body.length > 1600) {
+  if (params.body.length > 160) {
     return {
       exito: false,
-      error: 'El mensaje supera los 1600 caracteres permitidos'
+      error: 'El mensaje supera los 160 caracteres permitidos'
     }
   }
 
@@ -124,10 +124,10 @@ export async function enviarMensajeConNumero(params: {
   to: string
   body: string
 }): Promise<EnvioResultado> {
-  if (params.body.length > 1600) {
+  if (params.body.length > 160) {
     return {
       exito: false,
-      error: 'El mensaje supera los 1600 caracteres permitidos'
+      error: 'El mensaje supera los 160 caracteres permitidos'
     }
   }
 
