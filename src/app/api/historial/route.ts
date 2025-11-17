@@ -19,6 +19,7 @@ type HistorialItem = {
   tipo_accion: Canal
   estado: Estado
   destino: string
+  rut: string
   campana_id: string | null
   campana_nombre: string | null
   origen: string | null
@@ -30,6 +31,7 @@ type QueryRow = {
   tipo_accion: Canal
   estado: Estado
   campana_id: string | null
+  rut: string
   detalles: HistorialDetalles | null
   workflows_cobranza: { nombre: string } | null
 }
@@ -97,7 +99,7 @@ export async function GET(request: NextRequest) {
     let query = supabase
       .from('historial')
       .select(
-        `id, fecha, tipo_accion, estado, campana_id, detalles, workflows_cobranza(nombre)`,
+        `id, fecha, tipo_accion, estado, campana_id, rut, detalles, workflows_cobranza(nombre)`,
         { count: 'exact' }
       )
       .order('fecha', { ascending: false })
@@ -167,6 +169,7 @@ export async function GET(request: NextRequest) {
         tipo_accion: row.tipo_accion,
         estado: row.estado,
         destino,
+        rut: row.rut,
         campana_id: row.campana_id ?? null,
         campana_nombre: row.workflows_cobranza?.nombre ?? null,
         origen: row.detalles?.origen ?? null,

@@ -14,6 +14,7 @@ type HistorialItem = {
   tipo_accion: 'email' | 'llamada' | 'sms' | 'whatsapp'
   estado: string
   destino: string
+  rut: string
   campana_id: string | null
   campana_nombre: string | null
   origen: string | null
@@ -58,10 +59,10 @@ export default function HistorialTable({
                   <TableHead className="px-4 py-3">Fecha</TableHead>
                   <TableHead className="px-4 py-3">Canal</TableHead>
                   <TableHead className="px-4 py-3">Estado</TableHead>
+                  <TableHead className="px-4 py-3">RUT</TableHead>
                   <TableHead className="px-4 py-3">Destino</TableHead>
                   <TableHead className="px-4 py-3">Campaña</TableHead>
                   <TableHead className="px-4 py-3">Origen</TableHead>
-                  <TableHead className="px-4 py-3">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -71,10 +72,10 @@ export default function HistorialTable({
                       <TableCell className="px-4 py-3"><Skeleton className="h-4 w-40" /></TableCell>
                       <TableCell className="px-4 py-3"><Skeleton className="h-4 w-16" /></TableCell>
                       <TableCell className="px-4 py-3"><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell className="px-4 py-3"><Skeleton className="h-4 w-24" /></TableCell>
                       <TableCell className="px-4 py-3"><Skeleton className="h-4 w-40" /></TableCell>
                       <TableCell className="px-4 py-3"><Skeleton className="h-4 w-20" /></TableCell>
                       <TableCell className="px-4 py-3"><Skeleton className="h-4 w-16" /></TableCell>
-                      <TableCell className="px-4 py-3"><Skeleton className="h-8 w-20" /></TableCell>
                     </TableRow>
                   ))
                 ) : data.length === 0 ? (
@@ -85,7 +86,11 @@ export default function HistorialTable({
                   </TableRow>
                 ) : (
                   data.map((row) => (
-                    <TableRow key={row.id}>
+                    <TableRow 
+                      key={row.id}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => onVerDetalle(row.id)}
+                    >
                       <TableCell className="px-4 py-3 font-medium">
                         {new Date(row.fecha).toLocaleString()}
                       </TableCell>
@@ -102,6 +107,9 @@ export default function HistorialTable({
                         </Badge>
                       </TableCell>
                       <TableCell className="px-4 py-3 font-mono text-sm">
+                        {row.rut}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 font-mono text-sm">
                         {row.destino}
                       </TableCell>
                       <TableCell className="px-4 py-3 text-sm text-muted-foreground">
@@ -109,15 +117,6 @@ export default function HistorialTable({
                       </TableCell>
                       <TableCell className="px-4 py-3 text-sm text-muted-foreground">
                         {row.origen || '-'}
-                      </TableCell>
-                      <TableCell className="px-4 py-3">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => onVerDetalle(row.id)}
-                        >
-                          Ver detalle
-                        </Button>
                       </TableCell>
                     </TableRow>
                   ))

@@ -22,6 +22,7 @@ type HistorialItem = {
   tipo_accion: Canal
   estado: Estado
   destino: string
+  rut: string
   campana_id: string | null
   campana_nombre: string | null
   origen: string | null
@@ -150,7 +151,7 @@ export default function HistorialApp({ exportModalOpen: externalExportModalOpen,
       }
 
       // Convertir datos a CSV
-      const headers = ['Fecha', 'Canal', 'Estado', 'Destino', 'Campaña', 'Origen']
+      const headers = ['Fecha', 'Canal', 'Estado', 'RUT', 'Destino', 'Campaña', 'Origen']
       const rows = data.items.map((item: HistorialItem) => [
         new Date(item.fecha).toLocaleString('es-CL', {
           year: 'numeric',
@@ -162,6 +163,7 @@ export default function HistorialApp({ exportModalOpen: externalExportModalOpen,
         }),
         item.tipo_accion,
         item.estado,
+        item.rut,
         item.destino,
         item.campana_nombre || item.campana_id || '-',
         item.origen || '-',
