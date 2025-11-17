@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Plus, BarChart3, Settings, Lightbulb, Save, StickyNote, Play } from 'lucide-react'
+import { ArrowLeft, Plus, BarChart3, Lightbulb, Save, StickyNote, Play, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import {
@@ -46,7 +46,7 @@ interface TopToolbarProps {
   onAddNode?: (nodeType: string) => void
   availableNodeTypes?: NodeType[]
   onAddNote?: () => void
-  onSave?: (data: { nombre: string; descripcion: string }) => void
+  onSave?: (data: { nombre: string; descripcion: string }) => Promise<void> | void
   onTest?: () => void
   hasNodes?: boolean
   isTesting?: boolean
@@ -54,6 +54,7 @@ interface TopToolbarProps {
   initialDescription?: string
   onNameChange?: (name: string) => void
   onDescriptionChange?: (description: string) => void
+  onSettingsClose?: () => void
 }
 
 export function TopToolbar({ 
@@ -64,10 +65,11 @@ export function TopToolbar({
   onTest,
   hasNodes = false,
   isTesting = false,
-  initialName = 'Campaña de Cobranza',
+  initialName = '',
   initialDescription = '',
   onNameChange,
-  onDescriptionChange
+  onDescriptionChange,
+  onSettingsClose
 }: TopToolbarProps) {
   const router = useRouter()
   const [nodesMenuOpen, setNodesMenuOpen] = useState(false)
@@ -75,17 +77,14 @@ export function TopToolbar({
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [saveOpen, setSaveOpen] = useState(false)
-  const [campaignName, setCampaignName] = useState(initialName)
+  const [campaignName, setCampaignName] = useState(initialName || '')
   const [campaignDescription, setCampaignDescription] = useState(initialDescription)
+  const [pendingSave, setPendingSave] = useState(false)
 
   // Sincronizar con props iniciales cuando cambian
   useEffect(() => {
-    if (initialName !== campaignName) {
-      setCampaignName(initialName)
-    }
-    if (initialDescription !== campaignDescription) {
-      setCampaignDescription(initialDescription)
-    }
+    setCampaignName(initialName || '')
+    setCampaignDescription(initialDescription || '')
   }, [initialName, initialDescription])
 
   const handleNodeSelect = (nodeType: string) => {
@@ -95,21 +94,44 @@ export function TopToolbar({
     setNodesMenuOpen(false)
   }
 
-  const handleSave = () => {
-    if (onSave) {
-      onSave({
-        nombre: campaignName,
-        descripcion: campaignDescription
-      })
+  const handleSaveClick = () => {
+    // Si no hay nombre, abrir el modal para que el usuario lo agregue
+    if (!campaignName.trim()) {
+      setPendingSave(true)
+      setSettingsOpen(true)
+      return
     }
-    setSaveOpen(false)
+    // Si hay nombre, proceder con el diálogo de confirmación
+    setSaveOpen(true)
+  }
+
+  const handleSave = async () => {
+    if (onSave) {
+      try {
+        await onSave({
+          nombre: campaignName,
+          descripcion: campaignDescription
+        })
+        // Después de guardar exitosamente, abrir el modal de configuración
+        setSaveOpen(false)
+        setSettingsOpen(true)
+        setPendingSave(false)
+      } catch (error) {
+        // Si hay error, mantener el diálogo de confirmación abierto
+        console.error('Error al guardar:', error)
+        setPendingSave(false)
+      }
+    } else {
+      setSaveOpen(false)
+      setPendingSave(false)
+    }
   }
 
   return (
     <>
     <div className="bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 flex-1">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -119,13 +141,41 @@ export function TopToolbar({
                   aria-label="Volver a lista de campañas"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  <span>{campaignName}</span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
                 <p>Volver a lista de campañas</p>
               </TooltipContent>
             </Tooltip>
+            
+            {/* Input editable del nombre de la campaña */}
+            <div className="flex items-center space-x-2 flex-1 max-w-md">
+              <Input
+                value={campaignName}
+                onChange={(e) => {
+                  setCampaignName(e.target.value)
+                  onNameChange?.(e.target.value)
+                }}
+                placeholder="Ingresa el nombre de la campaña"
+                className="border-0 border-b-2 border-gray-300 focus:border-blue-500 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none px-0 py-1 text-base font-semibold"
+              />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSettingsOpen(true)}
+                    className="h-8 w-8 flex-shrink-0"
+                    aria-label="Configurar campaña"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Configuración de la campaña</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -180,24 +230,6 @@ export function TopToolbar({
               </TooltipTrigger>
               <TooltipContent>
                 <p>Ver estadísticas y reportes</p>
-              </TooltipContent>
-            </Tooltip>
-
-            {/* Botón Configuración */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSettingsOpen(true)}
-                  className="h-9 w-9"
-                  aria-label="Configuración"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Configuración de la campaña</p>
               </TooltipContent>
             </Tooltip>
 
@@ -257,7 +289,7 @@ export function TopToolbar({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
-                  onClick={() => setSaveOpen(true)}
+                  onClick={handleSaveClick}
                   className="bg-blue-500 text-white hover:bg-blue-600 flex items-center gap-2"
                   aria-label="Guardar campaña"
                 >
@@ -366,7 +398,23 @@ export function TopToolbar({
       </Sheet>
 
       {/* Modal de Configuración */}
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+      <Dialog open={settingsOpen} onOpenChange={(open) => {
+        setSettingsOpen(open)
+        if (!open) {
+          // Si había un guardado pendiente y ahora hay nombre, proceder con el guardado
+          if (pendingSave && campaignName.trim()) {
+            setPendingSave(false)
+            setSaveOpen(true)
+          } else if (pendingSave && !campaignName.trim()) {
+            // Si cerró el modal sin agregar nombre, cancelar el guardado pendiente
+            setPendingSave(false)
+          }
+          // Ejecutar callback si existe
+          if (onSettingsClose) {
+            onSettingsClose()
+          }
+        }
+      }}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Configuración de la Campaña</DialogTitle>
@@ -405,8 +453,18 @@ export function TopToolbar({
             <Button variant="outline" onClick={() => setSettingsOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={() => setSettingsOpen(false)}>
-              Guardar cambios
+            <Button 
+              onClick={() => {
+                setSettingsOpen(false)
+                // Si había un guardado pendiente y ahora hay nombre, proceder con el guardado
+                if (pendingSave && campaignName.trim()) {
+                  setPendingSave(false)
+                  setSaveOpen(true)
+                }
+              }}
+              disabled={!campaignName.trim()}
+            >
+              {pendingSave ? 'Guardar campaña' : 'Guardar cambios'}
             </Button>
           </DialogFooter>
         </DialogContent>

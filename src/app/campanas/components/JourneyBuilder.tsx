@@ -170,8 +170,9 @@ interface JourneyBuilderProps {
 export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
   const router = useRouter()
   const [campaignId, setCampaignId] = useState<string | null>(null)
-  const [campaignName, setCampaignName] = useState('Campaña de Cobranza')
+  const [campaignName, setCampaignName] = useState('')
   const [campaignDescription, setCampaignDescription] = useState('')
+  const [pendingRedirectId, setPendingRedirectId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
@@ -746,11 +747,12 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
           throw new Error(data.error || 'Error al guardar la campaña')
         }
 
-        // Si se creó exitosamente, actualizar campaignId y redirigir
+        // Si se creó exitosamente, actualizar campaignId y marcar para redirección
         if (data.data && data.data.id) {
           setCampaignId(data.data.id)
-          // Redirigir a la página de edición
-          router.push(`/campanas/${data.data.id}`)
+          setPendingRedirectId(data.data.id)
+          // No redirigir inmediatamente, dejar que el modal se abra primero
+          // La redirección se hará cuando el usuario cierre el modal
         }
 
         toast.success(`Campaña "${payload.nombre}" guardada exitosamente`, { id: toastId })
@@ -761,8 +763,10 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
       console.error('❌ Error al guardar:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
       toast.error(`Error al guardar la campaña: ${errorMessage}`, { id: toastId })
+      // Lanzar el error para que TopToolbar pueda manejarlo
+      throw error
     }
-  }, [nodes, edges, campaignId, campaignName, campaignDescription, router])
+  }, [nodes, edges, campaignId, campaignName, campaignDescription])
 
   // Función para probar la campaña
   const handleTest = useCallback(async () => {
@@ -935,6 +939,13 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
             setNodes(prev => [...prev, newNote])
           }}
           availableNodeTypes={availableNodeTypes}
+          onSettingsClose={() => {
+            // Si hay una redirección pendiente (nueva campaña guardada), redirigir
+            if (pendingRedirectId) {
+              router.push(`/campanas/${pendingRedirectId}`)
+              setPendingRedirectId(null)
+            }
+          }}
         />
         
         {/* Canvas Principal */}
