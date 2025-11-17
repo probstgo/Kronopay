@@ -19,17 +19,19 @@ interface NodeConfigPanelProps {
 }
 
 export function NodeConfigPanel({ node, onClose, onSaveConfig, onConfigChange }: NodeConfigPanelProps) {
-  if (!node) return null
-
   // Guardar la configuración inicial para comparar cambios
-  const initialConfigRef = useRef(JSON.stringify(node.data.configuracion || {}))
+  // Los hooks deben estar antes de cualquier return condicional
+  const initialConfigRef = useRef(JSON.stringify(node?.data?.configuracion || {}))
 
   // Actualizar la referencia inicial cuando cambia el nodo
   useEffect(() => {
+    if (!node) return
     initialConfigRef.current = JSON.stringify(node.data.configuracion || {})
     // Notificar que no hay cambios al abrir un nuevo nodo
     onConfigChange?.(false)
-  }, [node.id, onConfigChange])
+  }, [node?.id, onConfigChange, node])
+
+  if (!node) return null
 
   // Función para guardar configuración
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
