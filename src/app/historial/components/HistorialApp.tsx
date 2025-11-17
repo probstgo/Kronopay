@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { toast } from 'sonner'
+import { downloadCSV } from '@/lib/csvUtils'
 
 import { Separator } from '@/components/ui/separator'
 
@@ -9,6 +11,7 @@ import FiltrosHistorial from './FiltrosHistorial'
 import MetricasHeader from './MetricasHeader'
 import HistorialTable from './HistorialTable'
 import DetalleModal from './DetalleModal'
+import ExportarHistorialModal from './ExportarHistorialModal'
 
 type Canal = 'email' | 'llamada' | 'sms' | 'whatsapp'
 type Estado = 'iniciado' | 'entregado' | 'completado' | 'fallido' | string
@@ -37,7 +40,12 @@ type MetricasResponse = {
   duracionLlamadasSegundos: number
 }
 
-export default function HistorialApp() {
+interface HistorialAppProps {
+  exportModalOpen?: boolean
+  onExportModalChange?: (open: boolean) => void
+}
+
+export default function HistorialApp({ exportModalOpen: externalExportModalOpen, onExportModalChange }: HistorialAppProps = {} as HistorialAppProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -47,6 +55,12 @@ export default function HistorialApp() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [detalleId, setDetalleId] = useState<string | null>(null)
+  const [internalExportModalOpen, setInternalExportModalOpen] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+
+  // Usar el estado externo si se proporciona, sino usar el interno
+  const exportModalOpen = externalExportModalOpen !== undefined ? externalExportModalOpen : internalExportModalOpen
+  const setExportModalOpen = onExportModalChange || setInternalExportModalOpen
 
   const paramsObj = useMemo(() => {
     const obj: Record<string, string> = {}
@@ -104,6 +118,84 @@ export default function HistorialApp() {
     fetchAll()
   }, [fetchAll])
 
+  const handleExportCSV = useCallback(async (fechaDesde: string, fechaHasta: string) => {
+    setIsExporting(true)
+    try {
+      const params = new URLSearchParams()
+      if (fechaDesde) {
+        // Convertir fecha a formato datetime-local para la API
+        const desdeDate = new Date(fechaDesde)
+        desdeDate.setHours(0, 0, 0, 0)
+        params.set('from', desdeDate.toISOString())
+      }
+      if (fechaHasta) {
+        // Convertir fecha a formato datetime-local para la API (fin del día)
+        const hastaDate = new Date(fechaHasta)
+        hastaDate.setHours(23, 59, 59, 999)
+        params.set('to', hastaDate.toISOString())
+      }
+      params.set('export', 'true')
+
+      const response = await fetch(`/api/historial?${params.toString()}`, { cache: 'no-store' })
+      
+      if (!response.ok) {
+        throw new Error('Error al obtener los datos para exportar')
+      }
+
+      const data = await response.json() as ListadoResponse
+
+      if (!data.items || data.items.length === 0) {
+        toast.warning('No hay datos para exportar en el rango de fechas seleccionado')
+        return
+      }
+
+      // Convertir datos a CSV
+      const headers = ['Fecha', 'Canal', 'Estado', 'Destino', 'Campaña', 'Origen']
+      const rows = data.items.map((item: HistorialItem) => [
+        new Date(item.fecha).toLocaleString('es-CL', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        }),
+        item.tipo_accion,
+        item.estado,
+        item.destino,
+        item.campana_nombre || item.campana_id || '-',
+        item.origen || '-',
+      ])
+
+      // Escapar comillas y crear CSV
+      const escapeCSV = (value: string) => {
+        if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+          return `"${value.replace(/"/g, '""')}"`
+        }
+        return value
+      }
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => escapeCSV(String(cell))).join(','))
+      ].join('\n')
+
+      // Generar nombre de archivo
+      const fechaDesdeStr = fechaDesde || 'inicio'
+      const fechaHastaStr = fechaHasta || 'fin'
+      const filename = `historial_${fechaDesdeStr}_${fechaHastaStr}.csv`
+
+      downloadCSV(csvContent, filename)
+      toast.success(`Exportación completada: ${data.items.length} registros exportados`)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error desconocido al exportar'
+      toast.error(message)
+      console.error('Error al exportar CSV:', err)
+    } finally {
+      setIsExporting(false)
+    }
+  }, [])
+
   return (
     <div className="space-y-4">
       <FiltrosHistorial
@@ -142,6 +234,13 @@ export default function HistorialApp() {
       />
 
       <DetalleModal id={detalleId} onClose={() => setDetalleId(null)} />
+
+      <ExportarHistorialModal
+        open={exportModalOpen}
+        onOpenChange={setExportModalOpen}
+        onExport={handleExportCSV}
+        isExporting={isExporting}
+      />
     </div>
   )
 }

@@ -77,6 +77,7 @@ export async function GET(request: NextRequest) {
     )
 
     const url = new URL(request.url)
+    const isExport = url.searchParams.get('export') === 'true'
     const from = parseDate(url.searchParams.get('from'))
     const to = parseDate(url.searchParams.get('to'))
     const canal = validarEnum<Canal>(url.searchParams.get('canal'), ['email', 'llamada', 'sms', 'whatsapp'] as const)
@@ -101,34 +102,43 @@ export async function GET(request: NextRequest) {
       )
       .order('fecha', { ascending: false })
 
-    if (from) query = query.gte('fecha', from.toISOString())
-    if (to) query = query.lte('fecha', to.toISOString())
-    if (canal) query = query.eq('tipo_accion', canal)
-    if (estado) query = query.eq('estado', estado)
-    if (campanaId) query = query.eq('campana_id', campanaId)
+    // Si es exportación, solo aplicar filtros de fecha
+    if (isExport) {
+      if (from) query = query.gte('fecha', from.toISOString())
+      if (to) query = query.lte('fecha', to.toISOString())
+      // No aplicar paginación para exportación
+    } else {
+      // Filtros normales para la vista
+      if (from) query = query.gte('fecha', from.toISOString())
+      if (to) query = query.lte('fecha', to.toISOString())
+      if (canal) query = query.eq('tipo_accion', canal)
+      if (estado) query = query.eq('estado', estado)
+      if (campanaId) query = query.eq('campana_id', campanaId)
 
-    if (q) {
-      // Búsqueda en detalles JSONB por campos comunes
-      query = query.or(
-        `detalles->>email.ilike.%${q}%,detalles->>telefono.ilike.%${q}%,detalles->>rut.ilike.%${q}%`
-      )
+      if (q) {
+        // Búsqueda en detalles JSONB por campos comunes
+        query = query.or(
+          `detalles->>email.ilike.%${q}%,detalles->>telefono.ilike.%${q}%,detalles->>rut.ilike.%${q}%`
+        )
+      }
+
+      // Filtro por modo_prueba
+      if (modoPrueba === 'solo_pruebas') {
+        // Solo mostrar registros con modo_prueba: true
+        // Usar contains para verificar si el JSONB contiene la clave con valor true
+        query = query.contains('detalles', { modo_prueba: true })
+      } else if (modoPrueba === 'sin_pruebas') {
+        // Excluir registros con modo_prueba: true
+        // Verificar que modo_prueba sea null o no sea 'true' (cuando se extrae como texto)
+        query = query.or('detalles->>modo_prueba.is.null,detalles->>modo_prueba.neq.true')
+      }
+      // Si modoPrueba es null o 'todos', no se aplica filtro (muestra todo)
+
+      // Aplicar paginación solo si no es exportación
+      const fromIdx = (page - 1) * size
+      const toIdx = fromIdx + size - 1
+      query = query.range(fromIdx, toIdx)
     }
-
-    // Filtro por modo_prueba
-    if (modoPrueba === 'solo_pruebas') {
-      // Solo mostrar registros con modo_prueba: true
-      // Usar contains para verificar si el JSONB contiene la clave con valor true
-      query = query.contains('detalles', { modo_prueba: true })
-    } else if (modoPrueba === 'sin_pruebas') {
-      // Excluir registros con modo_prueba: true
-      // Verificar que modo_prueba sea null o no sea 'true' (cuando se extrae como texto)
-      query = query.or('detalles->>modo_prueba.is.null,detalles->>modo_prueba.neq.true')
-    }
-    // Si modoPrueba es null o 'todos', no se aplica filtro (muestra todo)
-
-    const fromIdx = (page - 1) * size
-    const toIdx = fromIdx + size - 1
-    query = query.range(fromIdx, toIdx)
 
     const { data, error, count } = await query
 
