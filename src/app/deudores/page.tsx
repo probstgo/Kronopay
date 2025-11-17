@@ -4,7 +4,6 @@ import { useState, useCallback, useRef } from 'react';
 import { DeudoresTable } from './components/DeudoresTable';
 import { FiltrosDeudores, FiltrosAplicados } from './components/FiltrosDeudores';
 import { HeaderDeudores } from './components/HeaderDeudores';
-import { Deudor } from '@/lib/database';
 
 // Tipo para el deudor con datos combinados
 interface DeudorConDatos {
@@ -62,11 +61,6 @@ export default function DeudoresPage() {
     }
   };
 
-  const handleEnviarRecordatorio = (deudor: Deudor) => {
-    toast.success(`Recordatorio enviado a: ${deudor.nombre}`);
-    // Aquí se enviaría el recordatorio
-  };
-
   const handleImportarCSV = () => {
     if (deudoresTableRef.current?.handleImportarCSV) {
       deudoresTableRef.current.handleImportarCSV();
@@ -100,7 +94,6 @@ export default function DeudoresPage() {
           <DeudoresTable
             ref={deudoresTableRef}
             filtros={filtros}
-            onEnviarRecordatorio={handleEnviarRecordatorio}
           />
         </div>
       </div>

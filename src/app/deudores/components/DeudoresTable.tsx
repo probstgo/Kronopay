@@ -18,7 +18,7 @@ import {
   Mail, 
   Phone
 } from 'lucide-react';
-import { Deudor, Deuda, Contacto, formatearRUT, formatearTelefono, calcularDiasVencidos, formatearMonto } from '@/lib/database';
+import { Deuda, Contacto, formatearRUT, formatearTelefono, calcularDiasVencidos, formatearMonto } from '@/lib/database';
 import { toast } from 'sonner';
 import { EstadoBadge } from './EstadoBadge';
 import { DeudorForm } from './DeudorForm';
@@ -56,17 +56,17 @@ interface DeudaConDeudor extends Deuda {
 
 interface DeudoresTableProps {
   filtros: FiltrosAplicados;
-  onEnviarRecordatorio?: (deudor: Deudor) => void;
 }
 
-export const DeudoresTable = forwardRef<{
+type DeudoresTableHandle = {
   handleAgregarDeudor: () => void;
   handleEditarDeudor: (deudor: DeudorConDatos) => void;
   handleEliminarDeudor: (deudor: DeudorConDatos) => void;
   handleImportarCSV: () => void;
-}, DeudoresTableProps>(({
+};
+
+export const DeudoresTable = forwardRef<DeudoresTableHandle, DeudoresTableProps>(({
   filtros,
-  onEnviarRecordatorio,
 }, ref) => {
   const [deudas, setDeudas] = useState<DeudaConDeudor[]>([]);
   const [filtrados, setFiltrados] = useState<DeudaConDeudor[]>([]);
@@ -452,13 +452,6 @@ export const DeudoresTable = forwardRef<{
                             onClick={() => handleEditarDeudor(deudorParaEditar, deuda.id)}
                           >
                             <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => onEnviarRecordatorio?.(deudorParaEditar)}
-                          >
-                            <Mail className="h-3 w-3" />
                           </Button>
                           <Button
                             size="sm"
