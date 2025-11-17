@@ -113,14 +113,9 @@ export function TopToolbar({
   }
 
   const handleSaveClick = () => {
-    // Si no hay nombre, abrir el modal para que el usuario lo agregue
-    if (!campaignName.trim()) {
-      setPendingSave(true)
-      setSettingsOpen(true)
-      return
-    }
-    // Si hay nombre, proceder con el diálogo de confirmación
-    setSaveOpen(true)
+    // Siempre abrir primero el modal de configuración
+    setPendingSave(true)
+    setSettingsOpen(true)
   }
 
   const handleSave = async () => {
@@ -147,9 +142,8 @@ export function TopToolbar({
             router.push(targetPath)
           }
         } else {
-          // Después de guardar exitosamente, abrir el modal de configuración
+          // Después de guardar exitosamente, solo cerrar el diálogo
           setSaveOpen(false)
-          setSettingsOpen(true)
           setPendingSave(false)
         }
       } catch (error) {
@@ -551,40 +545,16 @@ export function TopToolbar({
               Cancelar
             </Button>
             <Button 
-              onClick={async () => {
-                // Si había un guardado pendiente y ahora hay nombre, proceder con el guardado
+              onClick={() => {
+                // Si había un guardado pendiente y ahora hay nombre, cerrar el modal y abrir el diálogo de confirmación
                 if (pendingSave && campaignName.trim()) {
                   setSettingsOpen(false)
-                  // Si se quería salir después de guardar, hacerlo directamente
+                  // Si se quería salir después de guardar, no abrir el diálogo, guardar directamente
                   if (exitAfterSave) {
-                    try {
-                      if (onSave) {
-                        await onSave({
-                          nombre: campaignName,
-                          descripcion: campaignDescription
-                        })
-                      }
-                      const targetPath = navigationAfterSave || '/campanas'
-                      setPendingSave(false)
-                      setExitAfterSave(false)
-                      setNavigationAfterSave(null)
-                      
-                      // Notificar que se guardó exitosamente y se debe navegar
-                      if (onSaveSuccess) {
-                        onSaveSuccess(targetPath)
-                      } else if (onNavigationConfirm) {
-                        onNavigationConfirm(true, true)
-                      } else {
-                        router.push(targetPath)
-                      }
-                    } catch (error) {
-                      console.error('Error al guardar:', error)
-                      setPendingSave(false)
-                      setExitAfterSave(false)
-                      setNavigationAfterSave(null)
-                    }
+                    // Guardar directamente sin diálogo de confirmación
+                    handleSave()
                   } else {
-                    setPendingSave(false)
+                    // Abrir el diálogo de confirmación
                     setSaveOpen(true)
                   }
                 } else {
@@ -593,7 +563,7 @@ export function TopToolbar({
               }}
               disabled={!campaignName.trim()}
             >
-              {pendingSave ? 'Guardar campaña' : 'Guardar cambios'}
+              {pendingSave ? 'Continuar' : 'Guardar cambios'}
             </Button>
           </DialogFooter>
         </DialogContent>
