@@ -45,7 +45,7 @@ export default function ExportarHistorialModal({
       const desde = new Date(fechaDesde)
       const hasta = new Date(fechaHasta)
       if (desde > hasta) {
-        setError('La fecha "desde" debe ser anterior o igual a la fecha "hasta"')
+        setError('La fecha &quot;desde&quot; debe ser anterior o igual a la fecha &quot;hasta&quot;')
         return
       }
     }
@@ -56,7 +56,7 @@ export default function ExportarHistorialModal({
       setFechaDesde('')
       setFechaHasta('')
       onOpenChange(false)
-    } catch (err) {
+    } catch {
       // El error ya se maneja en la función onExport
     }
   }
@@ -120,8 +120,8 @@ export default function ExportarHistorialModal({
             </div>
           )}
           <div className="text-sm text-gray-500">
-            <p>• Si solo seleccionas "desde", se exportarán todos los registros desde esa fecha</p>
-            <p>• Si solo seleccionas "hasta", se exportarán todos los registros hasta esa fecha</p>
+            <p>• Si solo seleccionas &quot;desde&quot;, se exportarán todos los registros desde esa fecha</p>
+            <p>• Si solo seleccionas &quot;hasta&quot;, se exportarán todos los registros hasta esa fecha</p>
             <p>• Si seleccionas ambas, se exportarán los registros en ese rango</p>
           </div>
         </div>
