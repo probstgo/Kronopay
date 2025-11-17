@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useCallback, createContext, useContext, useEffect } from 'react'
+import { useState, useCallback, createContext, useContext, useEffect, useRef } from 'react'
 import { ReactFlow, Background, Controls, MiniMap, Node, Edge, addEdge, useNodesState, useEdgesState, Connection } from 'reactflow'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { CheckCircle, XCircle, Mail, Phone, MessageSquare, AlertCircle } from 'lucide-react'
 import {
   Dialog,
@@ -169,13 +169,26 @@ interface JourneyBuilderProps {
 
 export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
   const router = useRouter()
+  const pathname = usePathname()
   const [campaignId, setCampaignId] = useState<string | null>(null)
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null)
   const [campaignName, setCampaignName] = useState('')
   const [campaignDescription, setCampaignDescription] = useState('')
   const [pendingRedirectId, setPendingRedirectId] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+  
+  // Snapshot del último estado guardado para detectar cambios
+  type SavedSnapshot = {
+    nodes: Array<{ id: string; type: string; position: { x: number; y: number }; data: Record<string, unknown> }>
+    edges: Array<{ id: string; source: string; target: string; type?: string; animated?: boolean }>
+    notes: Array<{ id: string; text: string; position: { x: number; y: number } }>
+    nombre: string
+    descripcion: string
+  }
+  const savedSnapshotRef = useRef<SavedSnapshot | null>(null)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [selectedNode, setSelectedNode] = useState<string | null>(null)
   const [showNodeMenu, setShowNodeMenu] = useState(false)
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
@@ -194,6 +207,146 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
       error?: string
     }>
   } | null>(null)
+
+  // Función para crear snapshot del estado actual
+  const createSnapshot = useCallback((): SavedSnapshot => {
+    const realNodes = nodes.filter(n => n.id !== 'initial-plus' && n.type !== 'note')
+    const noteNodes = nodes.filter(n => n.type === 'note')
+    
+    return {
+      nodes: realNodes.map(node => ({
+        id: node.id,
+        type: node.type,
+        position: node.position,
+        data: node.data
+      })),
+      edges: edges.map(edge => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        type: edge.type || 'smoothstep',
+        animated: edge.animated || false
+      })),
+      notes: noteNodes.map(note => ({
+        id: note.id,
+        text: note.data?.text || '',
+        position: note.position
+      })),
+      nombre: campaignName,
+      descripcion: campaignDescription
+    }
+  }, [nodes, edges, campaignName, campaignDescription])
+
+  // Función para comparar estado actual con snapshot
+  const compareWithSnapshot = useCallback((snapshot: SavedSnapshot | null): boolean => {
+    if (!snapshot) {
+      // Si no hay snapshot, hay cambios si hay algo configurado
+      const realNodes = nodes.filter(n => n.id !== 'initial-plus' && n.type !== 'note')
+      return realNodes.length > 0 || edges.length > 0 || nodes.some(n => n.type === 'note') || campaignName.trim() !== '' || campaignDescription.trim() !== ''
+    }
+
+    const current = createSnapshot()
+    
+    // Comparar nodos
+    if (current.nodes.length !== snapshot.nodes.length) return true
+    for (let i = 0; i < current.nodes.length; i++) {
+      const curr = current.nodes[i]
+      const saved = snapshot.nodes.find(n => n.id === curr.id)
+      if (!saved || 
+          curr.type !== saved.type ||
+          curr.position.x !== saved.position.x ||
+          curr.position.y !== saved.position.y ||
+          JSON.stringify(curr.data) !== JSON.stringify(saved.data)) {
+        return true
+      }
+    }
+
+    // Comparar edges
+    if (current.edges.length !== snapshot.edges.length) return true
+    for (let i = 0; i < current.edges.length; i++) {
+      const curr = current.edges[i]
+      const saved = snapshot.edges.find(e => e.id === curr.id)
+      if (!saved ||
+          curr.source !== saved.source ||
+          curr.target !== saved.target) {
+        return true
+      }
+    }
+
+    // Comparar notas
+    if (current.notes.length !== snapshot.notes.length) return true
+    for (let i = 0; i < current.notes.length; i++) {
+      const curr = current.notes[i]
+      const saved = snapshot.notes.find(n => n.id === curr.id)
+      if (!saved ||
+          curr.text !== saved.text ||
+          curr.position.x !== saved.position.x ||
+          curr.position.y !== saved.position.y) {
+        return true
+      }
+    }
+
+    // Comparar nombre y descripción
+    if (current.nombre !== snapshot.nombre || current.descripcion !== snapshot.descripcion) {
+      return true
+    }
+
+    return false
+  }, [nodes, edges, campaignName, campaignDescription, createSnapshot])
+
+  // Detectar cambios sin guardar
+  useEffect(() => {
+    const hasChanges = compareWithSnapshot(savedSnapshotRef.current)
+    setHasUnsavedChanges(hasChanges)
+  }, [nodes, edges, campaignName, campaignDescription, compareWithSnapshot])
+
+  // Protección beforeunload para navegación del navegador
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault()
+        e.returnValue = '' // Chrome requiere returnValue
+        return '' // Algunos navegadores requieren return
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasUnsavedChanges])
+
+  // Interceptar clics en Links del Sidebar y otras navegaciones
+  useEffect(() => {
+    const handleLinkClick = (e: MouseEvent) => {
+      // Solo interceptar si hay cambios sin guardar
+      if (!hasUnsavedChanges) return
+
+      // Buscar el Link más cercano al elemento clickeado
+      const target = e.target as HTMLElement
+      const link = target.closest('a[href]') as HTMLAnchorElement | null
+      
+      if (!link) return
+
+      const href = link.getAttribute('href')
+      if (!href) return
+
+      // Si el href es de la misma página o es una ruta de campaña, no interceptar
+      if (href === pathname || href.startsWith('/campanas/')) return
+
+      // Si es una ruta externa o diferente, interceptar
+      e.preventDefault()
+      e.stopPropagation()
+      
+      // Guardar la navegación pendiente y mostrar el diálogo
+      setPendingNavigation(href)
+    }
+
+    // Agregar listener a todos los clics en el documento
+    document.addEventListener('click', handleLinkClick, true) // true = capture phase
+
+    return () => {
+      document.removeEventListener('click', handleLinkClick, true)
+    }
+  }, [hasUnsavedChanges, pathname])
 
   // Cargar campaña si hay params (edición)
   useEffect(() => {
@@ -275,6 +428,12 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
 
       setShouldFitView(true)
       toast.success('Campaña cargada exitosamente')
+      
+      // Guardar snapshot después de cargar (usar setTimeout para asegurar que todos los estados estén actualizados)
+      setTimeout(() => {
+        savedSnapshotRef.current = createSnapshot()
+        setHasUnsavedChanges(false)
+      }, 100)
     } catch (error) {
       console.error('Error cargando campaña:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
@@ -758,6 +917,10 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
         toast.success(`Campaña "${payload.nombre}" guardada exitosamente`, { id: toastId })
         console.log('✅ Campaña guardada exitosamente:', data)
       }
+
+      // Actualizar snapshot después de guardar exitosamente
+      savedSnapshotRef.current = createSnapshot()
+      setHasUnsavedChanges(false)
       
     } catch (error) {
       console.error('❌ Error al guardar:', error)
@@ -939,6 +1102,30 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
             setNodes(prev => [...prev, newNote])
           }}
           availableNodeTypes={availableNodeTypes}
+          hasUnsavedChanges={hasUnsavedChanges}
+          pendingNavigation={pendingNavigation}
+          onNavigationConfirm={(shouldSave, shouldNavigate) => {
+            if (shouldNavigate && pendingNavigation) {
+              if (shouldSave) {
+                // La navegación se hará después de guardar desde TopToolbar
+                // No hacer nada aquí, TopToolbar manejará la navegación después del guardado
+              } else {
+                // Salir sin guardar - navegar inmediatamente
+                router.push(pendingNavigation)
+                setPendingNavigation(null)
+              }
+            } else {
+              // Cancelar navegación
+              setPendingNavigation(null)
+            }
+          }}
+          onSaveSuccess={(targetPath) => {
+            // Cuando se guarda exitosamente y hay una navegación pendiente
+            if (targetPath) {
+              router.push(targetPath)
+              setPendingNavigation(null)
+            }
+          }}
           onSettingsClose={() => {
             // Si hay una redirección pendiente (nueva campaña guardada), redirigir
             if (pendingRedirectId) {

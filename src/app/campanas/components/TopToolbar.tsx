@@ -55,6 +55,10 @@ interface TopToolbarProps {
   onNameChange?: (name: string) => void
   onDescriptionChange?: (description: string) => void
   onSettingsClose?: () => void
+  hasUnsavedChanges?: boolean
+  pendingNavigation?: string | null
+  onNavigationConfirm?: (shouldSave: boolean, shouldNavigate: boolean) => void
+  onSaveSuccess?: (targetPath: string | null) => void
 }
 
 export function TopToolbar({ 
@@ -69,7 +73,11 @@ export function TopToolbar({
   initialDescription = '',
   onNameChange,
   onDescriptionChange,
-  onSettingsClose
+  onSettingsClose,
+  hasUnsavedChanges = false,
+  pendingNavigation = null,
+  onNavigationConfirm,
+  onSaveSuccess
 }: TopToolbarProps) {
   const router = useRouter()
   const [nodesMenuOpen, setNodesMenuOpen] = useState(false)
@@ -77,15 +85,25 @@ export function TopToolbar({
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [saveOpen, setSaveOpen] = useState(false)
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
   const [campaignName, setCampaignName] = useState(initialName || '')
   const [campaignDescription, setCampaignDescription] = useState(initialDescription)
   const [pendingSave, setPendingSave] = useState(false)
+  const [exitAfterSave, setExitAfterSave] = useState(false)
+  const [navigationAfterSave, setNavigationAfterSave] = useState<string | null>(null)
 
   // Sincronizar con props iniciales cuando cambian
   useEffect(() => {
     setCampaignName(initialName || '')
     setCampaignDescription(initialDescription || '')
   }, [initialName, initialDescription])
+
+  // Mostrar diálogo cuando hay navegación pendiente desde el Sidebar
+  useEffect(() => {
+    if (pendingNavigation && hasUnsavedChanges) {
+      setExitConfirmOpen(true)
+    }
+  }, [pendingNavigation, hasUnsavedChanges])
 
   const handleNodeSelect = (nodeType: string) => {
     if (onAddNode) {
@@ -112,18 +130,97 @@ export function TopToolbar({
           nombre: campaignName,
           descripcion: campaignDescription
         })
-        // Después de guardar exitosamente, abrir el modal de configuración
-        setSaveOpen(false)
-        setSettingsOpen(true)
-        setPendingSave(false)
+        // Si se quería salir después de guardar, hacerlo
+        if (exitAfterSave) {
+          const targetPath = navigationAfterSave || '/campanas'
+          setExitAfterSave(false)
+          setPendingSave(false)
+          setSaveOpen(false)
+          setNavigationAfterSave(null)
+          
+          // Notificar que se guardó exitosamente y se debe navegar
+          if (onSaveSuccess) {
+            onSaveSuccess(targetPath)
+          } else if (onNavigationConfirm) {
+            onNavigationConfirm(true, true)
+          } else {
+            router.push(targetPath)
+          }
+        } else {
+          // Después de guardar exitosamente, abrir el modal de configuración
+          setSaveOpen(false)
+          setSettingsOpen(true)
+          setPendingSave(false)
+        }
       } catch (error) {
         // Si hay error, mantener el diálogo de confirmación abierto
         console.error('Error al guardar:', error)
         setPendingSave(false)
+        setExitAfterSave(false)
+        setNavigationAfterSave(null)
       }
     } else {
       setSaveOpen(false)
       setPendingSave(false)
+      setExitAfterSave(false)
+      setNavigationAfterSave(null)
+    }
+  }
+
+  const handleBackClick = () => {
+    if (hasUnsavedChanges) {
+      setExitConfirmOpen(true)
+    } else {
+      router.push('/campanas')
+    }
+  }
+
+  const handleExitWithSave = async () => {
+    setExitConfirmOpen(false)
+    const targetPath = pendingNavigation || '/campanas'
+    
+    // Si no hay nombre, abrir modal primero
+    if (!campaignName.trim()) {
+      setPendingSave(true)
+      setExitAfterSave(true)
+      setNavigationAfterSave(targetPath)
+      setSettingsOpen(true)
+    } else {
+      // Guardar y luego navegar
+      try {
+        if (onSave) {
+          await onSave({
+            nombre: campaignName,
+            descripcion: campaignDescription
+          })
+        }
+        // Notificar que se guardó exitosamente y se debe navegar
+        if (onSaveSuccess) {
+          onSaveSuccess(targetPath)
+        } else if (onNavigationConfirm) {
+          onNavigationConfirm(true, true)
+        } else {
+          router.push(targetPath)
+        }
+      } catch (error) {
+        console.error('Error al guardar:', error)
+        // No navegar si hay error
+        if (onNavigationConfirm) {
+          onNavigationConfirm(false, false)
+        }
+      }
+    }
+  }
+
+  const handleExitWithoutSave = () => {
+    setExitConfirmOpen(false)
+    const targetPath = pendingNavigation || '/campanas'
+    
+    // Notificar que se debe navegar sin guardar
+    if (onNavigationConfirm) {
+      onNavigationConfirm(false, true)
+    } else {
+      router.push(targetPath)
     }
   }
 
@@ -136,7 +233,7 @@ export function TopToolbar({
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  onClick={() => router.push('/campanas')}
+                  onClick={handleBackClick}
                   className="flex items-center space-x-2"
                   aria-label="Volver a lista de campañas"
                 >
@@ -454,12 +551,44 @@ export function TopToolbar({
               Cancelar
             </Button>
             <Button 
-              onClick={() => {
-                setSettingsOpen(false)
+              onClick={async () => {
                 // Si había un guardado pendiente y ahora hay nombre, proceder con el guardado
                 if (pendingSave && campaignName.trim()) {
-                  setPendingSave(false)
-                  setSaveOpen(true)
+                  setSettingsOpen(false)
+                  // Si se quería salir después de guardar, hacerlo directamente
+                  if (exitAfterSave) {
+                    try {
+                      if (onSave) {
+                        await onSave({
+                          nombre: campaignName,
+                          descripcion: campaignDescription
+                        })
+                      }
+                      const targetPath = navigationAfterSave || '/campanas'
+                      setPendingSave(false)
+                      setExitAfterSave(false)
+                      setNavigationAfterSave(null)
+                      
+                      // Notificar que se guardó exitosamente y se debe navegar
+                      if (onSaveSuccess) {
+                        onSaveSuccess(targetPath)
+                      } else if (onNavigationConfirm) {
+                        onNavigationConfirm(true, true)
+                      } else {
+                        router.push(targetPath)
+                      }
+                    } catch (error) {
+                      console.error('Error al guardar:', error)
+                      setPendingSave(false)
+                      setExitAfterSave(false)
+                      setNavigationAfterSave(null)
+                    }
+                  } else {
+                    setPendingSave(false)
+                    setSaveOpen(true)
+                  }
+                } else {
+                  setSettingsOpen(false)
                 }
               }}
               disabled={!campaignName.trim()}
@@ -524,6 +653,47 @@ export function TopToolbar({
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleSave}>
               Guardar campaña
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de Confirmación de Salida */}
+      <AlertDialog open={exitConfirmOpen} onOpenChange={(open) => {
+        if (!open) {
+          // Si se cierra el diálogo sin acción, cancelar la navegación pendiente
+          if (onNavigationConfirm) {
+            onNavigationConfirm(false, false)
+          }
+        }
+        setExitConfirmOpen(open)
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Salir sin guardar?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tienes cambios sin guardar en esta campaña. Si sales ahora, perderás todos los cambios que has realizado.
+              <br /><br />
+              ¿Qué deseas hacer?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={handleExitWithoutSave}
+              className="w-full sm:w-auto border-red-300 text-red-600 hover:bg-red-50"
+            >
+              Salir sin guardar
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setExitConfirmOpen(false)}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+            <AlertDialogAction onClick={handleExitWithSave} className="w-full sm:w-auto">
+              Guardar y salir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
