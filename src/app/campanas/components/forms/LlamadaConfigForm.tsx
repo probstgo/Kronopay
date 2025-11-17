@@ -7,6 +7,8 @@ interface LlamadaConfigFormProps {
   node: Node
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSave: (config: any) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onConfigChange?: (config: any) => void
 }
 
 interface Agente {
@@ -16,7 +18,7 @@ interface Agente {
   activo: boolean
 }
 
-export function LlamadaConfigForm({ node, onSave }: LlamadaConfigFormProps) {
+export function LlamadaConfigForm({ node, onSave, onConfigChange }: LlamadaConfigFormProps) {
   const [config, setConfig] = useState(node.data.configuracion || {
     agente_id: '',
     configuracion_avanzada: {
@@ -72,6 +74,13 @@ export function LlamadaConfigForm({ node, onSave }: LlamadaConfigFormProps) {
     setError(null)
     onSave(config)
   }
+
+  // Notificar cambios cuando se modifica la configuración
+  useEffect(() => {
+    if (onConfigChange) {
+      onConfigChange(config)
+    }
+  }, [config, onConfigChange])
 
   return (
     <div className="space-y-4">

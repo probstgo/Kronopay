@@ -12,6 +12,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import 'reactflow/dist/style.css'
@@ -207,6 +217,8 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
       error?: string
     }>
   } | null>(null)
+  const [nodeConfigHasChanges, setNodeConfigHasChanges] = useState(false)
+  const [pendingNodeConfigClose, setPendingNodeConfigClose] = useState(false)
 
   // Función para crear snapshot del estado actual
   const createSnapshot = useCallback((): SavedSnapshot => {
@@ -795,17 +807,32 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
           : n
       )
     )
+    // Mostrar mensaje de éxito
+    toast.success('Configuración del nodo guardada exitosamente')
+    // Marcar que no hay cambios sin guardar
+    setNodeConfigHasChanges(false)
   }, [setNodes])
 
   // Obtener el nodo seleccionado
   const selectedNodeData = selectedNode ? nodes.find(n => n.id === selectedNode) : null
 
-  // Manejar clic en el canvas para cerrar menú
+  // Manejar clic en el canvas para cerrar menú y panel de configuración
   const onPaneClick = useCallback(() => {
     console.log('🖱️ Clic en canvas, cerrando menú')
     setShowNodeMenu(false)
     setSourceNodeId(null)
-  }, [])
+    
+    // Si hay panel de configuración abierto, intentar cerrarlo
+    if (selectedNode) {
+      // Si hay cambios sin guardar, mostrar confirmación
+      if (nodeConfigHasChanges) {
+        setPendingNodeConfigClose(true)
+      } else {
+        // Si no hay cambios, cerrar directamente
+        setSelectedNode(null)
+      }
+    }
+  }, [selectedNode, nodeConfigHasChanges])
 
   // Función para guardar la campaña (Fase 3.1: integración con API)
   const handleSave = useCallback(async (metadata: { nombre: string; descripcion: string }) => {
@@ -1234,8 +1261,16 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
           {selectedNodeData && (
             <NodeConfigPanel 
               node={selectedNodeData}
-              onClose={() => setSelectedNode(null)}
+              onClose={() => {
+                // Si hay cambios sin guardar, mostrar confirmación
+                if (nodeConfigHasChanges) {
+                  setPendingNodeConfigClose(true)
+                } else {
+                  setSelectedNode(null)
+                }
+              }}
               onSaveConfig={handleSaveNodeConfig}
+              onConfigChange={(hasChanges) => setNodeConfigHasChanges(hasChanges)}
             />
           )}
         </div>
@@ -1406,6 +1441,44 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Diálogo de confirmación para cerrar panel de configuración con cambios sin guardar */}
+        <AlertDialog open={pendingNodeConfigClose} onOpenChange={(open) => {
+          if (!open) {
+            setPendingNodeConfigClose(false)
+          }
+        }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Cerrar sin guardar?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tienes cambios sin guardar en la configuración del nodo. Si cierras ahora, perderás todos los cambios que has realizado.
+                <br /><br />
+                ¿Qué deseas hacer?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setPendingNodeConfigClose(false)
+                  setSelectedNode(null)
+                  setNodeConfigHasChanges(false)
+                }}
+                className="w-full sm:w-auto border-red-300 text-red-600 hover:bg-red-50"
+              >
+                Cerrar sin guardar
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setPendingNodeConfigClose(false)}
+                className="w-full sm:w-auto"
+              >
+                Cancelar
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </NodeActionsContext.Provider>
   )

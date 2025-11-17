@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { EmailConfigForm } from './forms/EmailConfigForm'
 import { LlamadaConfigForm } from './forms/LlamadaConfigForm'
 import { EsperaConfigForm } from './forms/EsperaConfigForm'
@@ -14,15 +15,38 @@ interface NodeConfigPanelProps {
   onClose: () => void
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSaveConfig: (nodeId: string, config: any) => void
+  onConfigChange?: (hasChanges: boolean) => void
 }
 
-export function NodeConfigPanel({ node, onClose, onSaveConfig }: NodeConfigPanelProps) {
+export function NodeConfigPanel({ node, onClose, onSaveConfig, onConfigChange }: NodeConfigPanelProps) {
   if (!node) return null
+
+  // Guardar la configuración inicial para comparar cambios
+  const initialConfigRef = useRef(JSON.stringify(node.data.configuracion || {}))
+
+  // Actualizar la referencia inicial cuando cambia el nodo
+  useEffect(() => {
+    initialConfigRef.current = JSON.stringify(node.data.configuracion || {})
+    // Notificar que no hay cambios al abrir un nuevo nodo
+    onConfigChange?.(false)
+  }, [node.id, onConfigChange])
 
   // Función para guardar configuración
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSaveConfig = (newConfig: any) => {
     onSaveConfig(node.id, newConfig)
+    // Actualizar la referencia inicial después de guardar
+    initialConfigRef.current = JSON.stringify(newConfig)
+    // Notificar que no hay cambios
+    onConfigChange?.(false)
+  }
+
+  // Función para notificar cambios en la configuración
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleConfigChange = (newConfig: any) => {
+    const currentConfig = JSON.stringify(newConfig)
+    const hasChanges = currentConfig !== initialConfigRef.current
+    onConfigChange?.(hasChanges)
   }
 
   // Función para obtener el título del nodo según su tipo
@@ -79,31 +103,31 @@ export function NodeConfigPanel({ node, onClose, onSaveConfig }: NodeConfigPanel
       {/* Formulario específico según el tipo de nodo */}
       <div className="space-y-4">
         {node.data.tipo === 'filtro' && (
-          <FiltroConfigForm node={node} onSave={handleSaveConfig} />
+          <FiltroConfigForm node={node} onSave={handleSaveConfig} onConfigChange={handleConfigChange} />
         )}
         
         {node.data.tipo === 'email' && (
-          <EmailConfigForm node={node} onSave={handleSaveConfig} />
+          <EmailConfigForm node={node} onSave={handleSaveConfig} onConfigChange={handleConfigChange} />
         )}
         
         {node.data.tipo === 'llamada' && (
-          <LlamadaConfigForm node={node} onSave={handleSaveConfig} />
+          <LlamadaConfigForm node={node} onSave={handleSaveConfig} onConfigChange={handleConfigChange} />
         )}
         
         {node.data.tipo === 'espera' && (
-          <EsperaConfigForm node={node} onSave={handleSaveConfig} />
+          <EsperaConfigForm node={node} onSave={handleSaveConfig} onConfigChange={handleConfigChange} />
         )}
         
         {node.data.tipo === 'sms' && (
-          <SMSConfigForm node={node} onSave={handleSaveConfig} />
+          <SMSConfigForm node={node} onSave={handleSaveConfig} onConfigChange={handleConfigChange} />
         )}
         
         {node.data.tipo === 'whatsapp' && (
-          <WhatsAppConfigForm node={node} onSave={handleSaveConfig} />
+          <WhatsAppConfigForm node={node} onSave={handleSaveConfig} onConfigChange={handleConfigChange} />
         )}
         
         {node.data.tipo === 'condicion' && (
-          <CondicionConfigForm node={node} onSave={handleSaveConfig} />
+          <CondicionConfigForm node={node} onSave={handleSaveConfig} onConfigChange={handleConfigChange} />
         )}
       </div>
     </div>

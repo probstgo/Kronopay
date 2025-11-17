@@ -1,12 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 
 interface CondicionConfigFormProps {
   node: Node
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSave: (config: any) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onConfigChange?: (config: any) => void
 }
 
 interface Condicion {
@@ -16,7 +18,7 @@ interface Condicion {
   valor2?: string // Para operador "entre"
 }
 
-export function CondicionConfigForm({ node, onSave }: CondicionConfigFormProps) {
+export function CondicionConfigForm({ node, onSave, onConfigChange }: CondicionConfigFormProps) {
   const [config, setConfig] = useState<{ condiciones: Condicion[], logica: 'AND' | 'OR' }>(node.data.configuracion || {
     condiciones: [
       {
@@ -31,6 +33,13 @@ export function CondicionConfigForm({ node, onSave }: CondicionConfigFormProps) 
   const handleSave = () => {
     onSave(config)
   }
+
+  // Notificar cambios cuando se modifica la configuración
+  useEffect(() => {
+    if (onConfigChange) {
+      onConfigChange(config)
+    }
+  }, [config, onConfigChange])
 
   const addCondicion = () => {
     setConfig({

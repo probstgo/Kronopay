@@ -1,15 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 
 interface EsperaConfigFormProps {
   node: Node
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSave: (config: any) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onConfigChange?: (config: any) => void
 }
 
-export function EsperaConfigForm({ node, onSave }: EsperaConfigFormProps) {
+export function EsperaConfigForm({ node, onSave, onConfigChange }: EsperaConfigFormProps) {
   const [config, setConfig] = useState(node.data.configuracion || {
     duracion: {
       tipo: 'dias',
@@ -30,6 +32,13 @@ export function EsperaConfigForm({ node, onSave }: EsperaConfigFormProps) {
   const handleSave = () => {
     onSave(config)
   }
+
+  // Notificar cambios cuando se modifica la configuración
+  useEffect(() => {
+    if (onConfigChange) {
+      onConfigChange(config)
+    }
+  }, [config, onConfigChange])
 
   return (
     <div className="space-y-4">

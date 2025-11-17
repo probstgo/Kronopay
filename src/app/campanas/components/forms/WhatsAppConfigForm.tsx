@@ -9,6 +9,8 @@ interface WhatsAppConfigFormProps {
   node: Node
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSave: (config: any) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onConfigChange?: (config: any) => void
 }
 
 interface Plantilla {
@@ -19,7 +21,7 @@ interface Plantilla {
   tipo_contenido?: 'texto' | 'html'
 }
 
-export function WhatsAppConfigForm({ node, onSave }: WhatsAppConfigFormProps) {
+export function WhatsAppConfigForm({ node, onSave, onConfigChange }: WhatsAppConfigFormProps) {
   const [config, setConfig] = useState(node.data.configuracion || {
     plantilla_id: '',
     configuracion_avanzada: {
@@ -79,6 +81,13 @@ export function WhatsAppConfigForm({ node, onSave }: WhatsAppConfigFormProps) {
     setError(null)
     onSave(config)
   }
+
+  // Notificar cambios cuando se modifica la configuración
+  useEffect(() => {
+    if (onConfigChange) {
+      onConfigChange(config)
+    }
+  }, [config, onConfigChange])
 
   return (
     <div className="space-y-4">

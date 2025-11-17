@@ -7,9 +7,11 @@ interface FiltroConfigFormProps {
   node: Node
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onSave: (config: any) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onConfigChange?: (config: any) => void
 }
 
-export function FiltroConfigForm({ node, onSave }: FiltroConfigFormProps) {
+export function FiltroConfigForm({ node, onSave, onConfigChange }: FiltroConfigFormProps) {
   const [config, setConfig] = useState(node.data.configuracion || {
     filtros: {
       estado_deuda: [],
@@ -30,6 +32,13 @@ export function FiltroConfigForm({ node, onSave }: FiltroConfigFormProps) {
   const handleSave = () => {
     onSave(config)
   }
+
+  // Notificar cambios cuando se modifica la configuración
+  useEffect(() => {
+    if (onConfigChange) {
+      onConfigChange(config)
+    }
+  }, [config, onConfigChange])
 
   // Calcular contador de deudores con filtros aplicados
   useEffect(() => {
