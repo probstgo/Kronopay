@@ -210,13 +210,13 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
 
   // Función para crear snapshot del estado actual
   const createSnapshot = useCallback((): SavedSnapshot => {
-    const realNodes = nodes.filter(n => n.id !== 'initial-plus' && n.type !== 'note')
+    const realNodes = nodes.filter(n => n.id !== 'initial-plus' && n.type !== 'note' && n.type)
     const noteNodes = nodes.filter(n => n.type === 'note')
     
     return {
       nodes: realNodes.map(node => ({
         id: node.id,
-        type: node.type,
+        type: node.type || 'unknown',
         position: node.position,
         data: node.data
       })),
