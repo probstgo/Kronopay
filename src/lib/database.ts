@@ -10,7 +10,10 @@
 export const ESTADOS_DEUDA = {
   NUEVA: 'nueva',
   PENDIENTE: 'pendiente',
+  VIGENTE: 'vigente',
+  VENCIDA: 'vencida',
   PAGADO: 'pagado',
+  CANCELADA: 'cancelada',
 } as const;
 
 export const ESTADOS_DEUDA_CONFIG = {
@@ -24,10 +27,25 @@ export const ESTADOS_DEUDA_CONFIG = {
     color: 'bg-yellow-100 text-yellow-800',
     icon: '⏳',
   },
+  vigente: {
+    label: 'Vigente',
+    color: 'bg-cyan-100 text-cyan-800',
+    icon: '📅',
+  },
+  vencida: {
+    label: 'Vencida',
+    color: 'bg-red-100 text-red-800',
+    icon: '⚠️',
+  },
   pagado: {
     label: 'Pagado',
     color: 'bg-green-100 text-green-800',
     icon: '✅',
+  },
+  cancelada: {
+    label: 'Cancelada',
+    color: 'bg-gray-100 text-gray-800',
+    icon: '🚫',
   },
 } as const;
 
@@ -69,7 +87,7 @@ export interface Deuda {
   rut: string;
   monto: number;
   fecha_vencimiento: string;
-  estado: 'nueva' | 'pendiente' | 'pagado';
+  estado: 'nueva' | 'pendiente' | 'vigente' | 'vencida' | 'pagado' | 'cancelada';
   created_at: string;
 }
 
