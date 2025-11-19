@@ -124,10 +124,10 @@ async function ejecutarNodoRecursivo(
       nodo_id: nodo.id,
       paso_numero: pasoActual,
       tipo_accion: nodo.tipo === 'email' || nodo.tipo === 'sms' || nodo.tipo === 'llamada' || nodo.tipo === 'whatsapp'
-        ? nodo.tipo
-        : nodo.tipo === 'condicion'
-          ? 'condicion'
-          : 'filtro',
+        ? nodo.tipo 
+        : nodo.tipo === 'condicion' 
+          ? 'condicion' 
+            : 'filtro',
       estado: 'iniciado',
       datos_entrada: {
         cantidad_deudores: deudores.length,
@@ -340,7 +340,7 @@ async function ejecutarNodoRecursivo(
         ? nodo.tipo 
         : nodo.tipo === 'condicion' 
           ? 'condicion' 
-          : 'filtro',
+            : 'filtro',
       estado: errorEjecucion ? 'fallido' : 'completado',
       datos_entrada: {
         cantidad_deudores: deudores.length,

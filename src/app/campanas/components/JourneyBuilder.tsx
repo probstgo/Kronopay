@@ -33,6 +33,7 @@ import { WhatsAppNode } from './nodes/WhatsAppNode'
 import { CondicionNode } from './nodes/CondicionNode'
 import { FiltroNode } from './nodes/FiltroNode'
 import { NoteNode } from './nodes/NoteNode'
+import { sincronizarTriggersWorkflow, obtenerTriggersWorkflow, type NodoConTrigger } from '@/lib/workflowTriggers'
 
 // Componente para el nodo "+" inicial
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -380,14 +381,39 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
         setCampaignDescription(descripcion)
       }
 
+      // Cargar triggers de la campaña (Fase 5)
+      const triggersMap = await obtenerTriggersWorkflow(id)
+      console.log('📋 Triggers cargados:', triggersMap.size)
+
       // Restaurar nodos (agregar nodo inicial "+" si no hay nodos)
       if (canvas_data.nodes && canvas_data.nodes.length > 0) {
-        const restoredNodes: Node[] = canvas_data.nodes.map((node: { id: string; type: string; position: { x: number; y: number }; data: Record<string, unknown> }) => ({
-          id: node.id,
-          type: node.type,
-          position: node.position,
-          data: node.data
-        }))
+        const restoredNodes: Node[] = canvas_data.nodes.map((node: { id: string; type: string; position: { x: number; y: number }; data: Record<string, unknown> }) => {
+          // Si el nodo tiene trigger configurado, agregarlo a la configuración
+          const trigger = triggersMap.get(node.id)
+          
+          if (trigger && ['email', 'sms', 'whatsapp', 'llamada'].includes(node.type)) {
+            return {
+              id: node.id,
+              type: node.type,
+              position: node.position,
+              data: {
+                ...node.data,
+                configuracion: {
+                  ...(node.data?.configuracion as Record<string, unknown> || {}),
+                  tipo_evento: trigger.tipo_evento,
+                  dias_relativos: trigger.dias_relativos
+                }
+              }
+            }
+          }
+          
+          return {
+            id: node.id,
+            type: node.type,
+            position: node.position,
+            data: node.data
+          }
+        })
         setNodes(restoredNodes)
       } else {
         // Si no hay nodos, mostrar nodo inicial "+"
@@ -934,6 +960,31 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
       // Actualizar snapshot después de guardar exitosamente
       savedSnapshotRef.current = createSnapshot()
       setHasUnsavedChanges(false)
+
+      // Sincronizar triggers automáticos (Fase 5)
+      const workflowId = campaignId || data.data?.id
+      if (workflowId) {
+        console.log('🔄 Sincronizando triggers automáticos...')
+        
+        // Preparar nodos con triggers
+        const nodosConTrigger: NodoConTrigger[] = realNodes
+          .filter(n => ['email', 'sms', 'whatsapp', 'llamada'].includes(n.type || ''))
+          .map(n => ({
+            id: n.id,
+            tipo: n.type as 'email' | 'sms' | 'whatsapp' | 'llamada',
+            tipo_evento: n.data?.configuracion?.tipo_evento,
+            dias_relativos: n.data?.configuracion?.dias_relativos
+          }))
+        
+        const resultadoTriggers = await sincronizarTriggersWorkflow(workflowId, nodosConTrigger)
+        
+        if (resultadoTriggers.exito) {
+          console.log('✅ Triggers sincronizados exitosamente')
+        } else {
+          console.error('⚠️ Error sincronizando triggers:', resultadoTriggers.error)
+          toast.warning('Campaña guardada pero hubo un error al sincronizar triggers automáticos')
+        }
+      }
       
     } catch (error) {
       console.error('❌ Error al guardar:', error)

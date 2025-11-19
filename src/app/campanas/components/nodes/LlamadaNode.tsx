@@ -5,6 +5,8 @@ interface LlamadaNodeData {
   agente: string
   configuracion: {
     agente_id: string
+    tipo_evento?: 'deuda_creada' | 'dias_antes_vencimiento' | 'dia_vencimiento' | 'dias_despues_vencimiento' | 'pago_registrado'
+    dias_relativos?: number | null
     script_personalizado: string
     variables_dinamicas: {
       nombre: boolean
@@ -22,9 +24,22 @@ interface LlamadaNodeProps {
 }
 
 export function LlamadaNode({ data, id, onConfigure, onDelete }: LlamadaNodeProps) {
+  const tieneTrigger = !!data.configuracion?.tipo_evento
+  
   return (
-    <div className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-green-200 hover:border-green-300 transition-colors">
+    <div className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-green-200 hover:border-green-300 transition-colors relative">
       <Handle type="target" position={Position.Left} />
+      
+      {/* Badge de trigger automático */}
+      {tieneTrigger && (
+        <div 
+          className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full shadow-md font-semibold flex items-center space-x-1"
+          title="Trigger automático configurado"
+        >
+          <span>⚡</span>
+          <span>Auto</span>
+        </div>
+      )}
       
       {/* Contenido principal del nodo */}
       <div className="flex items-center space-x-2 mb-2">

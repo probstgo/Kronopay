@@ -29,14 +29,14 @@ interface LlamadaConfig {
 }
 
 const defaultLlamadaConfiguracion: LlamadaConfig = {
-  agente_id: '',
+    agente_id: '',
   tipo_evento: 'deuda_creada',
   dias_relativos: null,
-  configuracion_avanzada: {
-    horario_llamadas: { inicio: '09:00', fin: '18:00' },
-    reintentos: 3,
-    grabar_conversacion: true
-  }
+    configuracion_avanzada: {
+      horario_llamadas: { inicio: '09:00', fin: '18:00' },
+      reintentos: 3,
+      grabar_conversacion: true
+    }
 }
 
 const buildInitialConfig = (nodeConfig: Record<string, unknown> | undefined): LlamadaConfig => {
