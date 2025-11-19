@@ -9,9 +9,8 @@ import { EventTimingSelector, requiereDiasRelativos, TipoEvento } from './EventT
 interface EmailConfigFormProps {
   node: Node
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onSave: (config: any) => void
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onConfigChange?: (config: any) => void
+  onSave: (config: EmailConfig) => void
+  onConfigChange?: (config: EmailConfig) => void
 }
 
 interface Plantilla {
@@ -23,27 +22,53 @@ interface Plantilla {
   tipo_contenido?: 'texto' | 'html'
 }
 
-const buildInitialConfig = (nodeConfig: Record<string, unknown> | undefined) => {
+interface EmailConfig {
+  plantilla_id: string
+  tipo_evento: TipoEvento
+  dias_relativos: number | null
+  configuracion_avanzada: {
+    solo_dias_laborables: boolean
+    horario_trabajo: { inicio: string; fin: string }
+    reintentos: number
+  }
+}
+
+const defaultEmailConfiguracion: EmailConfig = {
+  plantilla_id: '',
+  tipo_evento: 'deuda_creada',
+  dias_relativos: null,
+  configuracion_avanzada: {
+    solo_dias_laborables: true,
+    horario_trabajo: { inicio: '09:00', fin: '18:00' },
+    reintentos: 3
+  }
+}
+
+const buildInitialConfig = (nodeConfig: Record<string, unknown> | undefined): EmailConfig => {
   const base = (nodeConfig || {}) as Record<string, unknown>
   return {
-    plantilla_id: (base.plantilla_id as string) || '',
-    tipo_evento: (base.tipo_evento as TipoEvento) || 'deuda_creada',
-    dias_relativos: typeof base.dias_relativos === 'number' ? (base.dias_relativos as number) : null,
-    configuracion_avanzada: base.configuracion_avanzada || {
-      solo_dias_laborables: true,
-      horario_trabajo: { inicio: '09:00', fin: '18:00' },
-      reintentos: 3
-    }
+    plantilla_id: (base.plantilla_id as string) || defaultEmailConfiguracion.plantilla_id,
+    tipo_evento: (base.tipo_evento as TipoEvento) || defaultEmailConfiguracion.tipo_evento,
+    dias_relativos: typeof base.dias_relativos === 'number'
+      ? (base.dias_relativos as number)
+      : defaultEmailConfiguracion.dias_relativos,
+    configuracion_avanzada: (base.configuracion_avanzada as EmailConfig['configuracion_avanzada']) || defaultEmailConfiguracion.configuracion_avanzada
   }
 }
 
 export function EmailConfigForm({ node, onSave, onConfigChange }: EmailConfigFormProps) {
-  const [config, setConfig] = useState(buildInitialConfig(node.data.configuracion))
+  const [config, setConfig] = useState<EmailConfig>(buildInitialConfig(node.data.configuracion))
   const [plantillas, setPlantillas] = useState<Plantilla[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showPreview, setShowPreview] = useState(false)
   const [plantillaSeleccionada, setPlantillaSeleccionada] = useState<Plantilla | null>(null)
+
+  useEffect(() => {
+    if (onConfigChange) {
+      onConfigChange(config)
+    }
+  }, [config, onConfigChange])
 
   // Cargar plantillas desde la BD
   useEffect(() => {
@@ -96,13 +121,6 @@ export function EmailConfigForm({ node, onSave, onConfigChange }: EmailConfigFor
     setError(null)
     onSave(config)
   }
-
-  // Notificar cambios cuando se modifica la configuración
-  useEffect(() => {
-    if (onConfigChange) {
-      onConfigChange(config)
-    }
-  }, [config, onConfigChange])
 
   return (
     <div className="space-y-4">
