@@ -48,7 +48,7 @@ export async function ejecutarCampanaAutomaticamente({
   }
 
   // Validar tipos de nodos soportados
-  const tiposValidos: NodoCampana['tipo'][] = ['filtro', 'email', 'llamada', 'sms', 'whatsapp', 'espera', 'condicion']
+  const tiposValidos: NodoCampana['tipo'][] = ['filtro', 'email', 'llamada', 'sms', 'whatsapp', 'condicion']
   const nodosInvalidos = nodosReales.filter(nodo => !tiposValidos.includes(nodo.type as NodoCampana['tipo']))
   
   if (nodosInvalidos.length > 0) {

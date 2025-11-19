@@ -13,7 +13,7 @@ export interface LogEjecucionParams {
   ejecucion_id: string
   nodo_id: string
   paso_numero: number
-  tipo_accion: 'email' | 'llamada' | 'sms' | 'espera' | 'condicion' | 'filtro' | 'whatsapp'
+  tipo_accion: 'email' | 'llamada' | 'sms' | 'condicion' | 'filtro' | 'whatsapp'
   estado: 'iniciado' | 'completado' | 'fallido' | 'saltado'
   datos_entrada?: Record<string, unknown>
   datos_salida?: Record<string, unknown>
