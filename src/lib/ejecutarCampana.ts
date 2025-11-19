@@ -1,4 +1,4 @@
-import { calcularProximaFecha, programarAccionesMultiples } from './programarAcciones'
+import { programarAccionesMultiples } from './programarAcciones'
 import { createClient } from '@supabase/supabase-js'
 import { calcularDiasVencidos } from './programarAcciones'
 import { calcularEstadoEfectivoDeuda } from './database'
@@ -112,7 +112,7 @@ async function ejecutarNodoRecursivo(
   // Incrementar paso número para este nodo
   const pasoActual = pasoNumero + 1
   const inicioTiempo = Date.now()
-  let fechaEjecucion = new Date(fechaBase)
+  const fechaEjecucion = new Date(fechaBase)
   let deudoresParaSiguiente = deudores
   let errorEjecucion: string | undefined
   let datosSalida: Record<string, unknown> = {}
