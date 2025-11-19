@@ -29,17 +29,6 @@ interface WorkflowTrigger {
   activo: boolean
 }
 
-/**
- * Interfaz para el estado de deuda en un workflow
- */
-interface WorkflowDeudaState {
-  id: string
-  workflow_id: string
-  deuda_id: string
-  ultimo_nodo_id: string | null
-  proxima_evaluacion: string | null
-  contexto: Record<string, unknown>
-}
 
 /**
  * Evalúa triggers para una deuda específica y genera programaciones automáticamente

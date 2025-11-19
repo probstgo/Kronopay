@@ -100,8 +100,14 @@ export async function generarProgramacionDesdeNodo(
     }
 
     // 7. Preparar variables para la programación
+    // Normalizar deudores: Supabase puede retornar como array o objeto
+    const deudoresNormalizado = Array.isArray(deuda.deudores) 
+      ? deuda.deudores[0] 
+      : deuda.deudores
+    const nombreDeudor = (deudoresNormalizado as { nombre?: string })?.nombre || 'Cliente'
+    
     const vars: Record<string, string> = {
-      nombre: (deuda.deudores as { nombre: string })?.nombre || 'Cliente',
+      nombre: nombreDeudor,
       monto: `$${deuda.monto || 0}`,
       fecha_vencimiento: deuda.fecha_vencimiento
     }
