@@ -22,15 +22,41 @@ interface Plantilla {
   tipo_contenido?: 'texto' | 'html'
 }
 
-const buildInitialConfig = (nodeConfig: Record<string, unknown> | undefined) => {
+interface SMSConfig {
+  plantilla_id: string
+  tipo_evento: TipoEvento
+  dias_relativos: number | null
+  configuracion_avanzada: {
+    horario_envio: { inicio: string; fin: string }
+    reintentos: number
+  }
+}
+
+const defaultSMSConfiguracion: SMSConfig = {
+  plantilla_id: '',
+  tipo_evento: 'deuda_creada',
+  dias_relativos: null,
+  configuracion_avanzada: {
+    horario_envio: { inicio: '09:00', fin: '18:00' },
+    reintentos: 3
+  }
+}
+
+const buildInitialConfig = (nodeConfig: Record<string, unknown> | undefined): SMSConfig => {
   const base = (nodeConfig || {}) as Record<string, unknown>
+  const advConfig = (base.configuracion_avanzada as Record<string, unknown>) || {}
+  const horarioEnvio = (advConfig.horario_envio as Record<string, unknown>) || {}
+  
   return {
-    plantilla_id: (base.plantilla_id as string) || '',
-    tipo_evento: (base.tipo_evento as TipoEvento) || 'deuda_creada',
-    dias_relativos: typeof base.dias_relativos === 'number' ? (base.dias_relativos as number) : null,
-    configuracion_avanzada: base.configuracion_avanzada || {
-      horario_envio: { inicio: '09:00', fin: '18:00' },
-      reintentos: 3
+    plantilla_id: (base.plantilla_id as string) || defaultSMSConfiguracion.plantilla_id,
+    tipo_evento: (base.tipo_evento as TipoEvento) || defaultSMSConfiguracion.tipo_evento,
+    dias_relativos: typeof base.dias_relativos === 'number' ? (base.dias_relativos as number) : defaultSMSConfiguracion.dias_relativos,
+    configuracion_avanzada: {
+      horario_envio: {
+        inicio: (horarioEnvio.inicio as string) || defaultSMSConfiguracion.configuracion_avanzada.horario_envio.inicio,
+        fin: (horarioEnvio.fin as string) || defaultSMSConfiguracion.configuracion_avanzada.horario_envio.fin
+      },
+      reintentos: typeof advConfig.reintentos === 'number' ? (advConfig.reintentos as number) : defaultSMSConfiguracion.configuracion_avanzada.reintentos
     }
   }
 }

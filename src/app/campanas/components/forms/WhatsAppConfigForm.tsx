@@ -22,15 +22,41 @@ interface Plantilla {
   tipo_contenido?: 'texto' | 'html'
 }
 
-const buildInitialConfig = (nodeConfig: Record<string, unknown> | undefined) => {
+interface WhatsAppConfig {
+  plantilla_id: string
+  tipo_evento: TipoEvento
+  dias_relativos: number | null
+  configuracion_avanzada: {
+    horario_envio: { inicio: string; fin: string }
+    reintentos: number
+  }
+}
+
+const defaultWhatsAppConfiguracion: WhatsAppConfig = {
+  plantilla_id: '',
+  tipo_evento: 'deuda_creada',
+  dias_relativos: null,
+  configuracion_avanzada: {
+    horario_envio: { inicio: '09:00', fin: '18:00' },
+    reintentos: 3
+  }
+}
+
+const buildInitialConfig = (nodeConfig: Record<string, unknown> | undefined): WhatsAppConfig => {
   const base = (nodeConfig || {}) as Record<string, unknown>
+  const advConfig = (base.configuracion_avanzada as Record<string, unknown>) || {}
+  const horarioEnvio = (advConfig.horario_envio as Record<string, unknown>) || {}
+  
   return {
-    plantilla_id: (base.plantilla_id as string) || '',
-    tipo_evento: (base.tipo_evento as TipoEvento) || 'deuda_creada',
-    dias_relativos: typeof base.dias_relativos === 'number' ? (base.dias_relativos as number) : null,
-    configuracion_avanzada: base.configuracion_avanzada || {
-      horario_envio: { inicio: '09:00', fin: '18:00' },
-      reintentos: 3
+    plantilla_id: (base.plantilla_id as string) || defaultWhatsAppConfiguracion.plantilla_id,
+    tipo_evento: (base.tipo_evento as TipoEvento) || defaultWhatsAppConfiguracion.tipo_evento,
+    dias_relativos: typeof base.dias_relativos === 'number' ? (base.dias_relativos as number) : defaultWhatsAppConfiguracion.dias_relativos,
+    configuracion_avanzada: {
+      horario_envio: {
+        inicio: (horarioEnvio.inicio as string) || defaultWhatsAppConfiguracion.configuracion_avanzada.horario_envio.inicio,
+        fin: (horarioEnvio.fin as string) || defaultWhatsAppConfiguracion.configuracion_avanzada.horario_envio.fin
+      },
+      reintentos: typeof advConfig.reintentos === 'number' ? (advConfig.reintentos as number) : defaultWhatsAppConfiguracion.configuracion_avanzada.reintentos
     }
   }
 }
