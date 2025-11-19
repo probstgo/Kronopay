@@ -34,14 +34,14 @@ interface EmailConfig {
 }
 
 const defaultEmailConfiguracion: EmailConfig = {
-  plantilla_id: '',
+    plantilla_id: '',
   tipo_evento: 'deuda_creada',
   dias_relativos: null,
-  configuracion_avanzada: {
-    solo_dias_laborables: true,
-    horario_trabajo: { inicio: '09:00', fin: '18:00' },
-    reintentos: 3
-  }
+    configuracion_avanzada: {
+      solo_dias_laborables: true,
+      horario_trabajo: { inicio: '09:00', fin: '18:00' },
+      reintentos: 3
+    }
 }
 
 const buildInitialConfig = (nodeConfig: Record<string, unknown> | undefined): EmailConfig => {

@@ -6,10 +6,8 @@ import { EventTimingSelector, requiereDiasRelativos, TipoEvento } from './EventT
 
 interface LlamadaConfigFormProps {
   node: Node
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onSave: (config: any) => void
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  onConfigChange?: (config: any) => void
+  onSave: (config: LlamadaConfig) => void
+  onConfigChange?: (config: LlamadaConfig) => void
 }
 
 interface Agente {
@@ -19,22 +17,42 @@ interface Agente {
   activo: boolean
 }
 
-const buildInitialConfig = (nodeConfig: Record<string, unknown> | undefined) => {
+interface LlamadaConfig {
+  agente_id: string
+  tipo_evento: TipoEvento
+  dias_relativos: number | null
+  configuracion_avanzada: {
+    horario_llamadas: { inicio: string; fin: string }
+    reintentos: number
+    grabar_conversacion: boolean
+  }
+}
+
+const defaultLlamadaConfiguracion: LlamadaConfig = {
+  agente_id: '',
+  tipo_evento: 'deuda_creada',
+  dias_relativos: null,
+  configuracion_avanzada: {
+    horario_llamadas: { inicio: '09:00', fin: '18:00' },
+    reintentos: 3,
+    grabar_conversacion: true
+  }
+}
+
+const buildInitialConfig = (nodeConfig: Record<string, unknown> | undefined): LlamadaConfig => {
   const base = (nodeConfig || {}) as Record<string, unknown>
   return {
-    agente_id: (base.agente_id as string) || '',
-    tipo_evento: (base.tipo_evento as TipoEvento) || 'deuda_creada',
-    dias_relativos: typeof base.dias_relativos === 'number' ? (base.dias_relativos as number) : null,
-    configuracion_avanzada: base.configuracion_avanzada || {
-      horario_llamadas: { inicio: '09:00', fin: '18:00' },
-      reintentos: 3,
-      grabar_conversacion: true
-    }
+    agente_id: (base.agente_id as string) || defaultLlamadaConfiguracion.agente_id,
+    tipo_evento: (base.tipo_evento as TipoEvento) || defaultLlamadaConfiguracion.tipo_evento,
+    dias_relativos: typeof base.dias_relativos === 'number'
+      ? (base.dias_relativos as number)
+      : defaultLlamadaConfiguracion.dias_relativos,
+    configuracion_avanzada: (base.configuracion_avanzada as LlamadaConfig['configuracion_avanzada']) || defaultLlamadaConfiguracion.configuracion_avanzada
   }
 }
 
 export function LlamadaConfigForm({ node, onSave, onConfigChange }: LlamadaConfigFormProps) {
-  const [config, setConfig] = useState(buildInitialConfig(node.data.configuracion))
+  const [config, setConfig] = useState<LlamadaConfig>(buildInitialConfig(node.data.configuracion))
   const [agentes, setAgentes] = useState<Agente[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
