@@ -9,7 +9,7 @@ import { registrarLogEjecucion } from './logsEjecucion'
  */
 export interface NodoCampana {
   id: string
-  tipo: 'filtro' | 'email' | 'llamada' | 'sms' | 'whatsapp' | 'espera' | 'condicion'
+  tipo: 'filtro' | 'email' | 'llamada' | 'sms' | 'whatsapp' | 'condicion'
   configuracion: Record<string, unknown>
   data?: Record<string, unknown>
 }
@@ -124,12 +124,10 @@ async function ejecutarNodoRecursivo(
       nodo_id: nodo.id,
       paso_numero: pasoActual,
       tipo_accion: nodo.tipo === 'email' || nodo.tipo === 'sms' || nodo.tipo === 'llamada' || nodo.tipo === 'whatsapp'
-        ? nodo.tipo 
-        : nodo.tipo === 'condicion' 
-          ? 'condicion' 
-          : nodo.tipo === 'espera' 
-            ? 'espera' 
-            : 'filtro',
+        ? nodo.tipo
+        : nodo.tipo === 'condicion'
+          ? 'condicion'
+          : 'filtro',
       estado: 'iniciado',
       datos_entrada: {
         cantidad_deudores: deudores.length,
@@ -233,25 +231,6 @@ async function ejecutarNodoRecursivo(
         exitosas: resultadoLlamada.exitosas,
         fallidas: resultadoLlamada.fallidas,
         agente_id: nodo.configuracion.agente_id
-      }
-      break
-
-    case 'espera':
-      // Calcular próxima fecha según duración
-      fechaEjecucion = calcularProximaFecha(
-        fechaBase,
-        nodo.configuracion.duracion as { tipo: 'minutos' | 'horas' | 'dias' | 'semanas', cantidad: number },
-        nodo.configuracion.configuracion_avanzada as {
-          solo_dias_laborables?: boolean
-          excluir_fines_semana?: boolean
-          zona_horaria?: string
-          horario_trabajo?: { inicio: string, fin: string }
-        }
-      )
-      datosSalida = {
-        fecha_base: fechaBase.toISOString(),
-        fecha_calculada: fechaEjecucion.toISOString(),
-        duracion: nodo.configuracion.duracion
       }
       break
 
@@ -361,9 +340,7 @@ async function ejecutarNodoRecursivo(
         ? nodo.tipo 
         : nodo.tipo === 'condicion' 
           ? 'condicion' 
-          : nodo.tipo === 'espera' 
-            ? 'espera' 
-            : 'filtro',
+          : 'filtro',
       estado: errorEjecucion ? 'fallido' : 'completado',
       datos_entrada: {
         cantidad_deudores: deudores.length,

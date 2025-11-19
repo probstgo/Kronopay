@@ -390,3 +390,17 @@ export function calcularEstadoEfectivoDeuda(
   // En otros casos, retornar el estado original
   return estado;
 }
+
+/**
+ * Determina el estado inicial que debe tener una deuda según su fecha de vencimiento.
+ * Si ya está vencida (fecha anterior a hoy) retorna 'vencida', de lo contrario 'nueva'.
+ * Se usa en los formularios y cargas masivas para decidir el estado por defecto.
+ */
+export function determinarEstadoInicialDeuda(fechaVencimiento?: string | null): 'nueva' | 'vencida' {
+  if (!fechaVencimiento) {
+    return 'nueva';
+  }
+
+  const diasVencidos = calcularDiasVencidos(fechaVencimiento);
+  return diasVencidos > 0 ? 'vencida' : 'nueva';
+}

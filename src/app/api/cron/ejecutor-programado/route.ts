@@ -69,6 +69,21 @@ export async function GET(request: Request) {
     } catch (syncError) {
       console.error('Error sincronizando números Twilio dentro del cron:', syncError)
     }
+    
+    try {
+      const { data: transiciones, error: transicionesError } = await supabase.rpc('ejecutar_transiciones_estado_deuda')
+      if (transicionesError) {
+        console.error('Error ejecutando transiciones de estado de deuda:', transicionesError)
+      } else {
+        const resumen = Array.isArray(transiciones) ? transiciones[0] : transiciones
+        console.log('🔄 Transiciones automáticas:', {
+          nuevas_a_vigente: resumen?.nuevas_a_vigente ?? 0,
+          vigentes_a_vencidas: resumen?.vigentes_a_vencidas ?? 0
+        })
+      }
+    } catch (transicionesError) {
+      console.error('Error al invocar las transiciones de estado de deuda:', transicionesError)
+    }
     // 1. Obtener programaciones vencidas y pendientes (solo de deudas activas)
     const { data: programaciones, error } = await supabase
       .from('programaciones')
@@ -90,6 +105,8 @@ export async function GET(request: Request) {
       `)
       .eq('estado', 'pendiente')
       .is('deudas.eliminada_at', null)  // Solo deudas activas (soft delete)
+      .neq('deudas.estado', 'cancelada')
+      .neq('deudas.estado', 'pagado')
       .lte('fecha_programada', new Date().toISOString())
       .limit(100)
 

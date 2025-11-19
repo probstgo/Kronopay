@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
 import { Eye } from 'lucide-react'
 import { PreviewDialog } from '@/app/plantillas/components/PreviewDialog'
+import { EventTimingSelector, requiereDiasRelativos, TipoEvento } from './EventTimingSelector'
 
 interface WhatsAppConfigFormProps {
   node: Node
@@ -21,14 +22,21 @@ interface Plantilla {
   tipo_contenido?: 'texto' | 'html'
 }
 
-export function WhatsAppConfigForm({ node, onSave, onConfigChange }: WhatsAppConfigFormProps) {
-  const [config, setConfig] = useState(node.data.configuracion || {
-    plantilla_id: '',
-    configuracion_avanzada: {
+const buildInitialConfig = (nodeConfig: Record<string, unknown> | undefined) => {
+  const base = (nodeConfig || {}) as Record<string, unknown>
+  return {
+    plantilla_id: (base.plantilla_id as string) || '',
+    tipo_evento: (base.tipo_evento as TipoEvento) || 'deuda_creada',
+    dias_relativos: typeof base.dias_relativos === 'number' ? (base.dias_relativos as number) : null,
+    configuracion_avanzada: base.configuracion_avanzada || {
       horario_envio: { inicio: '09:00', fin: '18:00' },
       reintentos: 3
     }
-  })
+  }
+}
+
+export function WhatsAppConfigForm({ node, onSave, onConfigChange }: WhatsAppConfigFormProps) {
+  const [config, setConfig] = useState(buildInitialConfig(node.data.configuracion))
   const [plantillas, setPlantillas] = useState<Plantilla[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -66,6 +74,11 @@ export function WhatsAppConfigForm({ node, onSave, onConfigChange }: WhatsAppCon
   }, [])
 
   const handleSave = () => {
+    if (requiereDiasRelativos(config.tipo_evento) && (config.dias_relativos === null || config.dias_relativos === undefined)) {
+      setError('Debes especificar cuántos días antes o después del vencimiento')
+      return
+    }
+
     // Validar que se haya seleccionado una plantilla
     if (!config.plantilla_id) {
       setError('Debes seleccionar una plantilla de WhatsApp para continuar')
@@ -143,6 +156,17 @@ export function WhatsAppConfigForm({ node, onSave, onConfigChange }: WhatsAppCon
             Ver Preview de la Plantilla
           </button>
         )}
+      </div>
+
+      <div>
+        <EventTimingSelector
+          value={{ tipo_evento: config.tipo_evento, dias_relativos: config.dias_relativos }}
+          onChange={(eventConfig) => {
+            setConfig({ ...config, ...eventConfig })
+            if (error) setError(null)
+          }}
+          error={error && requiereDiasRelativos(config.tipo_evento) ? error : null}
+        />
       </div>
 
       <div>

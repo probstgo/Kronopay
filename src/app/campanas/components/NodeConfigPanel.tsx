@@ -3,7 +3,6 @@
 import { useEffect, useRef } from 'react'
 import { EmailConfigForm } from './forms/EmailConfigForm'
 import { LlamadaConfigForm } from './forms/LlamadaConfigForm'
-import { EsperaConfigForm } from './forms/EsperaConfigForm'
 import { SMSConfigForm } from './forms/SMSConfigForm'
 import { WhatsAppConfigForm } from './forms/WhatsAppConfigForm'
 import { CondicionConfigForm } from './forms/CondicionConfigForm'
@@ -60,8 +59,6 @@ export function NodeConfigPanel({ node, onClose, onSaveConfig, onConfigChange }:
         return node.data.plantilla || 'Configuración de Email'
       case 'llamada':
         return node.data.agente || 'Configuración de Llamada'
-      case 'espera':
-        return node.data.duracion || 'Configuración de Espera'
       case 'sms':
         return node.data.texto || 'Configuración de SMS'
       case 'whatsapp':
@@ -116,9 +113,6 @@ export function NodeConfigPanel({ node, onClose, onSaveConfig, onConfigChange }:
           <LlamadaConfigForm node={node} onSave={handleSaveConfig} onConfigChange={handleConfigChange} />
         )}
         
-        {node.data.tipo === 'espera' && (
-          <EsperaConfigForm node={node} onSave={handleSaveConfig} onConfigChange={handleConfigChange} />
-        )}
         
         {node.data.tipo === 'sms' && (
           <SMSConfigForm node={node} onSave={handleSaveConfig} onConfigChange={handleConfigChange} />

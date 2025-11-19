@@ -19,6 +19,11 @@ const ESTADOS_CONFIG = {
     icon: '⏳',
     color: 'bg-yellow-100 text-yellow-800 border-yellow-200'
   },
+  vigente: {
+    label: 'Vigente',
+    icon: '🟢',
+    color: 'bg-lime-100 text-lime-800 border-lime-200'
+  },
   vencida: {
     label: 'Vencida',
     icon: '⚠️',
@@ -28,6 +33,11 @@ const ESTADOS_CONFIG = {
     label: 'Pagada',
     icon: '✅',
     color: 'bg-blue-100 text-blue-800 border-blue-200'
+  },
+  cancelada: {
+    label: 'Cancelada',
+    icon: '🛑',
+    color: 'bg-gray-100 text-gray-800 border-gray-200'
   }
 } as const;
 

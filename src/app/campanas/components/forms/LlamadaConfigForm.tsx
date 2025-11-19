@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Node } from 'reactflow'
+import { EventTimingSelector, requiereDiasRelativos, TipoEvento } from './EventTimingSelector'
 
 interface LlamadaConfigFormProps {
   node: Node
@@ -18,15 +19,22 @@ interface Agente {
   activo: boolean
 }
 
-export function LlamadaConfigForm({ node, onSave, onConfigChange }: LlamadaConfigFormProps) {
-  const [config, setConfig] = useState(node.data.configuracion || {
-    agente_id: '',
-    configuracion_avanzada: {
+const buildInitialConfig = (nodeConfig: Record<string, unknown> | undefined) => {
+  const base = (nodeConfig || {}) as Record<string, unknown>
+  return {
+    agente_id: (base.agente_id as string) || '',
+    tipo_evento: (base.tipo_evento as TipoEvento) || 'deuda_creada',
+    dias_relativos: typeof base.dias_relativos === 'number' ? (base.dias_relativos as number) : null,
+    configuracion_avanzada: base.configuracion_avanzada || {
       horario_llamadas: { inicio: '09:00', fin: '18:00' },
       reintentos: 3,
       grabar_conversacion: true
     }
-  })
+  }
+}
+
+export function LlamadaConfigForm({ node, onSave, onConfigChange }: LlamadaConfigFormProps) {
+  const [config, setConfig] = useState(buildInitialConfig(node.data.configuracion))
   const [agentes, setAgentes] = useState<Agente[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -59,6 +67,11 @@ export function LlamadaConfigForm({ node, onSave, onConfigChange }: LlamadaConfi
   }, [])
 
   const handleSave = () => {
+    if (requiereDiasRelativos(config.tipo_evento) && (config.dias_relativos === null || config.dias_relativos === undefined)) {
+      setError('Debes especificar cuántos días antes o después del vencimiento')
+      return
+    }
+
     // Validar que se haya seleccionado un agente
     if (!config.agente_id) {
       setError('Debes seleccionar un agente de llamada para continuar')
@@ -122,6 +135,17 @@ export function LlamadaConfigForm({ node, onSave, onConfigChange }: LlamadaConfi
             <p className="text-xs text-red-600 font-medium">{error}</p>
           </div>
         )}
+      </div>
+
+      <div>
+        <EventTimingSelector
+          value={{ tipo_evento: config.tipo_evento, dias_relativos: config.dias_relativos }}
+          onChange={(eventConfig) => {
+            setConfig({ ...config, ...eventConfig })
+            if (error) setError(null)
+          }}
+          error={error && requiereDiasRelativos(config.tipo_evento) ? error : null}
+        />
       </div>
 
       <div>

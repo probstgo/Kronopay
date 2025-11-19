@@ -28,7 +28,6 @@ import { TopToolbar } from './TopToolbar'
 import { NodeConfigPanel } from './NodeConfigPanel'
 import { EmailNode } from './nodes/EmailNode'
 import { LlamadaNode } from './nodes/LlamadaNode'
-import { EsperaNode } from './nodes/EsperaNode'
 import { SMSNode } from './nodes/SMSNode'
 import { WhatsAppNode } from './nodes/WhatsAppNode'
 import { CondicionNode } from './nodes/CondicionNode'
@@ -67,7 +66,6 @@ function NodeWrapper({ nodeType, ...props }: { nodeType: string; [key: string]: 
   const nodeComponents = {
     email: EmailNode,
     llamada: LlamadaNode,
-    espera: EsperaNode,
     sms: SMSNode,
     whatsapp: WhatsAppNode,
     condicion: CondicionNode,
@@ -90,7 +88,6 @@ const nodeTypes = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   llamada: (props: any) => <NodeWrapper {...props} nodeType="llamada" />,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  espera: (props: any) => <NodeWrapper {...props} nodeType="espera" />,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sms: (props: any) => <NodeWrapper {...props} nodeType="sms" />,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -154,13 +151,6 @@ const availableNodeTypes = [
     description: 'Enviar mensaje de WhatsApp',
     icon: '💬',
     color: 'green'
-  },
-  {
-    id: 'espera',
-    name: 'Espera',
-    description: 'Esperar tiempo determinado',
-    icon: '⏰',
-    color: 'yellow'
   },
   {
     id: 'condicion',
@@ -509,6 +499,8 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
           plantilla: 'Nueva Plantilla',
           configuracion: {
             plantilla_id: '',
+            tipo_evento: 'deuda_creada',
+            dias_relativos: null,
             configuracion_avanzada: { solo_dias_laborables: true, horario_trabajo: { inicio: '09:00', fin: '18:00' }, reintentos: 3 }
           }
         }
@@ -519,6 +511,8 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
           agente: 'Nuevo Agente',
           configuracion: {
             agente_id: '',
+            tipo_evento: 'deuda_creada',
+            dias_relativos: null,
             configuracion_avanzada: { horario_llamadas: { inicio: '09:00', fin: '18:00' }, reintentos: 3, grabar_conversacion: true }
           }
         }
@@ -529,6 +523,8 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
           plantilla: 'Nueva Plantilla SMS',
           configuracion: {
             plantilla_id: '',
+            tipo_evento: 'deuda_creada',
+            dias_relativos: null,
             configuracion_avanzada: { horario_envio: { inicio: '09:00', fin: '18:00' }, reintentos: 3 }
           }
         }
@@ -539,17 +535,9 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
           texto: 'Nueva Plantilla WhatsApp',
           configuracion: {
             plantilla_id: '',
+            tipo_evento: 'deuda_creada',
+            dias_relativos: null,
             configuracion_avanzada: { horario_envio: { inicio: '09:00', fin: '18:00' }, reintentos: 3 }
-          }
-        }
-        break
-      case 'espera':
-        defaultData = {
-          ...defaultData,
-          duracion: '1 día',
-          configuracion: {
-            duracion: { tipo: 'dias', cantidad: 1 },
-            configuracion_avanzada: { solo_dias_laborables: true, excluir_fines_semana: true, zona_horaria: 'America/Santiago' }
           }
         }
         break

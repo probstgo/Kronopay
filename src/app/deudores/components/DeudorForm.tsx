@@ -86,8 +86,19 @@ const normalizarRUT = (rut: string): string => {
   
   return `${cuerpo}-${dv}`;
 };
+
+type EstadoDeuda = 'nueva' | 'pendiente' | 'pagado' | 'vigente' | 'vencida' | 'cancelada';
+const ESTADOS_DISPONIBLES: EstadoDeuda[] = ['nueva', 'pendiente', 'pagado', 'vigente', 'vencida', 'cancelada'];
+const normalizarEstadoDeuda = (valor?: string): EstadoDeuda | undefined => {
+  if (!valor) return undefined;
+  if (ESTADOS_DISPONIBLES.includes(valor as EstadoDeuda)) {
+    return valor as EstadoDeuda;
+  }
+  return undefined;
+};
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { determinarEstadoInicialDeuda } from '@/lib/database';
 
 interface Contacto {
   id: string;
@@ -107,7 +118,7 @@ interface Deuda {
   rut: string;
   monto: number;
   fecha_vencimiento: string;
-  estado: 'nueva' | 'pendiente' | 'pagado';
+  estado: EstadoDeuda;
   created_at: string;
 }
 
@@ -143,7 +154,7 @@ interface FormData {
   // Campos de deuda
   monto?: number;
   fecha_vencimiento?: string;
-  estado_deuda?: 'nueva' | 'pendiente' | 'pagado';
+  estado_deuda?: EstadoDeuda;
 }
 
 interface FormErrors {
@@ -163,7 +174,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor, deudaId }: Deud
     telefono: '',
     monto: undefined,
     fecha_vencimiento: '',
-    estado_deuda: 'nueva'
+    estado_deuda: undefined
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -243,7 +254,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor, deudaId }: Deud
         telefono: deudor.telefono || '',
         monto: deudaAEditar?.monto || deudor.monto_total || undefined,
         fecha_vencimiento: deudaAEditar?.fecha_vencimiento || deudor.fecha_vencimiento_mas_reciente || '',
-        estado_deuda: (deudaAEditar?.estado || deudor.estado_general || 'nueva') as 'nueva' | 'pendiente' | 'pagado'
+        estado_deuda: normalizarEstadoDeuda(deudaAEditar?.estado || deudor.estado_general)
       });
 
       // Consultar actividad si hay una deuda específica
@@ -261,7 +272,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor, deudaId }: Deud
         telefono: '',
         monto: undefined,
         fecha_vencimiento: '',
-        estado_deuda: 'nueva'
+        estado_deuda: undefined
       });
       setActividadDeuda(null);
     }
@@ -425,6 +436,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor, deudaId }: Deud
         // Actualizar deuda si se proporcionó
         if (formData.monto && formData.fecha_vencimiento) {
           let deudaActualizadaId: string | null = null;
+          const estadoParaGuardar = formData.estado_deuda ?? determinarEstadoInicialDeuda(formData.fecha_vencimiento);
           
           // Si se especificó una deudaId, actualizar esa deuda específica
           if (deudaId) {
@@ -433,7 +445,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor, deudaId }: Deud
               .update({
                 monto: formData.monto,
                 fecha_vencimiento: formData.fecha_vencimiento,
-                estado: formData.estado_deuda || 'nueva'
+                estado: estadoParaGuardar
               })
               .eq('id', deudaId)
               .is('eliminada_at', null); // Solo si no está eliminada
@@ -457,7 +469,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor, deudaId }: Deud
                 .update({
                   monto: formData.monto,
                   fecha_vencimiento: formData.fecha_vencimiento,
-                  estado: formData.estado_deuda || 'nueva'
+                  estado: estadoParaGuardar
                 })
                 .eq('id', deudaExistente.id);
               
@@ -473,7 +485,7 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor, deudaId }: Deud
                   rut: rutNormalizado,
                   monto: formData.monto,
                   fecha_vencimiento: formData.fecha_vencimiento,
-                  estado: formData.estado_deuda || 'nueva'
+                  estado: estadoParaGuardar
                 });
               
               if (deudaError) throw deudaError;
@@ -820,16 +832,19 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor, deudaId }: Deud
                   Estado de Deuda
                 </Label>
                 <Select
-                  value={formData.estado_deuda}
-                  onValueChange={(value) => handleInputChange('estado_deuda', value as 'nueva' | 'pendiente' | 'pagado')}
+                  value={formData.estado_deuda || ''}
+                  onValueChange={(value) => handleInputChange('estado_deuda', value as EstadoDeuda)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar estado" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="nueva">Nueva</SelectItem>
+                    <SelectItem value="vigente">Vigente</SelectItem>
                     <SelectItem value="pendiente">Pendiente</SelectItem>
+                    <SelectItem value="vencida">Vencida</SelectItem>
                     <SelectItem value="pagado">Pagado</SelectItem>
+                    <SelectItem value="cancelada">Cancelada</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

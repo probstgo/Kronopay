@@ -589,7 +589,7 @@ export function TopToolbar({
               <div>
                 <h3 className="font-semibold text-sm mb-1">Tipos de nodos</h3>
                 <p className="text-sm text-gray-600">
-                  Puedes usar Email, SMS, Llamadas, Esperas, Condiciones y Estadísticas para crear flujos complejos de cobranza.
+                  Puedes usar Email, SMS, Llamadas, Condiciones y Estadísticas para crear flujos complejos de cobranza.
                 </p>
               </div>
               <div>

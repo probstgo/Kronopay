@@ -122,11 +122,13 @@ export const DeudoresTable = forwardRef<DeudoresTableHandle, DeudoresTableProps>
       resultado = resultado.filter(deuda => {
         if (filtros.estado === 'vencida') {
           const diasVencidos = calcularDiasVencidos(deuda.fecha_vencimiento);
-          return diasVencidos > 0 && (deuda.estado === 'pendiente' || deuda.estado === 'nueva');
+          return deuda.estado === 'vencida' || (diasVencidos > 0 && (deuda.estado === 'pendiente' || deuda.estado === 'nueva'));
         }
         if (filtros.estado === 'pendiente') return deuda.estado === 'pendiente';
         if (filtros.estado === 'nueva') return deuda.estado === 'nueva';
+        if (filtros.estado === 'vigente') return deuda.estado === 'vigente';
         if (filtros.estado === 'pagada') return deuda.estado === 'pagado';
+        if (filtros.estado === 'cancelada') return deuda.estado === 'cancelada';
         return false;
       });
     }

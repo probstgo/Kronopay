@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import { parseCSVLine, downloadCSV, readCSVFile, mapCSVColumns, parseAndValidateCSV, CSVParseResult } from '@/lib/csvUtils';
 import { supabase } from '@/lib/supabase';
 import { parsearMontoCLP, validarMontoCLP } from '@/lib/formateo';
+import { determinarEstadoInicialDeuda } from '@/lib/database';
 
 interface ImportCSVModalProps {
   isOpen: boolean;
@@ -301,6 +302,8 @@ export function ImportCSVModal({ isOpen, onClose, onSuccess }: ImportCSVModalPro
               });
           }
 
+          const estadoInicial = determinarEstadoInicialDeuda(deudor.fecha_vencimiento || null);
+
           // Crear la deuda
           await supabase
             .from('deudas')
@@ -310,7 +313,7 @@ export function ImportCSVModal({ isOpen, onClose, onSuccess }: ImportCSVModalPro
               rut: deudor.rut || '',
               monto: deudor.monto_deuda,
               fecha_vencimiento: deudor.fecha_vencimiento || null,
-              estado: 'nueva'
+              estado: estadoInicial
             });
 
           deudoresInsertados++;

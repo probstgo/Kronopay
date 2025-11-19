@@ -26,9 +26,17 @@ const ESTADOS_CONFIG = {
     label: 'Sin deudas',
     icon: '✅'
   },
+  nueva: {
+    label: 'Nueva',
+    icon: '🆕'
+  },
   pendiente: {
     label: 'Pendiente',
     icon: '⏳'
+  },
+  vigente: {
+    label: 'Vigente',
+    icon: '🟢'
   },
   vencida: {
     label: 'Vencida',
@@ -37,6 +45,10 @@ const ESTADOS_CONFIG = {
   pagada: {
     label: 'Pagada',
     icon: '✅'
+  },
+  cancelada: {
+    label: 'Cancelada',
+    icon: '🛑'
   }
 } as const;
 
