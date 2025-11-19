@@ -228,6 +228,17 @@ export function EmailConfigForm({ node, onSave, onConfigChange }: EmailConfigFor
         </div>
       </div>
 
+      <div>
+        <EventTimingSelector
+          value={{ tipo_evento: config.tipo_evento, dias_relativos: config.dias_relativos }}
+          onChange={(eventConfig) => {
+            setConfig({ ...config, ...eventConfig })
+            if (error) setError(null)
+          }}
+          error={error && requiereDiasRelativos(config.tipo_evento) ? error : null}
+        />
+      </div>
+
       <button 
         onClick={handleSave}
         disabled={!config.plantilla_id || plantillas.length === 0}
@@ -253,17 +264,5 @@ export function EmailConfigForm({ node, onSave, onConfigChange }: EmailConfigFor
         />
       )}
     </div>
-
-      <div>
-        <EventTimingSelector
-          value={{ tipo_evento: config.tipo_evento, dias_relativos: config.dias_relativos }}
-          onChange={(eventConfig) => {
-            setConfig({ ...config, ...eventConfig })
-            if (error) setError(null)
-          }}
-          error={error && requiereDiasRelativos(config.tipo_evento) ? error : null}
-        />
-      </div>
-
   )
 }
