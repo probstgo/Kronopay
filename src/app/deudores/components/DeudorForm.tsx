@@ -586,8 +586,9 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor, deudaId }: Deud
         }
 
         // Crear deuda si se proporcionó
+        let deudaId: string | null = null
         if (formData.monto && formData.fecha_vencimiento) {
-          const { error: deudaError } = await supabase
+          const { data: deudaData, error: deudaError } = await supabase
             .from('deudas')
             .insert({
               usuario_id: user.id,
@@ -596,9 +597,29 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor, deudaId }: Deud
               monto: formData.monto,
               fecha_vencimiento: formData.fecha_vencimiento,
               estado: formData.estado_deuda || 'nueva'
-            });
+            })
+            .select('id')
+            .single();
           
           if (deudaError) throw deudaError;
+          deudaId = deudaData?.id || null
+
+          // Hook: Evaluar triggers automáticamente para deuda nueva con fecha_vencimiento >= hoy
+          if (deudaId && (!formData.estado_deuda || formData.estado_deuda === 'nueva')) {
+            const fechaVenc = new Date(formData.fecha_vencimiento)
+            const hoy = new Date()
+            hoy.setHours(0, 0, 0, 0)
+            fechaVenc.setHours(0, 0, 0, 0)
+            
+            if (fechaVenc >= hoy) {
+              // Evaluar triggers en background (no bloquear la UI)
+              import('@/lib/evaluarTriggers').then(({ evaluarTriggersDeuda }) => {
+                evaluarTriggersDeuda(deudaId!).catch(err => {
+                  console.error('Error evaluando triggers para nueva deuda:', err)
+                })
+              })
+            }
+          }
         }
 
         toast.success('Deudor creado exitosamente con contactos y deuda');

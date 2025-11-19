@@ -305,7 +305,7 @@ export function ImportCSVModal({ isOpen, onClose, onSuccess }: ImportCSVModalPro
           const estadoInicial = determinarEstadoInicialDeuda(deudor.fecha_vencimiento || null);
 
           // Crear la deuda
-          await supabase
+          const { data: deudaData, error: deudaError } = await supabase
             .from('deudas')
             .insert({
               usuario_id: user.id,
@@ -314,7 +314,28 @@ export function ImportCSVModal({ isOpen, onClose, onSuccess }: ImportCSVModalPro
               monto: deudor.monto_deuda,
               fecha_vencimiento: deudor.fecha_vencimiento || null,
               estado: estadoInicial
-            });
+            })
+            .select('id')
+            .single();
+
+          if (deudaError) throw deudaError;
+
+          // Hook: Evaluar triggers automáticamente para deuda nueva con fecha_vencimiento >= hoy
+          if (deudaData?.id && estadoInicial === 'nueva' && deudor.fecha_vencimiento) {
+            const fechaVenc = new Date(deudor.fecha_vencimiento)
+            const hoy = new Date()
+            hoy.setHours(0, 0, 0, 0)
+            fechaVenc.setHours(0, 0, 0, 0)
+            
+            if (fechaVenc >= hoy) {
+              // Evaluar triggers en background (no bloquear la importación)
+              import('@/lib/evaluarTriggers').then(({ evaluarTriggersDeuda }) => {
+                evaluarTriggersDeuda(deudaData.id).catch(err => {
+                  console.error('Error evaluando triggers para nueva deuda:', err)
+                })
+              })
+            }
+          }
 
           deudoresInsertados++;
         } catch (error) {

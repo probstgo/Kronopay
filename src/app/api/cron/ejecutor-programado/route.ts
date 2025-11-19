@@ -6,6 +6,8 @@ import { registrarLogEjecucion, crearEjecucionWorkflow, actualizarEjecucionWorkf
 import { sincronizarNumerosTwilio } from '@/lib/syncTwilioNumbers'
 import { procesarColaSms } from '@/lib/smsQueueProcessor'
 import { enviarSms } from '@/lib/twilio'
+import { evaluarTriggersTodasDeudas } from '@/lib/evaluarTriggers'
+import { verificarTransicionNuevaAVigente } from '@/lib/transicionesEstado'
 
 // Tipos para las respuestas de ElevenLabs
 interface ElevenLabsCallResult {
@@ -387,7 +389,24 @@ export async function GET(request: Request) {
           console.log(`✅ Registrado en historial`)
         }
 
-        // 5. Marcar programación como ejecutada
+        // 5. Hook: Verificar transición nueva → vigente si se ejecutó comunicación con éxito
+        // Esto aplica cuando se ejecuta una comunicación con evento deuda_creada
+        if (resultado.exito && prog.campana_id) {
+          // Obtener tipo_evento desde workflow_deuda_state si existe
+          const { data: workflowState } = await supabase
+            .from('workflow_deuda_state')
+            .select('contexto')
+            .eq('workflow_id', prog.campana_id)
+            .eq('deuda_id', prog.deuda_id)
+            .maybeSingle()
+
+          const tipoEvento = (workflowState?.contexto as Record<string, unknown>)?.tipo_evento as string | undefined
+
+          // Verificar y aplicar transición nueva → vigente si aplica
+          await verificarTransicionNuevaAVigente(prog.deuda_id, tipoEvento)
+        }
+
+        // 6. Marcar programación como ejecutada
         const estadoFinal = resultado.exito ? 'ejecutado' : 'cancelado'
         console.log(`🏁 Marcando programación como: ${estadoFinal}`)
         const { error: updateError } = await supabase
@@ -413,8 +432,22 @@ export async function GET(request: Request) {
       }
     }
 
+    // 7. Evaluar triggers para generar nuevas programaciones automáticas
+    // Esto se ejecuta después de procesar las programaciones pendientes
+    // para que el sistema genere nuevas programaciones según los triggers configurados
+    let programacionesGeneradas = 0
+    try {
+      console.log('🔍 Iniciando evaluación de triggers para todas las deudas activas...')
+      programacionesGeneradas = await evaluarTriggersTodasDeudas(1000) // Límite de 1000 deudas por ejecución
+      console.log(`✅ Evaluación de triggers completada: ${programacionesGeneradas} nuevas programaciones generadas`)
+    } catch (triggersError) {
+      console.error('❌ Error evaluando triggers:', triggersError)
+      // No fallar el cron job completo si falla la evaluación de triggers
+    }
+
     return NextResponse.json({ 
-      procesadas: programaciones?.length || 0 
+      procesadas: programaciones?.length || 0,
+      programaciones_generadas: programacionesGeneradas
     })
 
   } catch (error) {
