@@ -64,11 +64,11 @@ export default function SelectorDeudor({ onDeudorSelect, selectedDeudor }: Selec
           let estadoGeneral = 'sin_deudas'
           if (deudas.length > 0) {
             const tieneVencidas = deudas.some((x: Deuda) => (x as unknown as { estado?: string }).estado === 'vencida')
-            const tienePendientes = deudas.some((x: Deuda) => x.estado === 'pendiente')
+            const tieneVigentes = deudas.some((x: Deuda) => x.estado === 'vigente')
             const tieneNuevas = deudas.some((x: Deuda) => x.estado === 'nueva')
             const todasPagadas = deudas.every((x: Deuda) => x.estado === 'pagado')
             if (tieneVencidas) estadoGeneral = 'vencida'
-            else if (tienePendientes) estadoGeneral = 'pendiente'
+            else if (tieneVigentes) estadoGeneral = 'vigente'
             else if (tieneNuevas) estadoGeneral = 'nueva'
             else if (todasPagadas) estadoGeneral = 'pagada'
           }

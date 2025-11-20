@@ -404,7 +404,7 @@ export function determinarEstadoAutomatico(fechaVencimiento?: string): 'nueva' |
 /**
  * Calcula el estado efectivo de una deuda considerando la fecha de vencimiento.
  * Esta función replica la lógica usada en la sección de deudores:
- * - Si la deuda está vencida (días vencidos > 0) y su estado es 'nueva' o 'pendiente', retorna 'vencida'
+ * - Si la deuda está vencida (días vencidos > 0) y su estado es 'nueva', retorna 'vencida'
  * - Si la deuda está pagada, siempre retorna 'pagado' (no se considera vencida aunque esté vencida)
  * - En otros casos, retorna el estado original de la deuda
  */
