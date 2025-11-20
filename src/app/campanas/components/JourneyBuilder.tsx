@@ -33,7 +33,7 @@ import { WhatsAppNode } from './nodes/WhatsAppNode'
 import { CondicionNode } from './nodes/CondicionNode'
 import { FiltroNode } from './nodes/FiltroNode'
 import { NoteNode } from './nodes/NoteNode'
-import { sincronizarTriggersWorkflow, obtenerTriggersWorkflow, type NodoConTrigger } from '@/lib/workflowTriggers'
+import { type NodoConTrigger } from '@/lib/workflowTriggers'
 
 // Componente para el nodo "+" inicial
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -382,14 +382,23 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
       }
 
       // Cargar triggers de la campaña (Fase 5)
-      const triggersMap = await obtenerTriggersWorkflow(id)
-      console.log('📋 Triggers cargados:', triggersMap.size)
+      let triggersMap: Record<string, { tipo_evento: string; dias_relativos: number | null }> = {}
+      try {
+        const responseTriggers = await fetch(`/api/campanas/${id}/triggers`)
+        if (responseTriggers.ok) {
+          const dataTriggers = await responseTriggers.json()
+          triggersMap = dataTriggers.triggers || {}
+          console.log('📋 Triggers cargados:', Object.keys(triggersMap).length)
+        }
+      } catch (error) {
+        console.error('Error cargando triggers:', error)
+      }
 
       // Restaurar nodos (agregar nodo inicial "+" si no hay nodos)
       if (canvas_data.nodes && canvas_data.nodes.length > 0) {
         const restoredNodes: Node[] = canvas_data.nodes.map((node: { id: string; type: string; position: { x: number; y: number }; data: Record<string, unknown> }) => {
           // Si el nodo tiene trigger configurado, agregarlo a la configuración
-          const trigger = triggersMap.get(node.id)
+          const trigger = triggersMap[node.id]
           
           if (trigger && ['email', 'sms', 'whatsapp', 'llamada'].includes(node.type)) {
             return {
@@ -976,12 +985,23 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
             dias_relativos: n.data?.configuracion?.dias_relativos
           }))
         
-        const resultadoTriggers = await sincronizarTriggersWorkflow(workflowId, nodosConTrigger)
-        
-        if (resultadoTriggers.exito) {
-          console.log('✅ Triggers sincronizados exitosamente')
-        } else {
-          console.error('⚠️ Error sincronizando triggers:', resultadoTriggers.error)
+        try {
+          const responseTriggers = await fetch(`/api/campanas/${workflowId}/triggers`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nodos: nodosConTrigger })
+          })
+          
+          const resultadoTriggers = await responseTriggers.json()
+          
+          if (responseTriggers.ok && resultadoTriggers.exito) {
+            console.log('✅ Triggers sincronizados exitosamente', resultadoTriggers)
+          } else {
+            console.error('⚠️ Error sincronizando triggers:', resultadoTriggers.error)
+            toast.warning('Campaña guardada pero hubo un error al sincronizar triggers automáticos')
+          }
+        } catch (error) {
+          console.error('⚠️ Error al sincronizar triggers:', error)
           toast.warning('Campaña guardada pero hubo un error al sincronizar triggers automáticos')
         }
       }

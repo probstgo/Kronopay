@@ -1,17 +1,14 @@
 /**
- * Funciones para gestionar workflow_triggers en la base de datos
+ * Tipos y funciones helper para gestionar workflow_triggers
+ * 
+ * NOTA: Las operaciones de BD se realizan a través de API routes
+ * para evitar exponer SUPABASE_SERVICE_ROLE_KEY en el cliente
  */
 
-import { createClient } from '@supabase/supabase-js'
 import { type TipoEventoTrigger } from './evaluarTriggers'
 
 // Re-exportar el tipo para facilitar las importaciones
 export type { TipoEventoTrigger }
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 export interface WorkflowTrigger {
   id?: string
@@ -30,7 +27,7 @@ export interface NodoConTrigger {
 }
 
 /**
- * Sincroniza los triggers de un workflow con la configuración de los nodos del canvas
+ * Sincroniza los triggers de un workflow (cliente - llama a API route)
  * 
  * @param workflowId ID del workflow
  * @param nodos Array de nodos del canvas que tienen triggers configurados
@@ -40,122 +37,16 @@ export async function sincronizarTriggersWorkflow(
   nodos: NodoConTrigger[]
 ): Promise<{ exito: boolean; error?: string }> {
   try {
-    // 1. Obtener triggers existentes del workflow
-    const { data: triggersExistentes, error: errorObtener } = await supabase
-      .from('workflow_triggers')
-      .select('*')
-      .eq('workflow_id', workflowId)
-
-    if (errorObtener) {
-      console.error('Error obteniendo triggers existentes:', errorObtener)
-      return { exito: false, error: errorObtener.message }
-    }
-
-    // 2. Filtrar nodos válidos (solo los que tienen tipo_evento configurado)
-    const nodosConTrigger = nodos.filter(
-      (nodo) => nodo.tipo_evento && ['email', 'sms', 'whatsapp', 'llamada'].includes(nodo.tipo)
-    )
-
-    // 3. Crear un mapa de nodos actuales por nodo_id
-    const nodosMap = new Map<string, NodoConTrigger>()
-    nodosConTrigger.forEach((nodo) => {
-      nodosMap.set(nodo.id, nodo)
+    const response = await fetch(`/api/campanas/${workflowId}/triggers`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nodos })
     })
 
-    // 4. Crear un mapa de triggers existentes por nodo_id
-    const triggersMap = new Map<string, typeof triggersExistentes[0]>()
-    triggersExistentes?.forEach((trigger) => {
-      triggersMap.set(trigger.nodo_entrada_id, trigger)
-    })
+    const data = await response.json()
 
-    // 5. Identificar operaciones a realizar
-    const triggersACrear: Omit<WorkflowTrigger, 'id'>[] = []
-    const triggersAActualizar: WorkflowTrigger[] = []
-    const idsAEliminar: string[] = []
-
-    // 6. Procesar nodos actuales
-    for (const nodo of nodosConTrigger) {
-      const triggerExistente = triggersMap.get(nodo.id)
-
-      if (triggerExistente) {
-        // Verificar si necesita actualización
-        if (
-          triggerExistente.tipo_evento !== nodo.tipo_evento ||
-          triggerExistente.dias_relativos !== nodo.dias_relativos
-        ) {
-          triggersAActualizar.push({
-            id: triggerExistente.id,
-            workflow_id: workflowId,
-            tipo_evento: nodo.tipo_evento!,
-            dias_relativos: nodo.dias_relativos ?? null,
-            nodo_entrada_id: nodo.id,
-            activo: true,
-          })
-        }
-        // Marcar como procesado
-        triggersMap.delete(nodo.id)
-      } else {
-        // Crear nuevo trigger
-        triggersACrear.push({
-          workflow_id: workflowId,
-          tipo_evento: nodo.tipo_evento!,
-          dias_relativos: nodo.dias_relativos ?? null,
-          nodo_entrada_id: nodo.id,
-          activo: true,
-        })
-      }
-    }
-
-    // 7. Los triggers que quedaron en el map deben ser eliminados (nodos que ya no existen o ya no tienen evento)
-    idsAEliminar.push(...Array.from(triggersMap.values()).map((t) => t.id))
-
-    // 8. Ejecutar operaciones en la BD
-    
-    // Crear nuevos triggers
-    if (triggersACrear.length > 0) {
-      const { error: errorCrear } = await supabase
-        .from('workflow_triggers')
-        .insert(triggersACrear)
-
-      if (errorCrear) {
-        console.error('Error creando triggers:', errorCrear)
-        return { exito: false, error: errorCrear.message }
-      }
-      console.log(`✅ ${triggersACrear.length} triggers creados`)
-    }
-
-    // Actualizar triggers existentes
-    for (const trigger of triggersAActualizar) {
-      const { error: errorActualizar } = await supabase
-        .from('workflow_triggers')
-        .update({
-          tipo_evento: trigger.tipo_evento,
-          dias_relativos: trigger.dias_relativos,
-          actualizado_at: new Date().toISOString(),
-        })
-        .eq('id', trigger.id!)
-
-      if (errorActualizar) {
-        console.error(`Error actualizando trigger ${trigger.id}:`, errorActualizar)
-        return { exito: false, error: errorActualizar.message }
-      }
-    }
-    if (triggersAActualizar.length > 0) {
-      console.log(`✅ ${triggersAActualizar.length} triggers actualizados`)
-    }
-
-    // Eliminar triggers obsoletos
-    if (idsAEliminar.length > 0) {
-      const { error: errorEliminar } = await supabase
-        .from('workflow_triggers')
-        .delete()
-        .in('id', idsAEliminar)
-
-      if (errorEliminar) {
-        console.error('Error eliminando triggers:', errorEliminar)
-        return { exito: false, error: errorEliminar.message }
-      }
-      console.log(`✅ ${idsAEliminar.length} triggers eliminados`)
+    if (!response.ok) {
+      return { exito: false, error: data.error || 'Error al sincronizar triggers' }
     }
 
     return { exito: true }
@@ -169,7 +60,7 @@ export async function sincronizarTriggersWorkflow(
 }
 
 /**
- * Obtiene todos los triggers de un workflow
+ * Obtiene todos los triggers de un workflow (cliente - llama a API route)
  * 
  * @param workflowId ID del workflow
  * @returns Map con nodo_id como key y configuración del trigger como valor
@@ -180,22 +71,18 @@ export async function obtenerTriggersWorkflow(
   const triggersMap = new Map<string, { tipo_evento: TipoEventoTrigger; dias_relativos: number | null }>()
 
   try {
-    const { data: triggers, error } = await supabase
-      .from('workflow_triggers')
-      .select('nodo_entrada_id, tipo_evento, dias_relativos')
-      .eq('workflow_id', workflowId)
-      .eq('activo', true)
+    const response = await fetch(`/api/campanas/${workflowId}/triggers`)
+    const data = await response.json()
 
-    if (error) {
-      console.error('Error obteniendo triggers del workflow:', error)
+    if (!response.ok) {
+      console.error('Error obteniendo triggers:', data.error)
       return triggersMap
     }
 
-    triggers?.forEach((trigger) => {
-      triggersMap.set(trigger.nodo_entrada_id, {
-        tipo_evento: trigger.tipo_evento as TipoEventoTrigger,
-        dias_relativos: trigger.dias_relativos,
-      })
+    // Convertir el objeto a Map
+    Object.entries(data.triggers || {}).forEach(([nodoId, trigger]) => {
+      const t = trigger as { tipo_evento: TipoEventoTrigger; dias_relativos: number | null }
+      triggersMap.set(nodoId, t)
     })
 
     return triggersMap
