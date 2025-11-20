@@ -278,7 +278,15 @@ export async function generarProgramacionDesdeNodo(
       // No fallar si esto falla, la programación ya se creó
     }
 
-    console.log(`✅ Programación generada: ${programacion.id} para deuda ${deuda_id}, nodo ${nodo_id}`)
+    console.log('✅ Programación generada', {
+      programacion_id: programacion.id,
+      workflow_id,
+      nodo_id,
+      tipo_evento,
+      deuda_id,
+      estado_deuda: deuda.estado,
+      fecha_programada: fechaProgramada.toISOString()
+    })
     return true
   } catch (error) {
     console.error('Error en generarProgramacionDesdeNodo:', error)

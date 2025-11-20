@@ -137,6 +137,8 @@ export async function evaluarTriggersDeuda(deuda_id: string): Promise<number> {
       for (const trigger of triggers as WorkflowTrigger[]) {
         const evaluacion = await evaluarTrigger(trigger, deuda, hoy, fechaVencimiento)
         
+        console.log(`🔍 Evaluando trigger: nodo=${trigger.nodo_entrada_id}, tipo_evento=${trigger.tipo_evento}, dias_relativos=${trigger.dias_relativos}, deuda_id=${deuda_id}, estado=${deuda.estado}, aplica=${evaluacion.aplica}`)
+        
         if (!evaluacion.aplica) {
           continue
         }
@@ -145,6 +147,7 @@ export async function evaluarTriggersDeuda(deuda_id: string): Promise<number> {
         const nodoYaProcesado = estadoNodo && (estadoNodo.estado === 'pendiente' || estadoNodo.estado === 'ejecutado')
 
         if (nodoYaProcesado) {
+          console.log(`⏭️ Nodo ${trigger.nodo_entrada_id} ya procesado para deuda ${deuda_id}, estado: ${estadoNodo.estado}`)
           continue
         }
 
