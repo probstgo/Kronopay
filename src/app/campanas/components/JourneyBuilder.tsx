@@ -818,7 +818,7 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
     const node = nodes.find(n => n.id === nodeId)
     if (!node) return
 
-    // Si es un nodo SMS o Email y tiene plantilla_id, buscar el nombre de la plantilla
+    // Si es un nodo SMS, Email o WhatsApp y tiene plantilla_id, buscar el nombre de la plantilla
     let nombrePlantilla: string | undefined = undefined
     if ((node.type === 'sms' || node.type === 'email' || node.type === 'whatsapp') && config.plantilla_id) {
       try {
@@ -836,6 +836,23 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
       }
     }
 
+    // Si es un nodo Llamada y tiene agente_id, buscar el nombre del agente
+    let nombreAgente: string | undefined = undefined
+    if (node.type === 'llamada' && config.agente_id) {
+      try {
+        const response = await fetch('/api/telefono/agentes')
+        if (response.ok) {
+          const agentes = await response.json()
+          const agente = agentes.find((a: { id: string }) => a.id === config.agente_id)
+          if (agente) {
+            nombreAgente = agente.nombre
+          }
+        }
+      } catch (error) {
+        console.error('Error obteniendo nombre de agente:', error)
+      }
+    }
+
     setNodes((nodes) =>
       nodes.map((n) =>
         n.id === nodeId
@@ -843,7 +860,8 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
               ...n,
               data: {
                 ...n.data,
-                ...(nombrePlantilla && { plantilla: nombrePlantilla }),
+                ...(nombrePlantilla && { plantilla: nombrePlantilla, texto: nombrePlantilla }),
+                ...(nombreAgente && { agente: nombreAgente }),
                 configuracion: config
               }
             }

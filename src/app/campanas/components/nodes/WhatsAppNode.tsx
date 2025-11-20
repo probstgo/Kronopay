@@ -4,16 +4,17 @@ import { Handle, Position } from 'reactflow'
 
 interface WhatsAppNodeData {
   tipo: 'whatsapp'
-  texto: string
+  plantilla?: string
+  texto?: string
   configuracion: {
-    texto: string
+    plantilla_id?: string
     tipo_evento?: 'deuda_creada' | 'dias_antes_vencimiento' | 'dia_vencimiento' | 'dias_despues_vencimiento' | 'pago_registrado'
     dias_relativos?: number | null
-    variables_dinamicas: {
+    variables_dinamicas?: {
       nombre: boolean
       monto: boolean
     }
-    configuracion_avanzada: {
+    configuracion_avanzada?: {
       horario_envio: { inicio: string, fin: string }
       reintentos: number
     }
@@ -52,7 +53,7 @@ export function WhatsAppNode({ data, id, onConfigure, onDelete }: WhatsAppNodePr
         </div>
         <div>
           <div className="font-bold text-sm">WhatsApp</div>
-          <div className="text-xs text-gray-500">{data.texto}</div>
+          <div className="text-xs text-gray-500">{data.plantilla || data.texto || 'Sin plantilla'}</div>
         </div>
       </div>
       
