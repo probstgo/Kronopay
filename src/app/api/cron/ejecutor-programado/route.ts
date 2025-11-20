@@ -113,7 +113,21 @@ export async function GET(request: Request) {
     } catch (transicionesError) {
       console.error('Error al invocar las transiciones de estado de deuda:', transicionesError)
     }
-    // 1. Obtener programaciones vencidas y pendientes (solo de deudas activas)
+    
+    // 1. PRIMERO: Evaluar triggers para generar nuevas programaciones automáticas
+    // Esto permite que las programaciones recién generadas se ejecuten en la misma corrida
+    let programacionesGeneradas = 0
+    try {
+      console.log('🔍 Iniciando evaluación de triggers para todas las deudas activas...')
+      programacionesGeneradas = await evaluarTriggersTodasDeudas(1000) // Límite de 1000 deudas por ejecución
+      console.log(`✅ Evaluación de triggers completada: ${programacionesGeneradas} nuevas programaciones generadas`)
+    } catch (triggersError) {
+      console.error('❌ Error evaluando triggers:', triggersError)
+      // No fallar el cron job completo si falla la evaluación de triggers
+    }
+    
+    // 2. SEGUNDO: Obtener programaciones vencidas y pendientes (solo de deudas activas)
+    // Esto incluye las programaciones recién generadas en el paso anterior
     const { data: programaciones, error } = await supabase
       .from('programaciones')
       .select(`
@@ -216,7 +230,7 @@ export async function GET(request: Request) {
       } as ProgramaEjecucion & { rut?: string })
     }
 
-    // 2. Procesar cada programación
+    // 3. Procesar cada programación
     console.log('🔄 Iniciando procesamiento de', programacionesNormalizadas.length, 'programaciones')
     
     for (const prog of programacionesNormalizadas) {
@@ -296,7 +310,7 @@ export async function GET(request: Request) {
           })
         }
 
-        // 3. Ejecutar acción según tipo
+        // 4. Ejecutar acción según tipo
         console.log(`🚀 Ejecutando acción: ${prog.tipo_accion}`)
         let resultado: ResultadoEjecucion = { exito: false, error: 'Tipo de acción no válido' }
         switch (prog.tipo_accion) {
@@ -358,7 +372,7 @@ export async function GET(request: Request) {
           })
         }
 
-        // 4. Registrar en historial
+        // 5. Registrar en historial
         // Obtener RUT: primero desde programaciones.rut, luego desde deudas[0].rut
         const progConRut = prog as ProgramaEjecucion & { rut?: string }
         let rutParaHistorial = ''
@@ -416,7 +430,7 @@ export async function GET(request: Request) {
           console.log(`✅ Registrado en historial`)
         }
 
-        // 5. Marcar programación según resultado
+        // 6. Marcar programación según resultado
         const estadoFinal = resultado.exito ? 'ejecutado' : 'cancelado'
         const estadoWorkflow: EstadoProgramacionWorkflow = resultado.exito ? 'ejecutado' : 'fallido'
         console.log(`🏁 Marcando programación como: ${estadoFinal}`)
@@ -433,7 +447,7 @@ export async function GET(request: Request) {
           console.log(`✅ Programación ${prog.id} marcada como ${estadoFinal}`)
         }
 
-        // 6. Actualizar contexto del workflow para esta deuda
+        // 7. Actualizar contexto del workflow para esta deuda
         const contextoResultado = await actualizarContextoWorkflowDeuda(
           prog.campana_id,
           prog.deuda_id,
@@ -441,7 +455,7 @@ export async function GET(request: Request) {
           estadoWorkflow
         )
 
-        // 7. Hook: transición nueva → vigente solo cuando corresponde
+        // 8. Hook: transición nueva → vigente solo cuando corresponde
         if (resultado.exito && contextoResultado.tipoEvento) {
           await verificarTransicionNuevaAVigente(prog.deuda_id, contextoResultado.tipoEvento)
         }
@@ -456,18 +470,7 @@ export async function GET(request: Request) {
       }
     }
 
-    // 7. Evaluar triggers para generar nuevas programaciones automáticas
-    // Esto se ejecuta después de procesar las programaciones pendientes
-    // para que el sistema genere nuevas programaciones según los triggers configurados
-    let programacionesGeneradas = 0
-    try {
-      console.log('🔍 Iniciando evaluación de triggers para todas las deudas activas...')
-      programacionesGeneradas = await evaluarTriggersTodasDeudas(1000) // Límite de 1000 deudas por ejecución
-      console.log(`✅ Evaluación de triggers completada: ${programacionesGeneradas} nuevas programaciones generadas`)
-    } catch (triggersError) {
-      console.error('❌ Error evaluando triggers:', triggersError)
-      // No fallar el cron job completo si falla la evaluación de triggers
-    }
+    // 7. (Ya no necesario - la evaluación de triggers se hace al inicio)
 
     return NextResponse.json({ 
       procesadas: programaciones?.length || 0,

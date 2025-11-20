@@ -362,12 +362,29 @@ export function formatearMonto(monto: number): string {
 
 /**
  * Calcula días vencidos desde una fecha
+ * Usa la misma lógica que generarProgramacion.ts para consistencia
  */
 export function calcularDiasVencidos(fechaVencimiento: string): number {
-  const hoy = new Date();
-  const vencimiento = new Date(fechaVencimiento);
-  const diferencia = hoy.getTime() - vencimiento.getTime();
-  return Math.ceil(diferencia / (1000 * 60 * 60 * 24));
+  const hoy = new Date()
+  hoy.setHours(0, 0, 0, 0)
+  const fechaVenc = new Date(fechaVencimiento)
+  fechaVenc.setHours(0, 0, 0, 0)
+  // Math.floor para redondear hacia abajo y Math.max para asegurar que nunca sea negativo
+  return Math.max(0, Math.floor((hoy.getTime() - fechaVenc.getTime()) / (1000 * 60 * 60 * 24)))
+}
+
+/**
+ * Calcula días faltantes hasta el vencimiento
+ * Retorna 0 si la fecha ya pasó (deuda vencida)
+ * Usa la misma lógica que generarProgramacion.ts para consistencia
+ */
+export function calcularDiasAlVencimiento(fechaVencimiento: string): number {
+  const hoy = new Date()
+  hoy.setHours(0, 0, 0, 0)
+  const fechaVenc = new Date(fechaVencimiento)
+  fechaVenc.setHours(0, 0, 0, 0)
+  // Math.floor para redondear hacia abajo y Math.max para asegurar que nunca sea negativo
+  return Math.max(0, Math.floor((fechaVenc.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24)))
 }
 
 /**

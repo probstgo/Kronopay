@@ -197,12 +197,14 @@ async function evaluarTrigger(
 
     case 'dias_antes_vencimiento':
       // Aplica si hoy = fecha_vencimiento - dias_relativos
+      // Ejemplo: si vence el 20 y hoy es 10, faltan 10 días → se ejecuta
       if (trigger.dias_relativos === null) {
         return { aplica: false }
       }
       const fechaObjetivo = new Date(fechaVencimiento)
       fechaObjetivo.setDate(fechaObjetivo.getDate() - trigger.dias_relativos)
       fechaObjetivo.setHours(0, 0, 0, 0)
+      // Solo se ejecuta el día exacto (no antes, no después)
       return {
         aplica: hoy.getTime() === fechaObjetivo.getTime(),
         fechaEvento: fechaObjetivo
@@ -216,7 +218,8 @@ async function evaluarTrigger(
       }
 
     case 'dias_despues_vencimiento':
-      // Aplica si hoy = fecha_vencimiento + dias_relativos y estado = 'vencida'
+      // Aplica si hoy >= fecha_vencimiento + dias_relativos y estado = 'vencida'
+      // Esto permite disparar el trigger si ya pasó la fecha objetivo (para deudas creadas después)
       if (trigger.dias_relativos === null) {
         return { aplica: false }
       }
@@ -226,8 +229,9 @@ async function evaluarTrigger(
       const fechaObjetivoDespues = new Date(fechaVencimiento)
       fechaObjetivoDespues.setDate(fechaObjetivoDespues.getDate() + trigger.dias_relativos)
       fechaObjetivoDespues.setHours(0, 0, 0, 0)
+      // Aplicar si hoy es igual o posterior a la fecha objetivo
       return {
-        aplica: hoy.getTime() === fechaObjetivoDespues.getTime(),
+        aplica: hoy.getTime() >= fechaObjetivoDespues.getTime(),
         fechaEvento: fechaObjetivoDespues
       }
 

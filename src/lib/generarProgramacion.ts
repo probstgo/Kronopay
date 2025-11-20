@@ -87,6 +87,40 @@ export async function generarProgramacionDesdeNodo(
       }
     }
 
+    // Verificación adicional: buscar programación pendiente existente en BD para este nodo específico
+    // Esto previene duplicados si el hook se ejecuta múltiples veces
+    // Primero verificamos el contexto del workflow_deuda_state para ver si hay una programación pendiente para este nodo
+    if (!opciones.contexto) {
+      const { data: stateCheck } = await supabase
+        .from('workflow_deuda_state')
+        .select('contexto')
+        .eq('workflow_id', workflow_id)
+        .eq('deuda_id', deuda_id)
+        .maybeSingle()
+
+      if (stateCheck) {
+        const contextoCheck = parseWorkflowContexto(stateCheck.contexto)
+        const nodoCheck = contextoCheck.nodos?.[nodo_id]
+        if (nodoCheck) {
+          // Si hay una programación pendiente o ejecutada para este nodo, verificar que existe en BD
+          if (nodoCheck.estado === 'pendiente' || nodoCheck.estado === 'ejecutado') {
+            if (nodoCheck.programacion_id) {
+              const { data: progCheck } = await supabase
+                .from('programaciones')
+                .select('id, estado')
+                .eq('id', nodoCheck.programacion_id)
+                .maybeSingle()
+
+              if (progCheck && (progCheck.estado === 'pendiente' || progCheck.estado === 'ejecutado')) {
+                console.log(`⚠️ Ya existe programación ${nodoCheck.programacion_id} (${progCheck.estado}) para nodo ${nodo_id} y deuda ${deuda_id}`)
+                return false
+              }
+            }
+          }
+        }
+      }
+    }
+
     // 1. Obtener información de la deuda y deudor
     const { data: deuda, error: deudaError } = await supabase
       .from('deudas')
@@ -312,13 +346,15 @@ function calcularFechaProgramada(
 
   switch (tipo_evento) {
     case 'deuda_creada':
-      // Programar para hoy si aún no pasa el horario; si ya pasó, programar para mañana
-      if (ahora.getTime() <= hoy.getTime()) {
-        return hoy
+      // Programar para hoy mismo (el cron lo ejecutará en la próxima corrida si fecha_programada <= ahora)
+      // Si se usa fecha_evento (del trigger), usar esa fecha; sino usar hoy
+      if (fecha_evento) {
+        const fechaEvento = new Date(fecha_evento)
+        fechaEvento.setHours(9, 0, 0, 0)
+        return fechaEvento
       }
-      const siguienteDia = new Date(hoy)
-      siguienteDia.setDate(siguienteDia.getDate() + 1)
-      return siguienteDia
+      // Programar para hoy a las 9:00 AM
+      return hoy
 
     case 'dias_antes_vencimiento':
       if (dias_relativos === null) return hoy
