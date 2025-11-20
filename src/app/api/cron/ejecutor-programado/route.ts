@@ -9,6 +9,33 @@ import { enviarSms } from '@/lib/twilio'
 import { evaluarTriggersTodasDeudas } from '@/lib/evaluarTriggers'
 import { verificarTransicionNuevaAVigente } from '@/lib/transicionesEstado'
 
+type EstadoProgramacionWorkflow = 'pendiente' | 'ejecutado' | 'fallido'
+
+interface NodoContextoWorkflow {
+  programacion_id: string
+  estado: EstadoProgramacionWorkflow
+  tipo_evento?: string
+  fecha_programada?: string
+  dias_relativos?: number | null
+  ultima_ejecucion?: string | null
+}
+
+interface WorkflowContexto {
+  nodos?: Record<string, NodoContextoWorkflow>
+  programaciones?: Record<string, { nodo_id: string; estado: EstadoProgramacionWorkflow }>
+}
+
+function parseWorkflowContexto(raw: unknown): WorkflowContexto {
+  if (!raw || typeof raw !== 'object') {
+    return {}
+  }
+  const contexto = raw as WorkflowContexto
+  return {
+    nodos: contexto.nodos ? { ...contexto.nodos } : {},
+    programaciones: contexto.programaciones ? { ...contexto.programaciones } : {}
+  }
+}
+
 // Tipos para las respuestas de ElevenLabs
 interface ElevenLabsCallResult {
   success: boolean
@@ -389,25 +416,9 @@ export async function GET(request: Request) {
           console.log(`✅ Registrado en historial`)
         }
 
-        // 5. Hook: Verificar transición nueva → vigente si se ejecutó comunicación con éxito
-        // Esto aplica cuando se ejecuta una comunicación con evento deuda_creada
-        if (resultado.exito && prog.campana_id) {
-          // Obtener tipo_evento desde workflow_deuda_state si existe
-          const { data: workflowState } = await supabase
-            .from('workflow_deuda_state')
-            .select('contexto')
-            .eq('workflow_id', prog.campana_id)
-            .eq('deuda_id', prog.deuda_id)
-            .maybeSingle()
-
-          const tipoEvento = (workflowState?.contexto as Record<string, unknown>)?.tipo_evento as string | undefined
-
-          // Verificar y aplicar transición nueva → vigente si aplica
-          await verificarTransicionNuevaAVigente(prog.deuda_id, tipoEvento)
-        }
-
-        // 6. Marcar programación como ejecutada
+        // 5. Marcar programación según resultado
         const estadoFinal = resultado.exito ? 'ejecutado' : 'cancelado'
+        const estadoWorkflow: EstadoProgramacionWorkflow = resultado.exito ? 'ejecutado' : 'fallido'
         console.log(`🏁 Marcando programación como: ${estadoFinal}`)
         const { error: updateError } = await supabase
           .from('programaciones')
@@ -420,6 +431,19 @@ export async function GET(request: Request) {
           console.error(`❌ Error al actualizar estado de programación:`, updateError)
         } else {
           console.log(`✅ Programación ${prog.id} marcada como ${estadoFinal}`)
+        }
+
+        // 6. Actualizar contexto del workflow para esta deuda
+        const contextoResultado = await actualizarContextoWorkflowDeuda(
+          prog.campana_id,
+          prog.deuda_id,
+          prog.id,
+          estadoWorkflow
+        )
+
+        // 7. Hook: transición nueva → vigente solo cuando corresponde
+        if (resultado.exito && contextoResultado.tipoEvento) {
+          await verificarTransicionNuevaAVigente(prog.deuda_id, contextoResultado.tipoEvento)
         }
 
       } catch (err) {
@@ -453,6 +477,58 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Error en ejecutor:', error)
     return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+  }
+}
+
+async function actualizarContextoWorkflowDeuda(
+  workflowId: string | null,
+  deudaId: string,
+  programacionId: string,
+  nuevoEstado: EstadoProgramacionWorkflow
+): Promise<{ nodoId?: string; tipoEvento?: string }> {
+  if (!workflowId) {
+    return {}
+  }
+
+  const { data: workflowState } = await supabase
+    .from('workflow_deuda_state')
+    .select('contexto')
+    .eq('workflow_id', workflowId)
+    .eq('deuda_id', deudaId)
+    .maybeSingle()
+
+  if (!workflowState?.contexto) {
+    return {}
+  }
+
+  const contexto = parseWorkflowContexto(workflowState.contexto)
+  const nodoId = contexto.programaciones?.[programacionId]?.nodo_id
+
+  if (!nodoId) {
+    return {}
+  }
+
+  if (contexto.nodos?.[nodoId]) {
+    contexto.nodos[nodoId].estado = nuevoEstado
+    contexto.nodos[nodoId].ultima_ejecucion = new Date().toISOString()
+  }
+
+  if (contexto.programaciones) {
+    delete contexto.programaciones[programacionId]
+  }
+
+  await supabase
+    .from('workflow_deuda_state')
+    .update({
+      contexto,
+      ultimo_nodo_id: nodoId
+    })
+    .eq('workflow_id', workflowId)
+    .eq('deuda_id', deudaId)
+
+  return {
+    nodoId,
+    tipoEvento: contexto.nodos?.[nodoId]?.tipo_evento
   }
 }
 

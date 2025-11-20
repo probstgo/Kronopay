@@ -29,6 +29,35 @@ interface WorkflowTrigger {
   activo: boolean
 }
 
+type EstadoProgramacion = 'pendiente' | 'ejecutado' | 'fallido'
+
+interface NodoContextoState {
+  programacion_id: string
+  estado: EstadoProgramacion
+  tipo_evento: TipoEventoTrigger
+  fecha_programada: string
+  dias_relativos: number | null
+}
+
+interface WorkflowContexto {
+  nodos?: Record<string, NodoContextoState>
+}
+
+interface EvaluacionTriggerResultado {
+  aplica: boolean
+  fechaEvento?: Date | null
+}
+
+function parseWorkflowContexto(raw: unknown): WorkflowContexto {
+  if (!raw || typeof raw !== 'object') {
+    return {}
+  }
+  const contexto = raw as WorkflowContexto
+  return {
+    nodos: contexto.nodos ? { ...contexto.nodos } : {}
+  }
+}
+
 
 /**
  * Evalúa triggers para una deuda específica y genera programaciones automáticamente
@@ -88,39 +117,50 @@ export async function evaluarTriggersDeuda(deuda_id: string): Promise<number> {
         continue
       }
 
+      const { data: estadoExistente } = await supabase
+        .from('workflow_deuda_state')
+        .select('contexto, proxima_evaluacion')
+        .eq('workflow_id', workflow.id)
+        .eq('deuda_id', deuda_id)
+        .maybeSingle()
+
+      const contextoEstado = parseWorkflowContexto(estadoExistente?.contexto)
+      if (estadoExistente?.proxima_evaluacion) {
+        const proximaEval = new Date(estadoExistente.proxima_evaluacion)
+        proximaEval.setHours(0, 0, 0, 0)
+        if (proximaEval.getTime() > hoy.getTime()) {
+          continue
+        }
+      }
+
       // 4. Evaluar cada trigger
       for (const trigger of triggers as WorkflowTrigger[]) {
-        const aplica = await evaluarTrigger(trigger, deuda, hoy, fechaVencimiento)
+        const evaluacion = await evaluarTrigger(trigger, deuda, hoy, fechaVencimiento)
         
-        if (!aplica) {
+        if (!evaluacion.aplica) {
           continue
         }
 
-        // 5. Verificar estado de deuda en workflow_deuda_state
-        const { data: estadoExistente } = await supabase
-          .from('workflow_deuda_state')
-          .select('*')
-          .eq('workflow_id', workflow.id)
-          .eq('deuda_id', deuda_id)
-          .maybeSingle()
+        const estadoNodo = contextoEstado.nodos?.[trigger.nodo_entrada_id]
+        const nodoYaProcesado = estadoNodo && (estadoNodo.estado === 'pendiente' || estadoNodo.estado === 'ejecutado')
 
-        // Verificar si ya se ejecutó este nodo
-        const nodoYaEjecutado = estadoExistente?.ultimo_nodo_id === trigger.nodo_entrada_id
+        if (nodoYaProcesado) {
+          continue
+        }
 
-        if (!nodoYaEjecutado) {
-          // Generar programación desde el nodo de entrada
-          const generada = await generarProgramacionDesdeNodo(
-            trigger.nodo_entrada_id,
-            deuda_id,
-            workflow.id,
-            trigger.tipo_evento,
-            trigger.dias_relativos,
-            deuda.fecha_vencimiento
-          )
+        // Generar programación desde el nodo de entrada
+        const generada = await generarProgramacionDesdeNodo(
+          trigger.nodo_entrada_id,
+          deuda_id,
+          workflow.id,
+          trigger.tipo_evento,
+          trigger.dias_relativos,
+          deuda.fecha_vencimiento,
+          { contexto: contextoEstado, fechaEvento: evaluacion.fechaEvento || null }
+        )
 
-          if (generada) {
-            programacionesGeneradas++
-          }
+        if (generada) {
+          programacionesGeneradas++
         }
       }
     }
@@ -144,11 +184,13 @@ async function evaluarTrigger(
   },
   hoy: Date,
   fechaVencimiento: Date
-): Promise<boolean> {
+): Promise<EvaluacionTriggerResultado> {
   switch (trigger.tipo_evento) {
     case 'deuda_creada':
-      // Aplica si estado = 'nueva' y fecha_vencimiento >= hoy
-      return deuda.estado === 'nueva' && fechaVencimiento >= hoy
+      return {
+        aplica: deuda.estado === 'nueva' && fechaVencimiento >= hoy,
+        fechaEvento: hoy
+      }
 
     case 'dias_antes_vencimiento':
       // Aplica si hoy = fecha_vencimiento - dias_relativos
@@ -156,11 +198,17 @@ async function evaluarTrigger(
       const fechaObjetivo = new Date(fechaVencimiento)
       fechaObjetivo.setDate(fechaObjetivo.getDate() - trigger.dias_relativos)
       fechaObjetivo.setHours(0, 0, 0, 0)
-      return hoy.getTime() === fechaObjetivo.getTime()
+      return {
+        aplica: hoy.getTime() === fechaObjetivo.getTime(),
+        fechaEvento: fechaObjetivo
+      }
 
     case 'dia_vencimiento':
       // Aplica si hoy = fecha_vencimiento
-      return hoy.getTime() === fechaVencimiento.getTime()
+      return {
+        aplica: hoy.getTime() === fechaVencimiento.getTime(),
+        fechaEvento: fechaVencimiento
+      }
 
     case 'dias_despues_vencimiento':
       // Aplica si hoy = fecha_vencimiento + dias_relativos y estado = 'vencida'
@@ -169,23 +217,32 @@ async function evaluarTrigger(
       const fechaObjetivoDespues = new Date(fechaVencimiento)
       fechaObjetivoDespues.setDate(fechaObjetivoDespues.getDate() + trigger.dias_relativos)
       fechaObjetivoDespues.setHours(0, 0, 0, 0)
-      return hoy.getTime() === fechaObjetivoDespues.getTime()
+      return {
+        aplica: hoy.getTime() === fechaObjetivoDespues.getTime(),
+        fechaEvento: fechaObjetivoDespues
+      }
 
     case 'pago_registrado':
       // Aplica si hay pago confirmado reciente (últimas 24 horas)
       const { data: pagos } = await supabase
         .from('pagos')
-        .select('id')
+        .select('id, created_at')
         .eq('deuda_id', deuda.id)
         .eq('estado', 'confirmado')
         .is('eliminada_at', null)
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
         .limit(1)
 
-      return (pagos && pagos.length > 0) || false
+      if (pagos && pagos.length > 0) {
+        return {
+          aplica: true,
+          fechaEvento: new Date(pagos[0].created_at)
+        }
+      }
+      return { aplica: false }
 
     default:
-      return false
+      return { aplica: false }
   }
 }
 

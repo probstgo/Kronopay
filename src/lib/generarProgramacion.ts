@@ -7,6 +7,38 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+type EstadoProgramacion = 'pendiente' | 'ejecutado' | 'fallido'
+
+interface NodoContextoState {
+  programacion_id: string
+  estado: EstadoProgramacion
+  tipo_evento: TipoEventoTrigger
+  fecha_programada: string
+  dias_relativos: number | null
+  ultima_ejecucion?: string | null
+}
+
+interface WorkflowContexto {
+  nodos?: Record<string, NodoContextoState>
+  programaciones?: Record<string, { nodo_id: string; estado: EstadoProgramacion }>
+}
+
+function parseWorkflowContexto(raw: unknown): WorkflowContexto {
+  if (!raw || typeof raw !== 'object') {
+    return {}
+  }
+  const context = raw as WorkflowContexto
+  return {
+    nodos: context.nodos ? { ...context.nodos } : {},
+    programaciones: context.programaciones ? { ...context.programaciones } : {}
+  }
+}
+
+interface GenerarProgramacionOptions {
+  contexto?: WorkflowContexto
+  fechaEvento?: Date | null
+}
+
 /**
  * Genera una programación desde un nodo específico de un workflow
  * 
@@ -24,9 +56,37 @@ export async function generarProgramacionDesdeNodo(
   workflow_id: string,
   tipo_evento: TipoEventoTrigger,
   dias_relativos: number | null,
-  fecha_vencimiento: string
+  fecha_vencimiento: string,
+  opciones: GenerarProgramacionOptions = {}
 ): Promise<boolean> {
   try {
+    // 0. Obtener estado actual del workflow para esta deuda (deduplicación)
+    let contextoActual: WorkflowContexto
+    if (opciones.contexto) {
+      contextoActual = parseWorkflowContexto(opciones.contexto)
+    } else {
+      const { data: workflowState } = await supabase
+        .from('workflow_deuda_state')
+        .select('contexto')
+        .eq('workflow_id', workflow_id)
+        .eq('deuda_id', deuda_id)
+        .maybeSingle()
+
+      contextoActual = parseWorkflowContexto(workflowState?.contexto)
+    }
+    const estadoNodoExistente = contextoActual.nodos?.[nodo_id]
+
+    if (estadoNodoExistente) {
+      if (estadoNodoExistente.estado === 'pendiente' || estadoNodoExistente.estado === 'ejecutado') {
+        console.log(`⚠️ Nodo ${nodo_id} ya fue programado para deuda ${deuda_id}. Estado: ${estadoNodoExistente.estado}`)
+        return false
+      }
+      // Si estaba en fallido, permitimos reintentar
+      if (estadoNodoExistente.programacion_id && contextoActual.programaciones) {
+        delete contextoActual.programaciones[estadoNodoExistente.programacion_id]
+      }
+    }
+
     // 1. Obtener información de la deuda y deudor
     const { data: deuda, error: deudaError } = await supabase
       .from('deudas')
@@ -80,10 +140,23 @@ export async function generarProgramacionDesdeNodo(
     const configuracion = (nodo.data.configuracion || {}) as Record<string, unknown>
 
     // 5. Calcular fecha_programada según tipo_evento y dias_relativos
+    const diasRelativosNumero = typeof dias_relativos === 'number'
+      ? dias_relativos
+      : dias_relativos === null || dias_relativos === undefined
+        ? null
+        : Number(dias_relativos)
+
+    // Validación adicional para dias_despues_vencimiento
+    if (tipo_evento === 'dias_despues_vencimiento' && deuda.estado !== 'vencida') {
+      console.log(`⚠️ Nodo ${nodo_id} requiere deuda vencida pero estado actual es ${deuda.estado}`)
+      return false
+    }
+
     const fechaProgramada = calcularFechaProgramada(
       tipo_evento,
-      dias_relativos,
-      fecha_vencimiento
+      diasRelativosNumero,
+      fecha_vencimiento,
+      opciones.fechaEvento
     )
 
     // 6. Obtener contacto preferido del deudor según el tipo de acción
@@ -166,6 +239,27 @@ export async function generarProgramacionDesdeNodo(
       fecha_vencimiento
     )
 
+    const contextoActualizado: WorkflowContexto = {
+      nodos: {
+        ...(contextoActual.nodos || {}),
+        [nodo_id]: {
+          programacion_id: programacion.id,
+          estado: 'pendiente',
+          tipo_evento,
+          fecha_programada: fechaProgramada.toISOString(),
+          dias_relativos: diasRelativosNumero ?? null,
+          ultima_ejecucion: null
+        }
+      },
+      programaciones: {
+        ...(contextoActual.programaciones || {}),
+        [programacion.id]: {
+          nodo_id,
+          estado: 'pendiente'
+        }
+      }
+    }
+
     const { error: stateError } = await supabase
       .from('workflow_deuda_state')
       .upsert({
@@ -173,11 +267,7 @@ export async function generarProgramacionDesdeNodo(
         deuda_id: deuda_id,
         ultimo_nodo_id: nodo_id,
         proxima_evaluacion: proximaEvaluacion?.toISOString() || null,
-        contexto: {
-          ultima_programacion_id: programacion.id,
-          tipo_evento: tipo_evento,
-          fecha_programada: fechaProgramada.toISOString()
-        },
+        contexto: contextoActualizado,
         actualizado_at: new Date().toISOString()
       }, {
         onConflict: 'workflow_id,deuda_id'
@@ -202,23 +292,25 @@ export async function generarProgramacionDesdeNodo(
 function calcularFechaProgramada(
   tipo_evento: TipoEventoTrigger,
   dias_relativos: number | null,
-  fecha_vencimiento: string
+  fecha_vencimiento: string,
+  fecha_evento?: Date | null
 ): Date {
   const fechaVenc = new Date(fecha_vencimiento)
   fechaVenc.setHours(9, 0, 0, 0) // Hora por defecto: 9:00 AM
 
   const hoy = new Date()
   hoy.setHours(9, 0, 0, 0)
+  const ahora = new Date()
 
   switch (tipo_evento) {
     case 'deuda_creada':
-      // Programar para hoy o mañana si ya pasó el horario
-      if (hoy.getTime() < new Date().getTime()) {
+      // Programar para hoy si aún no pasa el horario; si ya pasó, programar para mañana
+      if (ahora.getTime() <= hoy.getTime()) {
         return hoy
       }
-      const manana = new Date(hoy)
-      manana.setDate(manana.getDate() + 1)
-      return manana
+      const siguienteDia = new Date(hoy)
+      siguienteDia.setDate(siguienteDia.getDate() + 1)
+      return siguienteDia
 
     case 'dias_antes_vencimiento':
       if (dias_relativos === null) return hoy
@@ -236,7 +328,11 @@ function calcularFechaProgramada(
       return fechaDespues
 
     case 'pago_registrado':
-      // Programar para hoy
+      if (fecha_evento) {
+        const fechaPago = new Date(fecha_evento)
+        fechaPago.setHours(9, 0, 0, 0)
+        return fechaPago
+      }
       return hoy
 
     default:
