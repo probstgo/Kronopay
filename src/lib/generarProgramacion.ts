@@ -102,6 +102,27 @@ export async function generarProgramacionDesdeNodo(
       return false
     }
 
+    // Verificación adicional: detectar programaciones antiguas sin nodo_id para la misma campaña+deuda
+    // Esto previene duplicados cuando hay programaciones creadas antes de agregar el campo nodo_id
+    const { data: programacionesSinNodo } = await supabase
+      .from('programaciones')
+      .select('id, estado')
+      .eq('campana_id', workflow_id)
+      .eq('deuda_id', deuda_id)
+      .is('nodo_id', null)
+      .in('estado', ['pendiente', 'ejecutando'])
+      .limit(1)
+
+    if (programacionesSinNodo && programacionesSinNodo.length > 0) {
+      console.log(`⚠️ Ya existe programación antigua sin nodo_id ${programacionesSinNodo[0].id} (${programacionesSinNodo[0].estado}) para campaña ${workflow_id} y deuda ${deuda_id}. Eliminando duplicado antiguo.`)
+      // Eliminar la programación antigua sin nodo_id para evitar duplicados
+      await supabase
+        .from('programaciones')
+        .delete()
+        .eq('id', programacionesSinNodo[0].id)
+      // Continuar con la creación de la nueva programación con nodo_id
+    }
+
     // 1. Obtener información de la deuda y deudor
     const { data: deuda, error: deudaError } = await supabase
       .from('deudas')
@@ -121,6 +142,17 @@ export async function generarProgramacionDesdeNodo(
 
     if (deudaError || !deuda) {
       console.error('Error obteniendo deuda:', deudaError)
+      return false
+    }
+
+    // Verificación de estado: asegurar que el estado de la deuda sea correcto para el tipo de trigger
+    // Esto previene crear programaciones para deudas con estados incorrectos
+    if (tipo_evento === 'deuda_creada' && deuda.estado !== 'nueva') {
+      console.log(`⚠️ Trigger deuda_creada no aplica para deuda ${deuda_id} con estado ${deuda.estado}. Solo aplica para estado "nueva".`)
+      return false
+    }
+    if (tipo_evento === 'dias_despues_vencimiento' && deuda.estado !== 'vencida') {
+      console.log(`⚠️ Trigger dias_despues_vencimiento no aplica para deuda ${deuda_id} con estado ${deuda.estado}. Solo aplica para estado "vencida".`)
       return false
     }
 
@@ -153,6 +185,24 @@ export async function generarProgramacionDesdeNodo(
 
     // 4. Obtener configuración del nodo
     const configuracion = (nodo.data.configuracion || {}) as Record<string, unknown>
+
+    // Verificación de filtros de estado de deuda en la configuración del nodo
+    // Si el nodo tiene filtros de estado configurados, verificar que el estado de la deuda coincida
+    const filtros = (configuracion.filtros || {}) as {
+      estado_deuda?: string[]
+      rango_monto?: { min: number | null; max: number | null }
+      dias_vencidos?: { min: number | null; max: number | null }
+      tipo_contacto?: string[]
+      historial_acciones?: string[]
+    }
+
+    if (filtros.estado_deuda && filtros.estado_deuda.length > 0) {
+      // Verificar que el estado de la deuda esté en la lista de estados permitidos
+      if (!filtros.estado_deuda.includes(deuda.estado)) {
+        console.log(`⚠️ Nodo ${nodo_id} tiene filtro de estado_deuda [${filtros.estado_deuda.join(', ')}] pero la deuda ${deuda_id} tiene estado ${deuda.estado}. No se generará programación.`)
+        return false
+      }
+    }
 
     // 5. Calcular fecha_programada según tipo_evento y dias_relativos
     const diasRelativosNumero = typeof dias_relativos === 'number'
