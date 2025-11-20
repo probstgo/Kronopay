@@ -194,7 +194,9 @@ async function evaluarTrigger(
 
     case 'dias_antes_vencimiento':
       // Aplica si hoy = fecha_vencimiento - dias_relativos
-      if (trigger.dias_relativos === null) return false
+      if (trigger.dias_relativos === null) {
+        return { aplica: false }
+      }
       const fechaObjetivo = new Date(fechaVencimiento)
       fechaObjetivo.setDate(fechaObjetivo.getDate() - trigger.dias_relativos)
       fechaObjetivo.setHours(0, 0, 0, 0)
@@ -212,8 +214,12 @@ async function evaluarTrigger(
 
     case 'dias_despues_vencimiento':
       // Aplica si hoy = fecha_vencimiento + dias_relativos y estado = 'vencida'
-      if (trigger.dias_relativos === null) return false
-      if (deuda.estado !== 'vencida') return false
+      if (trigger.dias_relativos === null) {
+        return { aplica: false }
+      }
+      if (deuda.estado !== 'vencida') {
+        return { aplica: false }
+      }
       const fechaObjetivoDespues = new Date(fechaVencimiento)
       fechaObjetivoDespues.setDate(fechaObjetivoDespues.getDate() + trigger.dias_relativos)
       fechaObjetivoDespues.setHours(0, 0, 0, 0)
