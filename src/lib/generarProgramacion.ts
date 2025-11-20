@@ -87,74 +87,19 @@ export async function generarProgramacionDesdeNodo(
       }
     }
 
-    // Verificación adicional: buscar programación pendiente existente en BD para este nodo específico
-    // Esto previene duplicados si el hook se ejecuta múltiples veces o si hay condiciones de carrera
-    if (!opciones.contexto) {
-      const { data: stateCheck } = await supabase
-        .from('workflow_deuda_state')
-        .select('contexto')
-        .eq('workflow_id', workflow_id)
-        .eq('deuda_id', deuda_id)
-        .maybeSingle()
+    // Verificación de duplicados usando nodo_id directamente (solución definitiva y escalable)
+    const { data: programacionDuplicada } = await supabase
+      .from('programaciones')
+      .select('id, estado')
+      .eq('campana_id', workflow_id)
+      .eq('deuda_id', deuda_id)
+      .eq('nodo_id', nodo_id)
+      .in('estado', ['pendiente', 'ejecutando'])
+      .maybeSingle()
 
-      if (stateCheck) {
-        const contextoCheck = parseWorkflowContexto(stateCheck.contexto)
-        const nodoCheck = contextoCheck.nodos?.[nodo_id]
-        if (nodoCheck) {
-          // Si hay una programación pendiente o ejecutada para este nodo, verificar que existe en BD
-          if (nodoCheck.estado === 'pendiente' || nodoCheck.estado === 'ejecutado') {
-            if (nodoCheck.programacion_id) {
-              const { data: progCheck } = await supabase
-                .from('programaciones')
-                .select('id, estado')
-                .eq('id', nodoCheck.programacion_id)
-                .maybeSingle()
-
-              if (progCheck && (progCheck.estado === 'pendiente' || progCheck.estado === 'ejecutado')) {
-                console.log(`⚠️ Ya existe programación ${nodoCheck.programacion_id} (${progCheck.estado}) para nodo ${nodo_id} y deuda ${deuda_id}`)
-                return false
-              }
-            }
-          }
-        }
-      }
-      
-      // Verificación adicional: buscar TODAS las programaciones pendientes para este workflow+deuda
-      // y verificar en el contexto si alguna corresponde al mismo nodo
-      // Esta verificación es permanente y no depende de ventanas de tiempo
-      const { data: todasProgramacionesPendientes } = await supabase
-        .from('programaciones')
-        .select('id, estado')
-        .eq('campana_id', workflow_id)
-        .eq('deuda_id', deuda_id)
-        .in('estado', ['pendiente', 'ejecutando'])
-
-      if (todasProgramacionesPendientes && todasProgramacionesPendientes.length > 0) {
-        // Si hay un workflow_deuda_state, verificar en el contexto si alguna corresponde al mismo nodo
-        if (stateCheck) {
-          const contextoParaVerificar = parseWorkflowContexto(stateCheck.contexto)
-          for (const progPendiente of todasProgramacionesPendientes) {
-            // Verificar si esta programación corresponde al mismo nodo según el contexto
-            if (contextoParaVerificar.programaciones?.[progPendiente.id]?.nodo_id === nodo_id) {
-              console.log(`⚠️ Ya existe programación pendiente ${progPendiente.id} para nodo ${nodo_id} y deuda ${deuda_id}`)
-              return false
-            }
-            // También verificar si el nodo en el contexto tiene esta programación
-            const nodoEnContexto = contextoParaVerificar.nodos?.[nodo_id]
-            if (nodoEnContexto && nodoEnContexto.programacion_id === progPendiente.id) {
-              console.log(`⚠️ Ya existe programación pendiente ${progPendiente.id} registrada en contexto para nodo ${nodo_id} y deuda ${deuda_id}`)
-              return false
-            }
-          }
-        } else {
-          // Si no hay contexto aún, podría ser la primera vez o una condición de carrera
-          // En este caso, verificamos si hay programaciones pendientes con características similares
-          // que podrían indicar un duplicado (mismo tipo_accion y misma plantilla/agente)
-          // Nota: Esta verificación no es perfecta pero ayuda a prevenir duplicados obvios
-          // La solución definitiva sería agregar nodo_id a la tabla programaciones
-          console.log(`ℹ️ No hay workflow_deuda_state aún para workflow ${workflow_id} y deuda ${deuda_id}, continuando con creación`)
-        }
-      }
+    if (programacionDuplicada) {
+      console.log(`⚠️ Ya existe programación ${programacionDuplicada.id} (${programacionDuplicada.estado}) para nodo ${nodo_id} y deuda ${deuda_id}`)
+      return false
     }
 
     // 1. Obtener información de la deuda y deudor
@@ -277,42 +222,6 @@ export async function generarProgramacionDesdeNodo(
       vozConfig = (configuracion.configuracion_avanzada as Record<string, unknown>)?.voz_config as Record<string, unknown> || null
     }
 
-    // Verificación final antes de crear: si no hay contexto, verificar por características del nodo
-    // Esto ayuda a prevenir duplicados cuando el hook y el cron se ejecutan simultáneamente
-    if (!opciones.contexto) {
-      const { data: stateCheckFinal } = await supabase
-        .from('workflow_deuda_state')
-        .select('contexto')
-        .eq('workflow_id', workflow_id)
-        .eq('deuda_id', deuda_id)
-        .maybeSingle()
-
-      if (!stateCheckFinal) {
-        // No hay contexto aún, verificar si hay programaciones pendientes con características similares
-        // que podrían indicar un duplicado del mismo nodo
-        const { data: programacionesSimilares } = await supabase
-          .from('programaciones')
-          .select('id, estado, tipo_accion, plantilla_id, agente_id')
-          .eq('campana_id', workflow_id)
-          .eq('deuda_id', deuda_id)
-          .eq('tipo_accion', tipoAccion)
-          .in('estado', ['pendiente', 'ejecutando'])
-
-        if (programacionesSimilares && programacionesSimilares.length > 0) {
-          // Verificar si alguna tiene la misma plantilla_id o agente_id (mismo nodo)
-          for (const progSimilar of programacionesSimilares) {
-            if (tipoAccion === 'llamada' && progSimilar.agente_id === agenteId) {
-              console.log(`⚠️ Ya existe programación pendiente ${progSimilar.id} con mismo agente_id para workflow ${workflow_id} y deuda ${deuda_id}`)
-              return false
-            }
-            if ((tipoAccion === 'email' || tipoAccion === 'sms' || tipoAccion === 'whatsapp') && progSimilar.plantilla_id === plantillaId) {
-              console.log(`⚠️ Ya existe programación pendiente ${progSimilar.id} con misma plantilla_id para workflow ${workflow_id} y deuda ${deuda_id}`)
-              return false
-            }
-          }
-        }
-      }
-    }
 
     // 9. Crear programación
     const { data: programacion, error: programacionError } = await supabase
@@ -329,7 +238,8 @@ export async function generarProgramacionDesdeNodo(
         vars: vars,
         voz_config: vozConfig,
         fecha_programada: fechaProgramada.toISOString(),
-        estado: 'pendiente'
+        estado: 'pendiente',
+        nodo_id: nodo_id
       })
       .select()
       .single()
