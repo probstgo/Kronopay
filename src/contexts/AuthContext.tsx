@@ -49,6 +49,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Obtener la sesión inicial
     const getInitialSession = async () => {
       try {
+        // Verificar si Supabase está configurado
+        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+          console.warn('AuthContext: Supabase no está configurado. Variables de entorno faltantes.')
+          setInitialized(true)
+          setLoading(false)
+          return
+        }
+        
         const { data: { session }, error } = await supabase.auth.getSession()
         if (error) {
           console.error('Error al obtener sesión inicial:', error)

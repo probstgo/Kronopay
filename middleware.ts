@@ -38,11 +38,43 @@ export async function middleware(request: NextRequest) {
   
   console.log(`\n🔵 MIDDLEWARE ejecutándose en: ${pathname}`)
   
+  // Verificar si las variables de entorno están configuradas
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  
+  // Si no hay variables de entorno, permitir acceso a rutas públicas y bloquear el resto
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.log(`⚠️ Variables de entorno de Supabase no configuradas`)
+    
+    // Verificar si es una ruta pública
+    const isPublicRoute = publicRoutes.some(route => {
+      return pathname === route || pathname.startsWith(route)
+    })
+    
+    if (isPublicRoute) {
+      console.log(`✅ Permitiendo acceso a ruta pública (sin config de Supabase): ${pathname}\n`)
+      return NextResponse.next()
+    }
+    
+    // Para rutas protegidas, redirigir a login
+    const isProtectedRoute = protectedRoutes.some(route => 
+      pathname.startsWith(route)
+    )
+    
+    if (isProtectedRoute) {
+      console.log(`🔒 BLOQUEANDO ACCESO a ${pathname} - Supabase no configurado - REDIRIGIENDO A LOGIN\n`)
+      return NextResponse.redirect(new URL('/login', request.url))
+    }
+    
+    // Para cualquier otra ruta, permitir acceso (puede ser una ruta de API o estática)
+    return NextResponse.next()
+  }
+  
   // Crear cliente de Supabase para el middleware
   const response = NextResponse.next()
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseAnonKey,
     {
       cookies: {
         get(name: string) {
