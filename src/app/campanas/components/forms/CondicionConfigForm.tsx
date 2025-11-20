@@ -213,8 +213,10 @@ export function CondicionConfigForm({ node, onSave, onConfigChange }: CondicionC
                       >
                         <option value="">Seleccionar estado</option>
                         <option value="nueva">Nueva</option>
-                        <option value="pendiente">Pendiente</option>
+                        <option value="vigente">Vigente</option>
+                        <option value="vencida">Vencida</option>
                         <option value="pagado">Pagado</option>
+                        <option value="cancelada">Cancelada</option>
                       </select>
                     ) : (
                       <input 

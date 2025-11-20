@@ -14,11 +14,6 @@ const ESTADOS_CONFIG = {
     icon: '🆕',
     color: 'bg-purple-100 text-purple-800 border-purple-200'
   },
-  pendiente: {
-    label: 'Pendiente',
-    icon: '⏳',
-    color: 'bg-yellow-100 text-yellow-800 border-yellow-200'
-  },
   vigente: {
     label: 'Vigente',
     icon: '🟢',

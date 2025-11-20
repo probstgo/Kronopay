@@ -100,7 +100,7 @@ export function FiltroConfigForm({ node, onSave, onConfigChange }: FiltroConfigF
 
   const estadosDeuda = [
     { value: 'nueva', label: 'Nueva', icon: '🆕' },
-    { value: 'pendiente', label: 'Pendiente', icon: '⏳' },
+    { value: 'vigente', label: 'Vigente', icon: '🟢' },
     { value: 'vencida', label: 'Vencida', icon: '⚠️' },
     { value: 'pagada', label: 'Pagada', icon: '✅' }
   ]

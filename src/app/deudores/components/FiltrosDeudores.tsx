@@ -30,10 +30,6 @@ const ESTADOS_CONFIG = {
     label: 'Nueva',
     icon: '🆕'
   },
-  pendiente: {
-    label: 'Pendiente',
-    icon: '⏳'
-  },
   vigente: {
     label: 'Vigente',
     icon: '🟢'

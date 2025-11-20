@@ -9,7 +9,6 @@
 
 export const ESTADOS_DEUDA = {
   NUEVA: 'nueva',
-  PENDIENTE: 'pendiente',
   VIGENTE: 'vigente',
   VENCIDA: 'vencida',
   PAGADO: 'pagado',
@@ -21,11 +20,6 @@ export const ESTADOS_DEUDA_CONFIG = {
     label: 'Nueva',
     color: 'bg-blue-100 text-blue-800',
     icon: '🆕',
-  },
-  pendiente: {
-    label: 'Pendiente',
-    color: 'bg-yellow-100 text-yellow-800',
-    icon: '⏳',
   },
   vigente: {
     label: 'Vigente',
@@ -87,7 +81,7 @@ export interface Deuda {
   rut: string;
   monto: number;
   fecha_vencimiento: string;
-  estado: 'nueva' | 'pendiente' | 'vigente' | 'vencida' | 'pagado' | 'cancelada';
+  estado: 'nueva' | 'vigente' | 'vencida' | 'pagado' | 'cancelada';
   created_at: string;
 }
 
@@ -427,8 +421,8 @@ export function calcularEstadoEfectivoDeuda(
   // Calcular días vencidos
   const diasVencidos = calcularDiasVencidos(fechaVencimiento);
 
-  // Si está vencida y su estado es 'nueva' o 'pendiente', retornar 'vencida'
-  if (diasVencidos > 0 && (estado === 'nueva' || estado === 'pendiente')) {
+  // Si está vencida y su estado es 'nueva', retornar 'vencida'
+  if (diasVencidos > 0 && estado === 'nueva') {
     return 'vencida';
   }
 

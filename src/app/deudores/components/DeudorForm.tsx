@@ -87,8 +87,8 @@ const normalizarRUT = (rut: string): string => {
   return `${cuerpo}-${dv}`;
 };
 
-type EstadoDeuda = 'nueva' | 'pendiente' | 'pagado' | 'vigente' | 'vencida' | 'cancelada';
-const ESTADOS_DISPONIBLES: EstadoDeuda[] = ['nueva', 'pendiente', 'pagado', 'vigente', 'vencida', 'cancelada'];
+type EstadoDeuda = 'nueva' | 'pagado' | 'vigente' | 'vencida' | 'cancelada';
+const ESTADOS_DISPONIBLES: EstadoDeuda[] = ['nueva', 'pagado', 'vigente', 'vencida', 'cancelada'];
 const normalizarEstadoDeuda = (valor?: string): EstadoDeuda | undefined => {
   if (!valor) return undefined;
   if (ESTADOS_DISPONIBLES.includes(valor as EstadoDeuda)) {
@@ -862,7 +862,6 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor, deudaId }: Deud
                   <SelectContent>
                     <SelectItem value="nueva">Nueva</SelectItem>
                     <SelectItem value="vigente">Vigente</SelectItem>
-                    <SelectItem value="pendiente">Pendiente</SelectItem>
                     <SelectItem value="vencida">Vencida</SelectItem>
                     <SelectItem value="pagado">Pagado</SelectItem>
                     <SelectItem value="cancelada">Cancelada</SelectItem>
