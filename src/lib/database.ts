@@ -363,12 +363,17 @@ export function formatearMonto(monto: number): string {
 /**
  * Calcula días vencidos desde una fecha
  * Usa la misma lógica que generarProgramacion.ts para consistencia
+ * Parsea la fecha de manera explícita para evitar problemas de zona horaria
  */
 export function calcularDiasVencidos(fechaVencimiento: string): number {
+  // Parsear fecha de vencimiento de forma explícita (YYYY-MM-DD)
+  const partes = fechaVencimiento.split('-')
+  const fechaVenc = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]))
+  fechaVenc.setHours(0, 0, 0, 0)
+  
   const hoy = new Date()
   hoy.setHours(0, 0, 0, 0)
-  const fechaVenc = new Date(fechaVencimiento)
-  fechaVenc.setHours(0, 0, 0, 0)
+  
   // Math.floor para redondear hacia abajo y Math.max para asegurar que nunca sea negativo
   return Math.max(0, Math.floor((hoy.getTime() - fechaVenc.getTime()) / (1000 * 60 * 60 * 24)))
 }
@@ -377,12 +382,17 @@ export function calcularDiasVencidos(fechaVencimiento: string): number {
  * Calcula días faltantes hasta el vencimiento
  * Retorna 0 si la fecha ya pasó (deuda vencida)
  * Usa la misma lógica que generarProgramacion.ts para consistencia
+ * Parsea la fecha de manera explícita para evitar problemas de zona horaria
  */
 export function calcularDiasAlVencimiento(fechaVencimiento: string): number {
+  // Parsear fecha de vencimiento de forma explícita (YYYY-MM-DD)
+  const partes = fechaVencimiento.split('-')
+  const fechaVenc = new Date(parseInt(partes[0]), parseInt(partes[1]) - 1, parseInt(partes[2]))
+  fechaVenc.setHours(0, 0, 0, 0)
+  
   const hoy = new Date()
   hoy.setHours(0, 0, 0, 0)
-  const fechaVenc = new Date(fechaVencimiento)
-  fechaVenc.setHours(0, 0, 0, 0)
+  
   // Math.floor para redondear hacia abajo y Math.max para asegurar que nunca sea negativo
   return Math.max(0, Math.floor((fechaVenc.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24)))
 }

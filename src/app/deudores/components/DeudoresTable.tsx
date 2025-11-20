@@ -18,7 +18,7 @@ import {
   Mail, 
   Phone
 } from 'lucide-react';
-import { Deuda, Contacto, formatearRUT, formatearTelefono, calcularDiasVencidos, formatearMonto } from '@/lib/database';
+import { Deuda, Contacto, formatearRUT, formatearTelefono, calcularDiasVencidos, calcularDiasAlVencimiento, formatearMonto } from '@/lib/database';
 import { toast } from 'sonner';
 import { EstadoBadge } from './EstadoBadge';
 import { DeudorForm } from './DeudorForm';
@@ -391,6 +391,7 @@ export const DeudoresTable = forwardRef<DeudoresTableHandle, DeudoresTableProps>
               <TableBody>
                 {deudasPagina.map((deuda) => {
                   const diasVencidos = calcularDiasVencidos(deuda.fecha_vencimiento);
+                  const diasFaltantes = calcularDiasAlVencimiento(deuda.fecha_vencimiento);
                   
                   // Crear objeto DeudorConDatos para compatibilidad con funciones existentes
                   // Incluimos la deuda específica que se está editando
@@ -438,7 +439,12 @@ export const DeudoresTable = forwardRef<DeudoresTableHandle, DeudoresTableProps>
                           <div>{deuda.fecha_vencimiento || '-'}</div>
                           {diasVencidos > 0 && (
                             <Badge variant="destructive" className="text-xs">
-                              {diasVencidos} días vencido
+                              {diasVencidos} días vencido{diasVencidos !== 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                          {diasVencidos === 0 && diasFaltantes > 0 && (
+                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                              Faltan {diasFaltantes} día{diasFaltantes !== 1 ? 's' : ''}
                             </Badge>
                           )}
                         </div>
