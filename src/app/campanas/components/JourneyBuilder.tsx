@@ -814,7 +814,28 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
 
   // Función para guardar configuración de nodo
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleSaveNodeConfig = useCallback((nodeId: string, config: any) => {
+  const handleSaveNodeConfig = useCallback(async (nodeId: string, config: any) => {
+    const node = nodes.find(n => n.id === nodeId)
+    if (!node) return
+
+    // Si es un nodo SMS o Email y tiene plantilla_id, buscar el nombre de la plantilla
+    let nombrePlantilla: string | undefined = undefined
+    if ((node.type === 'sms' || node.type === 'email' || node.type === 'whatsapp') && config.plantilla_id) {
+      try {
+        const tipo = node.type === 'email' ? 'email' : node.type === 'whatsapp' ? 'whatsapp' : 'sms'
+        const response = await fetch(`/api/plantillas?tipo=${tipo}`)
+        if (response.ok) {
+          const plantillas = await response.json()
+          const plantilla = plantillas.find((p: { id: string }) => p.id === config.plantilla_id)
+          if (plantilla) {
+            nombrePlantilla = plantilla.nombre
+          }
+        }
+      } catch (error) {
+        console.error('Error obteniendo nombre de plantilla:', error)
+      }
+    }
+
     setNodes((nodes) =>
       nodes.map((n) =>
         n.id === nodeId
@@ -822,6 +843,7 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
               ...n,
               data: {
                 ...n.data,
+                ...(nombrePlantilla && { plantilla: nombrePlantilla }),
                 configuracion: config
               }
             }
@@ -832,7 +854,7 @@ export function JourneyBuilder({ params }: JourneyBuilderProps = {}) {
     toast.success('Configuración del nodo guardada exitosamente')
     // Marcar que no hay cambios sin guardar
     setNodeConfigHasChanges(false)
-  }, [setNodes])
+  }, [setNodes, nodes])
 
   // Obtener el nodo seleccionado
   const selectedNodeData = selectedNode ? nodes.find(n => n.id === selectedNode) : null
