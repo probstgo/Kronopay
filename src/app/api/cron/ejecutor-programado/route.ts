@@ -263,6 +263,7 @@ export async function GET(request: Request) {
             .single()
 
           if (programacionData?.nodo_id) {
+            console.log(`🔍 Verificando filtros para programación ${prog.id} con nodo ${programacionData.nodo_id}`)
             // Obtener workflow y nodo para verificar filtros
             const { data: workflowData } = await supabase
               .from('workflows_cobranza')
@@ -285,6 +286,8 @@ export async function GET(request: Request) {
                   estado_deuda?: string[]
                 }
 
+                console.log(`🔍 Filtros configurados para nodo ${nodo.id}:`, filtros.estado_deuda || 'Ninguno')
+
                 // Si hay filtros de estado configurados, verificar el estado actual de la deuda
                 if (filtros.estado_deuda && filtros.estado_deuda.length > 0) {
                   const { data: deudaEstado } = await supabase
@@ -293,6 +296,8 @@ export async function GET(request: Request) {
                     .eq('id', prog.deuda_id)
                     .single()
 
+                  console.log(`🔍 Estado actual de deuda ${prog.deuda_id}: ${deudaEstado?.estado}`)
+
                   if (deudaEstado && !filtros.estado_deuda.includes(deudaEstado.estado)) {
                     console.log(`⚠️ Programación ${prog.id} tiene filtro de estado_deuda [${filtros.estado_deuda.join(', ')}] pero la deuda ${prog.deuda_id} tiene estado ${deudaEstado.estado}. Cancelando programación.`)
                     await supabase
@@ -300,10 +305,18 @@ export async function GET(request: Request) {
                       .update({ estado: 'cancelado' })
                       .eq('id', prog.id)
                     continue
+                  } else {
+                    console.log(`✅ Filtro de estado aprobado para programación ${prog.id}`)
                   }
                 }
+              } else {
+                console.log(`⚠️ Nodo ${programacionData.nodo_id} no encontrado en canvas`)
               }
+            } else {
+              console.log(`⚠️ Workflow ${prog.campana_id} no tiene canvas_data`)
             }
+          } else {
+            console.log(`ℹ️ Programación ${prog.id} no tiene nodo_id (es antigua o manual)`)
           }
         }
 
