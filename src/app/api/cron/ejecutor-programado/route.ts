@@ -253,6 +253,60 @@ export async function GET(request: Request) {
         
         console.log(`✅ Programación ${prog.id} bloqueada (ejecutando)`)
 
+        // Verificar filtros de estado del nodo antes de ejecutar
+        if (prog.campana_id && prog.deuda_id) {
+          // Obtener nodo_id de la programación
+          const { data: programacionData } = await supabase
+            .from('programaciones')
+            .select('nodo_id')
+            .eq('id', prog.id)
+            .single()
+
+          if (programacionData?.nodo_id) {
+            // Obtener workflow y nodo para verificar filtros
+            const { data: workflowData } = await supabase
+              .from('workflows_cobranza')
+              .select('canvas_data')
+              .eq('id', prog.campana_id)
+              .single()
+
+            if (workflowData?.canvas_data) {
+              const canvasData = workflowData.canvas_data as {
+                nodes?: Array<{
+                  id: string
+                  data: Record<string, unknown>
+                }>
+              }
+
+              const nodo = canvasData.nodes?.find(n => n.id === programacionData.nodo_id)
+              if (nodo) {
+                const configuracion = (nodo.data.configuracion || {}) as Record<string, unknown>
+                const filtros = (configuracion.filtros || {}) as {
+                  estado_deuda?: string[]
+                }
+
+                // Si hay filtros de estado configurados, verificar el estado actual de la deuda
+                if (filtros.estado_deuda && filtros.estado_deuda.length > 0) {
+                  const { data: deudaEstado } = await supabase
+                    .from('deudas')
+                    .select('estado')
+                    .eq('id', prog.deuda_id)
+                    .single()
+
+                  if (deudaEstado && !filtros.estado_deuda.includes(deudaEstado.estado)) {
+                    console.log(`⚠️ Programación ${prog.id} tiene filtro de estado_deuda [${filtros.estado_deuda.join(', ')}] pero la deuda ${prog.deuda_id} tiene estado ${deudaEstado.estado}. Cancelando programación.`)
+                    await supabase
+                      .from('programaciones')
+                      .update({ estado: 'cancelado' })
+                      .eq('id', prog.id)
+                    continue
+                  }
+                }
+              }
+            }
+          }
+        }
+
         // Buscar o crear ejecución_workflow para registrar logs
         if (prog.campana_id && prog.deuda_id) {
           // Obtener deudor_id desde deuda_id (solo deudas activas)
