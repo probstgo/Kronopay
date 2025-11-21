@@ -316,7 +316,14 @@ export async function GET(request: Request) {
               console.log(`⚠️ Workflow ${prog.campana_id} no tiene canvas_data`)
             }
           } else {
-            console.log(`ℹ️ Programación ${prog.id} no tiene nodo_id (es antigua o manual)`)
+            // Programaciones sin nodo_id no deberían ejecutarse para campañas automáticas
+            // Solo se permiten para campañas manuales (que ya no existen en el sistema actual)
+            console.log(`⚠️ Programación ${prog.id} no tiene nodo_id. Cancelando porque todas las campañas son automáticas.`)
+            await supabase
+              .from('programaciones')
+              .update({ estado: 'cancelado' })
+              .eq('id', prog.id)
+            continue
           }
         }
 

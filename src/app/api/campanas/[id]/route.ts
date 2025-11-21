@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { z } from 'zod'
-import { ejecutarCampanaAutomaticamente } from '@/lib/ejecutarCampanaAutomatica'
 
 // Schema para actualizar estado
 const updateEstadoSchema = z.object({
@@ -95,20 +94,8 @@ export async function PATCH(
       )
     }
 
-    // Si el estado cambió a "activo", ejecutar la campaña automáticamente
-    if (estado === 'activo') {
-      try {
-        await ejecutarCampanaAutomaticamente({
-          supabase,
-          campanaId: campanaActualizada.id,
-          usuarioId: session.user.id,
-          canvasData: campanaExistente.canvas_data
-        })
-      } catch (error) {
-        // No fallar la actualización si la ejecución falla, solo loguear
-        console.error('Error ejecutando campaña automáticamente:', error)
-      }
-    }
+    // Las programaciones se crearán automáticamente mediante el sistema de triggers
+    // cuando ocurran eventos (crear deuda, vencimiento, etc.) o cuando se ejecute el cron diario
 
     return NextResponse.json({
       exito: true,
