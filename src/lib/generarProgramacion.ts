@@ -59,6 +59,12 @@ export async function generarProgramacionDesdeNodo(
   fecha_vencimiento: string,
   opciones: GenerarProgramacionOptions = {}
 ): Promise<boolean> {
+  // Log de identificación: rastrear quién llama a esta función
+  const stackTrace = new Error().stack
+  const caller = stackTrace?.split('\n')[2]?.trim() || 'unknown'
+  console.log(`🔵 [GENERAR_PROGRAMACION] Llamada desde: ${caller}`)
+  console.log(`🔵 [GENERAR_PROGRAMACION] Parámetros: nodo_id=${nodo_id}, deuda_id=${deuda_id}, workflow_id=${workflow_id}, tipo_evento=${tipo_evento}`)
+  
   try {
     // 0. Obtener estado actual del workflow para esta deuda (deduplicación)
     let contextoActual: WorkflowContexto
@@ -274,6 +280,7 @@ export async function generarProgramacionDesdeNodo(
 
 
     // 9. Crear programación
+    console.log(`🔵 [GENERAR_PROGRAMACION] Insertando programación con nodo_id=${nodo_id} para deuda ${deuda_id}`)
     const { data: programacion, error: programacionError } = await supabase
       .from('programaciones')
       .insert({
@@ -298,6 +305,8 @@ export async function generarProgramacionDesdeNodo(
       console.error('Error creando programación:', programacionError)
       return false
     }
+
+    console.log(`🔵 [GENERAR_PROGRAMACION] Programación creada: id=${programacion.id}, nodo_id=${programacion.nodo_id || 'NULL'}`)
 
     // 10. Actualizar o crear workflow_deuda_state
     const proximaEvaluacion = calcularProximaEvaluacion(

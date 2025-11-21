@@ -612,10 +612,14 @@ export function DeudorForm({ isOpen, onClose, onSuccess, deudor, deudaId }: Deud
             fechaVenc.setHours(0, 0, 0, 0)
             
             if (fechaVenc >= hoy) {
+              console.log(`🟢 [HOOK_DEUDOR_FORM] Ejecutando hook para deuda ${deudaId}, estado=${formData.estado_deuda || 'nueva'}`)
               // Evaluar triggers en background (no bloquear la UI)
               import('@/lib/evaluarTriggers').then(({ evaluarTriggersDeuda }) => {
-                evaluarTriggersDeuda(deudaId!).catch(err => {
-                  console.error('Error evaluando triggers para nueva deuda:', err)
+                console.log(`🟢 [HOOK_DEUDOR_FORM] Llamando evaluarTriggersDeuda para deuda ${deudaId}`)
+                evaluarTriggersDeuda(deudaId!).then(result => {
+                  console.log(`🟢 [HOOK_DEUDOR_FORM] evaluarTriggersDeuda completado: ${result} programaciones generadas`)
+                }).catch(err => {
+                  console.error('🟢 [HOOK_DEUDOR_FORM] Error evaluando triggers para nueva deuda:', err)
                 })
               })
             }

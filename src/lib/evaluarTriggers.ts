@@ -66,6 +66,12 @@ function parseWorkflowContexto(raw: unknown): WorkflowContexto {
  * @returns Número de programaciones generadas
  */
 export async function evaluarTriggersDeuda(deuda_id: string): Promise<number> {
+  // Log de identificación: rastrear quién llama a esta función
+  const stackTrace = new Error().stack
+  const caller = stackTrace?.split('\n')[2]?.trim() || 'unknown'
+  console.log(`🟡 [EVALUAR_TRIGGERS] Llamada desde: ${caller}`)
+  console.log(`🟡 [EVALUAR_TRIGGERS] Evaluando triggers para deuda ${deuda_id}`)
+  
   try {
     // 1. Obtener información de la deuda
     const { data: deuda, error: deudaError } = await supabase
@@ -267,6 +273,7 @@ async function evaluarTrigger(
  * @returns Número total de programaciones generadas
  */
 export async function evaluarTriggersTodasDeudas(limite: number = 1000): Promise<number> {
+  console.log(`🔴 [CRON_EVALUAR_TODAS] Iniciando evaluación de triggers para todas las deudas (límite: ${limite})`)
   try {
     // Obtener deudas activas (no pagadas, no canceladas, no eliminadas)
     const { data: deudas, error: deudasError } = await supabase

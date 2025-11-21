@@ -328,10 +328,14 @@ export function ImportCSVModal({ isOpen, onClose, onSuccess }: ImportCSVModalPro
             fechaVenc.setHours(0, 0, 0, 0)
             
             if (fechaVenc >= hoy) {
+              console.log(`🟣 [HOOK_IMPORT_CSV] Ejecutando hook para deuda ${deudaData.id}, estado=${estadoInicial || 'nueva'}`)
               // Evaluar triggers en background (no bloquear la importación)
               import('@/lib/evaluarTriggers').then(({ evaluarTriggersDeuda }) => {
-                evaluarTriggersDeuda(deudaData.id).catch(err => {
-                  console.error('Error evaluando triggers para nueva deuda:', err)
+                console.log(`🟣 [HOOK_IMPORT_CSV] Llamando evaluarTriggersDeuda para deuda ${deudaData.id}`)
+                evaluarTriggersDeuda(deudaData.id).then(result => {
+                  console.log(`🟣 [HOOK_IMPORT_CSV] evaluarTriggersDeuda completado: ${result} programaciones generadas`)
+                }).catch(err => {
+                  console.error('🟣 [HOOK_IMPORT_CSV] Error evaluando triggers para nueva deuda:', err)
                 })
               })
             }

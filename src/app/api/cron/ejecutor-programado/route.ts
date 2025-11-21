@@ -118,9 +118,9 @@ export async function GET(request: Request) {
     // Esto permite que las programaciones recién generadas se ejecuten en la misma corrida
     let programacionesGeneradas = 0
     try {
-      console.log('🔍 Iniciando evaluación de triggers para todas las deudas activas...')
+      console.log('🔴 [CRON] Iniciando evaluación de triggers para todas las deudas activas...')
       programacionesGeneradas = await evaluarTriggersTodasDeudas(1000) // Límite de 1000 deudas por ejecución
-      console.log(`✅ Evaluación de triggers completada: ${programacionesGeneradas} nuevas programaciones generadas`)
+      console.log(`🔴 [CRON] Evaluación de triggers completada: ${programacionesGeneradas} nuevas programaciones generadas`)
     } catch (triggersError) {
       console.error('❌ Error evaluando triggers:', triggersError)
       // No fallar el cron job completo si falla la evaluación de triggers
